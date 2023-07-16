@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="content-security-policy" content="default-src 'none'; script-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self' 'sha256-XRIee9ZEiz4ckviuCDVuStkiSW6Ij9/ExbttGnzRsb8=';" />
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="node_modules/font-awesome/css/font-awesome.min.css">
+    <title>Home - Warehouse Electron</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Stocktake Electron</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="#">Home</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            Sessions
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="stocktake/newsession.html">New Stocktake Session</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="stocktake/listsession.html">History Sessions</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <form class="d-flex">
+                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+                    <button class="btn btn-outline-success" type="submit">Search</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <nav class="m-2" aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">Home</li>
+            </ol>
+        </nav>
+        <div class="container-fluid">
+            <h2>Choose an action:</h2>
+            <ul>
+                <li><a href="stocktake/listsession.html">Show All Sessions</a></li>
+                <li><a href="stocktake/newsession.html">New Stocktake Session</a></li>
+            </ul>
+        </div>
+        <hr>
+        <div class="container-fluid">
+            <h2>Current active stocktake session:</h2>
+            <table class="table">
+                <thead>
+                    <th>Session ID</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Action</th>
+                </thead>
+                <!-- 用来展示当前没有结束的sessions -->
+                <tbody id="activeSessionTBody">
+                    <tr>
+                        <td colspan="4">None</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <hr>
+        <div class="container-fluid">
+            Environment Check:<br>
+            <table class="table" style="width: auto;">
+                <tr>
+                    <td>Node.js:<div id="node-version"></div></td>
+                    <td></td>
+                    <td>Chromium:<div id="chrome-version"></div></td>
+                    <td></td>
+                    <td>Electron:<div id="electron-version"></div></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="index.js"></script>
+</body>
+
+</html>

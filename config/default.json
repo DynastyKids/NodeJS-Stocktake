@@ -1,0 +1,12 @@
+{
+  "server": {
+    "listening": 3000
+  },
+  "database": {
+    "protocol": "mongodb+srv", // 'mongodb+srv' or 'mongodb'
+    "server": "mongodb",
+    "username": "",
+    "password": "",
+    "database": ""
+  }
+}
