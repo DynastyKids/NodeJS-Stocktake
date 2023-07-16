@@ -1,0 +1,187 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Warehouse Stocktake via Swagger",
+    "description": "This is a Sample Warehouse Stocktake application based on the OpenAPI 3.0 specification.\n\nThis application are require in coherience running with Wechat Miniprogram and Electron distributed package. If you are require customization, please contact author via Github.",
+    "contact": {
+      "email": "shabibox@outlook.com"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version": "0.9.0"
+  },
+  "servers": [
+    {
+      "url": "http://192.168.2.1:3000/api/v1"
+    },
+    {
+      "url": "ws://CHA-PC-04.local:3000/api/v1"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Sessions",
+      "description": "Everything about your stocktake sessions"
+    },
+    {
+      "name": "Session Logs",
+      "description": "View about your each session details and product infos"
+    }
+  ],
+  "paths": {
+    "/sessions": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Get all current sessions available",
+        "description": "Get sessions available to join, user will require to use this while scanning products",
+        "operationId": "selectSessions",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/pollingsession"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "System Internal error"
+          }
+        }
+      }
+    },
+    "/sessionlogs/itemadd": {
+      "post": {
+        "tags": [
+          "Session Logs"
+        ],
+        "summary": "Adding items by scanner",
+        "description": "Wechat program will automatic input scanning items via this interface",
+        "operationId": "addlog",
+        "parameters": [
+          {
+            "name": "session",
+            "in": "query",
+            "description": "Session code that available from /sessions request",
+            "required": true,
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item",
+            "in": "query",
+            "description": "A base64 encrypted string contains all product info as schema shows",
+            "required": true,
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/pollinglog"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid status value"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "pollingsession": {
+        "type": "object",
+        "properties": {
+          "session": {
+            "type": "string",
+            "description": "7bit HEX code [0-9A-F]",
+            "format": "A1B2C3D"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "User defined session start time"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "User defined session finish time"
+          },
+          "logTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "System automated logged time when entry inputed"
+          }
+        }
+      },
+      "pollinglog": {
+        "type": "object",
+        "properties": {
+          "session": {
+            "type": "string",
+            "example": "1A2B3C4"
+          },
+          "loggingTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bestbefore": {
+            "type": "string",
+            "format": "date"
+          },
+          "productCode": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1
+          },
+          "quantityUnit": {
+            "type": "string",
+            "example": "Bag"
+          },
+          "shelfLocation": {
+            "type": "string",
+            "example": "AA"
+          },
+          "POIPnumber": {
+            "type": "string",
+            "example": "POIP12345"
+          },
+          "productLabel": {
+            "type": "string",
+            "example": "YYYYMMDD1A2B3C4"
+          },
+          "labelBuild": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      }
+    }
+  }
+}

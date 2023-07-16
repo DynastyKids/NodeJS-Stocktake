@@ -26,7 +26,6 @@ async function getCurrentSession(){
 		}
 
 		for await (const  x of cursor) {
-			console.log(x)
 			htmlContent += `<tr><td>${x.session}</td><td>${x.startDate}</td><td>${x.endDate}</td><td><a href="stocktake/viewsession.html?id=${x.session}">View</a></td></tr>`
 		}
 
@@ -43,5 +42,4 @@ async function getCurrentSession(){
 
 window.onload = () => {
 	console.log(getCurrentSession().catch(console.log));
-
 }
