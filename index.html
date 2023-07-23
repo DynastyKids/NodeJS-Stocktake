@@ -34,11 +34,10 @@
                             <li><a class="dropdown-item" href="stocktake/listsession.html">History Sessions</a></li>
                         </ul>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" aria-current="page" href="settings.html">Settings</a>
+                    </li>
                 </ul>
-                <form class="d-flex">
-                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-                    <button class="btn btn-outline-success" type="submit">Search</button>
-                </form>
             </div>
         </div>
     </nav>
@@ -48,8 +47,9 @@
                 <li class="breadcrumb-item active" aria-current="page">Home</li>
             </ol>
         </nav>
+        <h1>Homepage</h1>
         <div class="container-fluid">
-            <h2>Choose an action:</h2>
+            <h3>Choose an action:</h3>
             <ul>
                 <li><a href="stocktake/listsession.html">Show All Sessions</a></li>
                 <li><a href="stocktake/newsession.html">New Stocktake Session</a></li>
@@ -57,7 +57,7 @@
         </div>
         <hr>
         <div class="container-fluid">
-            <h2>Current active stocktake session:</h2>
+            <h3>Current active stocktake session:</h3>
             <table class="table">
                 <thead>
                     <th>Session ID</th>
@@ -85,6 +85,8 @@
                     <td>Electron:<div id="electron-version"></div></td>
                 </tr>
             </table>
+            <br><br>
+            <p id="serverAddressText">Server Running Info:</p>
         </div>
     </div>
 

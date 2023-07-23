@@ -1,8 +1,11 @@
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const path = require('path');
-const credentials = require(path.resolve( __dirname, "../credentials.js" ))
+const fs=require('fs');
+const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../localsettings.json')));
 const moment = require('moment-timezone')
+
+const { ipcRenderer } = require('electron');
 
 const uri = encodeURI(credentials.mongodb_protocol+"://" + credentials.mongodb_username + ":" + credentials.mongodb_password + "@" + credentials.mongodb_server + "/?retryWrites=true&w=majority");
 
@@ -70,5 +73,35 @@ window.onload = () => {
         getSessionItems(sessionId)
     }, 10000);
 
-    
+    ipcRenderer.on('server-info', (event, { address, port }) => {
+        document.querySelector("#sessionConfigText").innerText = `Server Address: ${address}\t\t\tPort: ${port}`;
+    });
+
+    setInterval(function(){qrv2patch()},120000) // 120秒更新一次V2的数据信息
+}
+
+async function qrv2patch(){
+	const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true,useNewUrlParser: true, useUnifiedTopology: true}});
+	const logsessions = client.db("chatestsyd").collection("pollinglog");
+	const productsessions = client.db("chatestsyd").collection("products");
+	var productList = productsessions.find({})
+	for await (const x of productList) {
+		var whereCondition = {productCode: x.labelname}
+		var updateInfo = {
+			$set:{productCode:x.itemcode, productName:x.labelname}
+		}
+		var updateResult = await logsessions.updateMany(whereCondition,updateInfo)
+	}
+
+	var logLists = logsessions.find({})
+	for await(const x of logLists){
+		if (x.productCode.includes("TP") || x.productCode.includes("SP") || x.productCode=="IG001") {
+			if (x.quantityUnit == "" && x.quantity<50) {
+				logsessions.updateOne({_id:x._id},{$set:{quantityUnit:"carton"}})
+			} else if (x.quantityUnit == "" && x.quantity>=50) {
+				logsessions.updateOne({_id:x._id},{$set:{quantityUnit:"bottles"}})
+			}
+		}
+		
+	}
 }

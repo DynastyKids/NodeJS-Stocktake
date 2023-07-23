@@ -22,6 +22,7 @@ SHASUMS256.txt
 **/package-lock.json
 compile_commands.json
 .envrc
+localsettings.json
 
 # npm package
 /npm/dist
