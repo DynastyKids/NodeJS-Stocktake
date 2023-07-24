@@ -3,7 +3,7 @@ const {ServerApiVersion} = require('mongodb');
 const flatpickr = require("flatpickr");
 const fs=require('fs');
 const path = require('path');
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../localsettings.json')));
+const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
 const moment = require('moment-timezone')
 
 const uri = encodeURI(credentials.mongodb_protocol+"://" + credentials.mongodb_username + ":" + credentials.mongodb_password + "@" + credentials.mongodb_server + "/?retryWrites=true&w=majority");

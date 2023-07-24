@@ -2,7 +2,7 @@ const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const path = require('path');
 const fs=require('fs');
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, 'localsettings.json')));
+const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, 'config/localsettings.json')));
 const moment = require('moment-timezone')
 
 const { ipcRenderer } = require('electron');

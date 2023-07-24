@@ -24,7 +24,17 @@ function createWindow() {
         },
     });
 
-    mainWindow.loadFile("index.html");
+    try{
+        let fileStatus = fs.statSync(path.join(__dirname,"config/localconfig.json"))
+        if (fileStatus.size > 10) {
+            mainWindow.loadFile('index.html')
+        } else {
+            mainWindow.loadFile("settings.html")
+        }
+    } catch (err){
+        mainWindow.loadFile('index.html')
+        console.error(err)
+    }
 
     mainWindow.on("closed", function () {
         mainWindow = null;
@@ -51,13 +61,6 @@ function createWindow() {
     mainWindow.webContents.on('did-finish-load', () => {
         mainWindow.webContents.send('server-info', { address, port });
     });
-
-
-    if (fs.existsSync(path.join(__dirname,"localconfig.json"))) {
-        mainWindow.loadFile('index.html')
-    } else {
-        mainWindow.loadFile("settings.html")
-    }
 }
 
 // app.on("ready", createWindow);

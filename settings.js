@@ -2,7 +2,7 @@
 const { ipcRenderer } = require('electron')
 const fs = require('fs')
 const path = require('path')
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, 'localsettings.json')));
+const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, 'config/localsettings.json')));
 
 const uri = encodeURI(credentials.mongodb_protocol+"://" + credentials.mongodb_username + ":" + credentials.mongodb_password + "@" + credentials.mongodb_server + "/?retryWrites=true&w=majority");
 
@@ -29,7 +29,7 @@ document.getElementById('settings-form').addEventListener('submit', (event) => {
   const userDataPath = ipcRenderer.sendSync('get-user-data-path')
 
   // 将设置保存到JSON文件中
-  fs.writeFileSync(path.join(__dirname, 'localsettings.json'), JSON.stringify(settings))
+  fs.writeFileSync(path.join(__dirname, 'config/localsettings.json'), JSON.stringify(settings))
 
   connectionVerify();
   alert('Settings has been saved')
