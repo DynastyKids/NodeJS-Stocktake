@@ -22,6 +22,7 @@ SHASUMS256.txt
 **/package-lock.json
 compile_commands.json
 .envrc
+/config/localsettings.json
 
 # npm package
 /npm/dist
@@ -52,5 +53,4 @@ ts-gen
 
 # Used to accelerate builds after sync
 patches/mtime-cache.json
-
 spec/fixtures/logo.png

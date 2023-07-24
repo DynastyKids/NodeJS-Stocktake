@@ -23,7 +23,7 @@ async function getSessionInfo(sessionCode){
         }
 
         for await (const x of cursor) {
-            htmlContent = `Session Time: ${x.startDate} => ${x.endDate}`
+            htmlContent = `From:\t${x.startDate}<br>Until:\t${x.endDate}`
         }
 
         if (htmlContent.length > 0){
@@ -55,6 +55,8 @@ async function getSessionItems(sessionCode){
         if (htmlContent.length > 0){
             document.querySelector("#activeTBody").innerHTML = htmlContent
         }
+    } catch(e) {
+        return htmlContent;
     } finally {
         client.close();
     }
@@ -74,7 +76,9 @@ window.onload = () => {
     }, 10000);
 
     ipcRenderer.on('server-info', (event, { address, port }) => {
-        document.querySelector("#sessionConfigText").innerText = `Server Address: ${address}\t\t\tPort: ${port}`;
+        document.querySelector("#sessionConfigAddress").innerText = `${address}`;
+        document.querySelector("#sessionConfigPort").innerText = `${port}`;
+    
     });
 
     setInterval(function(){qrv2patch()},120000) // 120秒更新一次V2的数据信息

@@ -52,10 +52,25 @@
     </nav>
     <div class="container-fluid">
         <h1 id="sessionTitle">Loading Session</h1>
-        <p id="sessionConfigText"></p>
-        <p id="sessionTimeText"></p>
+        <table class="table bor">
+            <tr>
+                <th>Server Address</th>
+                <th>Server Port</th>
+                <th colspan="2">Session Time</th>
+            </tr>
+            <tr>
+                <td id="sessionConfigAddress"></td>
+                <td id="sessionConfigPort"></td>
+                <td colspan="2" id="sessionTimeText"></td>
+            </tr>
+        </table>
+        
+        <h4>Actions</h4>
+        <ul id="actionList">
+            <li><a href="#">Add Item</a></li>
+        </ul>
         <hr>
-        <table class="table">
+        <table class="table" id="viewSessionTable">
             <thead class="thead-light">
             <tr>
                 <th scope="col">Product</th>

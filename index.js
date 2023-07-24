@@ -1,3 +1,5 @@
+const { ipcRenderer, ipcMain } = require("electron");
+
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const path = require('path');
@@ -5,15 +7,15 @@ const fs=require('fs');
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, 'config/localsettings.json')));
 const moment = require('moment-timezone')
 
-const { ipcRenderer } = require('electron');
-
 ipcRenderer.on('server-info', (event, { address, port }) => {
-	document.querySelector("#serverAddressText").innerText = `Server running at http://${address}:${port}`;
+	document.querySelector("#serverAddressText").innerText = address;
+	document.querySelector("#serverPortText").innerText = port;
+
 });
 
-ipcMain.on('get-user-data-path', (event) => {
-	event.returnValue = app.getPath('userData')
-})
+// ipcMain.on('get-user-data-path', (event) => {
+// 	event.returnValue = app.getPath('userData')
+// });
 
 const uri = encodeURI(credentials.mongodb_protocol+"://" + credentials.mongodb_username + ":" + credentials.mongodb_password + "@" + credentials.mongodb_server + "/?retryWrites=true&w=majority");
 
