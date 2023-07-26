@@ -24,14 +24,28 @@
                         <a class="nav-link active" aria-current="page" href="#">Home</a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                        <a class="nav-link dropdown-toggle" href="#" id="sessionDropdown" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">
                             Sessions
                         </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <ul class="dropdown-menu" aria-labelledby="sessionDropdown">
                             <li><a class="dropdown-item" href="stocktake/newsession.html">New Stocktake Session</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="stocktake/listsession.html">History Sessions</a></li>
+                            <li><a class="dropdown-item" href="stocktake/listsession.html">Show all Sessions</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="productDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            Products
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="productDropdown">
+                            <li><a class="dropdown-item" href="items/listProduct.html">Show all products</a></li>
+                            <li><a class="dropdown-item" href="items/addProduct.html">Add product</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="items/stocks.html">Show stocks overview</a></li>
+                            <li><a class="dropdown-item" href="items/listlog.html">Show movement log</a></li>
+                            <li><a class="dropdown-item" href="items/addlog.html">Add new movement log</a></li>
                         </ul>
                     </li>
                     <li class="nav-item">
@@ -49,11 +63,26 @@
         </nav>
         <h1>Homepage</h1>
         <div class="container-fluid">
-            <h3>Choose an action:</h3>
-            <ul>
-                <li><a href="stocktake/listsession.html">Show All Sessions</a></li>
-                <li><a href="stocktake/newsession.html">New Stocktake Session</a></li>
-            </ul>
+            <table class="table">
+                <tr>
+                    <td>
+                        <h4>Stocktake Action</h4>
+                        <ul class="list-group">
+                            <li class="list-group-item list-group-item-action"><a href="stocktake/newsession.html">New Stocktake Session</a></li>
+                            <li class="list-group-item list-group-item-action"><a href="stocktake/listsession.html">Show All Sessions</a></li>
+                        </ul>
+                    </td>
+                    <td>
+                        <h4>Product Action</h4>
+                        <ul class="list-group">
+                            <li class="list-group-item">Add product movement log</li>
+                            <li class="list-group-item">Show all products</li>
+                            <li class="list-group-item"><a href="items/addProduct.html">Add product</a></li>
+                            
+                        </ul>
+                    </td>
+                </tr>
+            </table>
         </div>
         <hr>
         <div class="container-fluid">
@@ -79,26 +108,14 @@
             <table class="table" style="width: auto;">
                 <tr>
                     <td>Environment Info:</td>
-                    <td>Node.js:</td>
-                    <td>Chromium:</td>
-                    <td>Electron:</td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td id="node-version"></td>
-                    <td id="chrome-version"></td>
-                    <td id="electron-version"></td>
+                    <td>Node.js: <p id="node-version"></p></td>
+                    <td>Chromium: <p id="chrome-version"></p></td>
+                    <td>Electron: <p id="electron-version"></p></td>
                 </tr>
                 <tr>
                     <td>Server Info:</td>
-                    <td>Address:</td>
-                    <td>Port:</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td id="serverAddressText"></td>
-                    <td id="serverPortText"></td>
+                    <td>Address: <p id="serverAddressText"></p></td>
+                    <td>Port<p id="serverPortText"></p><td>
                     <td></td>
                 </tr>
             </table>

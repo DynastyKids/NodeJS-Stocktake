@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="content-security-policy" content="default-src 'none'; script-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self' 'sha256-hayZOzBvvn7l/gT0R05KrZqQiIwY2vq78eOJFqJFGsI=';" />
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../node_modules/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../node_modules/flatpickr/dist/flatpickr.min.css">
+    <title>New Product - Warehouse Electron</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="../index.html">Stocktake Electron</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="../index.html">Home</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="sessionDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            Sessions
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="sessionDropdown">
+                            <li><a class="dropdown-item" href="stocktake/newsession.html">New Stocktake Session</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="stocktake/listsession.html">Show all Sessions</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="productDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            Products
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="productDropdown">
+                            <li><a class="dropdown-item" href="listProduct.html">Show all products</a></li>
+                            <li><a class="dropdown-item" href="#">Add product</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#">Add movement log</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" aria-current="page" href="../settings.html">Settings</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <nav class="m-2" aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
+                <li class="breadcrumb-item"><a href="listProduct.html">Products</a></li>
+                <li class="breadcrumb-item active" aria-current="page">New product</li>
+            </ol>
+        </nav>
+        <div class="container-fluid">
+            <div class="mt-2 mb-5">
+            <form id="newSessionForm">
+                <div class="form-group row mb-2">
+                    <div class="col-6 mb-2">
+                        <label for="inputCode" class="col-form-label">Product Code</label>
+                        <input type="text" class="form-control plaintext" id="inputCode" value="" 
+                            placeholder="Product code must be unique in database">
+                    </div>
+                    <div class="col-6 mb-2">
+                        <label for="inputLabelName" class="col-form-label">Product Label Name</label>
+                        <input type="text" class="form-control" id="inputLabelName" value=""
+                            placeholder="Label name to be used when printout labels.">
+                 
+                    </div>
+                    <div class="col-12 mb-2">
+                        <label for="inputDescription" class="col-form-label">Product Description</label>
+                        <input type="text" class="form-control" id="inputDescription" placeholder="*Optional: description text for product">
+                    </div>
+                    <div class="col-6 mb-2">
+                        <label for="inputQuantity" class="col-form-label">Product default quantity</label>
+                        <input type="number" value="" class="form-control" id="inputQuantity" placeholder="*Optional: default quantity number">
+                    </div>
+                    <div class="col-6 mb-2">
+                        <label for="inputUnit" class="col-form-label">Product Unit</label>
+                        <select class="form-select" id="inputUnit" aria-label="Default select example">
+                            <option selected>Open this select</option>
+                            <option value="bottle">Bottle</option>
+                            <option value="bag">Bag</option>
+                            <option value="carton">Carton</option>
+                            <option value="piece">Piece</option>
+                        </select>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <label for="inputWeight" class="col-form-label">Product weight</label>
+                        <input type="number" value="" class="form-control" id="inputWeight" placeholder="*Optional: weight of product (grams)">
+                    </div>
+                    <div class="col-6 mb-2">
+                        <label for="inputVendorCode" class="col-form-label">Vendor Code</label>
+                        <input type="text" value="" class="form-control" id="inputVendorCode" placeholder="*Optional: vendor code of product">
+                    </div>
+                    <div class="col-3 mb-2">
+                        <label for="inputExpire" class="form-check-label">Product has expire date?</label>
+                        <select class="form-select" id="inputExpire" aria-label="Default select example">
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+                </div>
+                <input type="submit" id="btnSubmit" value="Submit" class="btn btn-primary">
+            </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../node_modules/flatpickr/dist/flatpickr.min.js"></script>
+    <script src="addProduct.js"></script>
+</body>
+
+</html>
