@@ -18,7 +18,7 @@ async function getAllSession(){
     let nowTime= moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
     const tomorrow = (new Date('today')).setDate(new Date('today').getDate()+1)
     const options = {sort: { startDate: -1 },};
-    const sessions = client.db("chatestsyd").collection("pollingsession");
+    const sessions = client.db(credentials.mongodb_db).collection("pollingsession");
     let cursor;
     let htmlContent=""
     try {

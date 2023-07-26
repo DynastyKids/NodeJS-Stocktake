@@ -12,7 +12,7 @@ const uri = encodeURI(credentials.mongodb_protocol+"://" + credentials.mongodb_u
 async function getSessionInfo(sessionCode){
     const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true,useNewUrlParser: true, useUnifiedTopology: true}});
     const options = {sort: { loggingTime: -1 }};
-    const sessions = client.db("chatestsyd").collection("pollingsession");
+    const sessions = client.db(credentials.mongodb_db).collection("pollingsession");
     let cursor;
     let htmlContent=""
     try {
@@ -38,7 +38,7 @@ async function getSessionInfo(sessionCode){
 async function getSessionItems(sessionCode){
     const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true,useNewUrlParser: true, useUnifiedTopology: true}});
     const options = {sort: { startDate: -1 },};
-    const sessions = client.db("chatestsyd").collection("pollinglog");
+    const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
     let cursor;
     let htmlContent=""
     try {
@@ -86,8 +86,8 @@ window.onload = () => {
 
 async function qrv2patch(){
 	const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true,useNewUrlParser: true, useUnifiedTopology: true}});
-	const logsessions = client.db("chatestsyd").collection("pollinglog");
-	const productsessions = client.db("chatestsyd").collection("products");
+	const logsessions = client.db(credentials.mongodb_db).collection("pollinglog");
+	const productsessions = client.db(credentials.mongodb_db).collection("products");
 	var productList = productsessions.find({})
 	for await (const x of productList) {
 		var whereCondition = {productCode: x.labelname}

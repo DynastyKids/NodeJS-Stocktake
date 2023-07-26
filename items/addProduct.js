@@ -42,7 +42,7 @@ async function insertOneData(data){
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         // Send a ping to confirm a successful connection
-        await client.db("chatestsyd").collection("products")
+        await client.db(credentials.mongodb_db).collection("products")
             .insertOne(data, (err, res) => {
             if (err) {
                 console.error('Failed to insert document', err);
