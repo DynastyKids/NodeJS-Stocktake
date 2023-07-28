@@ -8,9 +8,9 @@ const moment = require('moment-timezone')
 const { ipcRenderer } = require('electron');
 
 const uri = encodeURI(credentials.mongodb_protocol+"://" + credentials.mongodb_username + ":" + credentials.mongodb_password + "@" + credentials.mongodb_server + "/?retryWrites=true&w=majority");
-
+const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}});
+    
 async function getSessionInfo(sessionCode){
-    const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true,useNewUrlParser: true, useUnifiedTopology: true}});
     const options = {sort: { loggingTime: -1 }};
     const sessions = client.db(credentials.mongodb_db).collection("pollingsession");
     let cursor;
@@ -29,18 +29,18 @@ async function getSessionInfo(sessionCode){
         if (htmlContent.length > 0){
             document.querySelector("#sessionTimeText").innerHTML = htmlContent
         }
-    } finally {
-        client.close();
+    } catch(err){
+        console.error(err)
     }
     return htmlContent;
 }
 
 async function getSessionItems(sessionCode){
-    const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true,useNewUrlParser: true, useUnifiedTopology: true}});
     const options = {sort: { startDate: -1 },};
     const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
     let cursor;
     let htmlContent=""
+    let alreadyInserted=[]
     try {
         await client.connect();
         cursor = sessions.find({session:sessionCode});
@@ -49,16 +49,16 @@ async function getSessionItems(sessionCode){
         }
 
         for await (const x of cursor) {
-            htmlContent += `<tr><td>${x.productCode} - ${x.productName}</td><td>${x.productLabel.substring(8)}</small></td><td>${x.shelfLocation}</td><td>${x.quantity}</td><td>${x.quantityUnit}</td><td>${x.bestbefore}</td><td><a href="#">Edit</a></td></tr>`
+            if(!alreadyInserted.includes(`${x.productCode}:${x.productLabel}`)){
+                htmlContent += `<tr><td>${x.productCode} - ${x.productName}</td><td><small>${x.productLabel}</small></td><td>${x.shelfLocation}</td><td>${x.quantity}</td><td>${x.quantityUnit}</td><td>${x.bestbefore}</td><td><a href="#">Edit</a></td></tr>`
+                alreadyInserted.push(`${x.productCode}:${x.productLabel}`)
+            }
+            if (htmlContent.length > 0){
+                document.querySelector("#activeTBody").innerHTML = htmlContent
+            }
         }
-
-        if (htmlContent.length > 0){
-            document.querySelector("#activeTBody").innerHTML = htmlContent
-        }
-    } catch(e) {
-        return htmlContent;
-    } finally {
-        client.close();
+    } catch(err) {
+        console.log(err)
     }
     return htmlContent;
 }
@@ -85,7 +85,6 @@ window.onload = () => {
 }
 
 async function qrv2patch(){
-	const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true,useNewUrlParser: true, useUnifiedTopology: true}});
 	const logsessions = client.db(credentials.mongodb_db).collection("pollinglog");
 	const productsessions = client.db(credentials.mongodb_db).collection("products");
 	var productList = productsessions.find({})

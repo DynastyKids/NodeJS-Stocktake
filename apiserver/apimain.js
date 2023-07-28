@@ -130,61 +130,128 @@ router.get('/api/v1/products', async (req, res) => {
     }
 })
 
-router.post('/api/v1/sessionlog/add',async (req,res) => {
+router.post('/api/v1/sessionlog/add',async (req,res) => { //扫描信息入
 	const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true,useNewUrlParser: true, useUnifiedTopology: true}});
-	const session = req.body.session;
+	const sessioncode = req.body.session;
 	const iteminfo = req.body.item;
 	let localTime = moment(new Date()).tz("Australia/Sydney")
 
 	console.log(session,iteminfo)
 	var mongodata = {}
 	if (isBase64String(iteminfo)) {
-		var productInfo = JSON.parse(atob(iteminfo))
-		console.log(productInfo)
-		mongodata={ // Default data assembled by V1 code
-			session: req.body.session,
-			productCode: productInfo.Code,
-			quantity: productInfo.Qty,
-			quantityUnit: "",
-			shelfLocation: "",
-			POIPnumber: "",
-			productName: "",
-			bestbefore: "",
-			productLabel: productInfo.LabelId,
-			labelBuild: 1,
+		mongodata=createLogObject(sessioncode, iteminfo)
+		console.log(mongodata)
+		let insertData = await insertOneToLog(mongodata)
+		if((await insertData).message == "success"){
+			res.json(insertData)
+		} else{
+			res.json({acknowledged:false})
 		}
-		if(productInfo.POIP){ // V2 code or higher
-			console.log("itemadd:V2")
-			mongodata.POIPnumber = productInfo.POIP;
-			// Hardcode for V2
-			// V2版本中productname在code中，则需要从表中重新提取
-			if(productInfo.Prod == "" && productInfo.Code.length > 5){
-				mongodata.productName = productInfo.Prod;
+	} else {
+		res.json({acknowledged:false})
+	}
+})
+
+router.post('/api/v1/qrafter',async(req,res)=>{
+	var sessioncode = req.body.session
+	var scan = req.body.scan
+	// Support for iOS Application QRafter, using Stock scanner method
+	// Set default variable name as: scan
+	// Require adding POST variable 
+	//    =>name: session, value: <session Code>
+
+	// Scan at moment except V1~V3 Code, but only support V3 from 2023-10-01
+
+	const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true,useNewUrlParser: true, useUnifiedTopology: true}});
+	const sessions = client.db("chatestsyd").collection("pollinglog");
+	let localTime = moment(new Date()).tz("Australia/Sydney")
+	
+	var mongodata = {}
+	if (scan.length > 0) {
+		let startpos = scan.search("item=")
+		let base64string = scan.substring(startpos+5)
+		if (isBase64String(base64string)) {
+			var productInfo = JSON.parse(atob(iteminfo))
+			createLogObject(sessioncode, productInfo)
+			let insertData = await insertOneToLog(mongodata)
+			if((await insertData).message == "success"){
+				// console.log("JSONreturn",insertData)
+				res.json(insertData)
 			}
-			if (Number.isInteger(productInfo.Unit)) {
-				mongodata.quantity = productInfo.Unit
-			}
-			mongodata.productName = productInfo.Prod;
-			mongodata.labelBuild = 2;
-		}
-		if(productInfo.Build){ // V3 or later, using all info provided
-			console.log("itemadd:V3")
-			mongodata.quantityUnit = productInfo.Unit.toLowerCase().replace("ctns","carton").replace("btls","bottle");
-			mongodata.POIPnumber = productInfo.POIP;
-			mongodata.productName = productInfo.Prod;
-			mongodata.bestbefore = productInfo.Bestbefore;
-			mongodata.labelBuild = 3;
 		}
 	}
-	// console.log("Before insert",mongodata)
-	// InsertOne unsuccessful => undefined,
-	// InsertOne success => object 
+})
+
+// 后续拓展端口1：
+router.post('/api/v1/stock',async (req,res) => {
+	const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true,useNewUrlParser: true, useUnifiedTopology: true}});
+	let localTime = moment(new Date()).tz("Australia/Sydney")
+	const action = req.body.action; // Action: move / add / consume
+	const itemcode = req.body.item; // 必须参数，使用productLabel做唯一标记
+	const additionalInfo = req.body.addInfo // 仅add/move需要该参数，move仅需要{shelfLocation:XX}，Add则需要完整信息
+	
+	if(action || action === ""){
+
+	}
+	
+
+	console.log(session,iteminfo)
+	let mongodata = createLogObject(sessioncode, iteminfo)
 	let insertData = await insertOneToLog(mongodata)
 	if((await insertData).message == "success"){
 		// console.log("JSONreturn",insertData)
 		res.json(insertData)
 	}
 })
+
+function createLogObject(sessioncode,iteminfo){
+	var mongodata = {}
+	try {
+		if (isBase64String(iteminfo)) {
+			console.log(iteminfo)
+			var productInfo = JSON.parse(atob(iteminfo))
+			console.log(productInfo)
+			mongodata={ // Default data assembled by V1 code
+				session: sessioncode,
+				productCode: productInfo.Code,
+				quantity: parseInt(productInfo.Qty),
+				quantityUnit: "",
+				shelfLocation: "",
+				POIPnumber: "",
+				productName: "",
+				bestbefore: "",
+				productLabel: productInfo.LabelId,
+				labelBuild: 1,
+			}
+			if(productInfo.POIP){ // V2 code or higher
+				console.log("itemadd:V2")
+				mongodata.POIPnumber = productInfo.POIP;
+				// Hardcode for V2
+				// V2版本中productname在code中，则需要从表中重新提取
+				if(productInfo.Prod == "" && productInfo.Code.length > 5){
+					mongodata.productName = productInfo.Prod;
+				}
+				if (Number.isInteger(productInfo.Unit)) {
+					mongodata.quantity = productInfo.Unit
+				}
+				mongodata.productName = productInfo.Prod;
+				mongodata.labelBuild = 2;
+			}
+			if(productInfo.Build){ // V3 or later, using all info provided
+				console.log("itemadd:V3")
+				mongodata.quantityUnit = productInfo.Unit.toLowerCase().replace("ctns","carton").replace("btls","bottle");
+				mongodata.POIPnumber = productInfo.POIP;
+				mongodata.productName = productInfo.Prod;
+				mongodata.bestbefore = productInfo.Bestbefore;
+				mongodata.labelBuild = 3;
+			}
+		}
+	} catch (error) {
+		console.error(error)
+	}
+
+	return mongodata
+}
 
 
 router.use('/', swaggerUi.serve);

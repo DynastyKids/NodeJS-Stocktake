@@ -25,7 +25,7 @@ function createWindow() {
     });
 
     try{
-        let fileStatus = fs.statSync(path.join(__dirname,"config/localconfig.json"))
+        let fileStatus = fs.statSync(path.join(__dirname,"config/localsettings.json"))
         if (fileStatus.size > 10) {
             mainWindow.loadFile('index.html')
         } else {
