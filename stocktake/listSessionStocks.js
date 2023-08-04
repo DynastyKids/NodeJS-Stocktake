@@ -65,7 +65,7 @@ async function getAllItemsFromSession(sessionCode){
     }
     try {
         await client.connect();
-        cursor = sessions.find({session: sessionCode});
+        cursor = sessions.find({$or: [{session:""},{session:sessionCode}]});
         if ((await sessions.countDocuments({})) === 0) {
             console.log("[MongoDB] Nothing Found");
             document.querySelector("#activeTBody").innerHTML = "<tr><td colspan=5>No item found in this session available</td></tr>"
@@ -77,7 +77,11 @@ async function getAllItemsFromSession(sessionCode){
                 <td><small>${x.productCode} - ${x.productName}</small></td>
                 <td><small>${x.quantity} ${x.quantityUnit}</small></td>
                 <td>${x.bestbefore}</td>
-                <td><a href="#">Consumed</a></td></tr>`
+                <td>${x.shelfLocation}</td>
+                <td class="action">
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-stockid="${x.productLabel}">Consume</a>
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#stockEditModal" data-bs-stockid="${x.productLabel}">Edit</a>
+                </td></tr>`
         }
 
         document.querySelector("#activeTBody").innerHTML = htmlContent
@@ -85,8 +89,6 @@ async function getAllItemsFromSession(sessionCode){
         console.error(err)
         htmlContent = "<tr><td colspan=5>No item found in this session available</td></tr>"
         document.querySelector("#activeTBody").innerHTML = htmlContent
-    // } finally {
-        // client.close();
     }
 
     return htmlContent;

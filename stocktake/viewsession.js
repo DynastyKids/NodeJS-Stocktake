@@ -50,7 +50,7 @@ async function getSessionItems(sessionCode){
 
         for await (const x of cursor) {
             if(!alreadyInserted.includes(`${x.productCode}:${x.productLabel}`)){
-                htmlContent += `<tr><td>${x.productCode} - ${x.productName}</td><td><small>${x.productLabel}</small></td><td>${x.shelfLocation}</td><td>${x.quantity}</td><td>${x.quantityUnit}</td><td>${x.bestbefore}</td><td><a href="#">Edit</a></td></tr>`
+                htmlContent += `<tr><td>${x.productCode} - ${x.productName}</td><td><small>${x.productLabel}</small></td><td>${x.shelfLocation}</td><td style="text-align:center">${x.quantity} ${x.quantityUnit}</td><td>${x.bestbefore}</td><td><a href="#">Edit</a></td></tr>`
                 alreadyInserted.push(`${x.productCode}:${x.productLabel}`)
             }
             if (htmlContent.length > 0){
@@ -75,10 +75,17 @@ window.onload = () => {
         getSessionItems(sessionId)
     }, 10000);
 
-    ipcRenderer.on('server-info', (event, { address, port }) => {
-        document.querySelector("#sessionConfigAddress").innerText = `${address}`;
+    ipcRenderer.on('server-info', (event, { address, port, addressSet }) => {
+        let addressHTML = ""
+        if (addressSet.length > 0){
+            addressSet.forEach(eachadd =>{
+                addressHTML += eachadd + "<br>"
+            })
+            document.querySelector("#sessionConfigAddress").innerHTML = addressHTML;
+        } else {
+            document.querySelector("#sessionConfigAddress").innerText = `${address}`;
+        }
         document.querySelector("#sessionConfigPort").innerText = `${port}`;
-    
     });
 
     setInterval(function(){qrv2patch()},120000) // 120秒更新一次V2的数据信息
@@ -98,7 +105,7 @@ async function qrv2patch(){
 
 	var logLists = logsessions.find({})
 	for await(const x of logLists){
-		if (x.productCode.includes("TP") || x.productCode.includes("SP") || x.productCode=="IG001") {
+		if (String(x.productCode).includes("TP") || String(x.productCode).includes("SP") || String(x.productCode).includes("IG001")) {
 			if (x.quantityUnit == "" && x.quantity<50) {
 				logsessions.updateOne({_id:x._id},{$set:{quantityUnit:"carton"}})
 			} else if (x.quantityUnit == "" && x.quantity>=50) {

@@ -69,10 +69,13 @@
                         <h4>Stocktake Action</h4>
                         <ul class="list-group">
                             <li class="list-group-item list-group-item-action">
-                                <a href="stocktake/newsession.html">New Stocktake Session</a>
+                                <a href="stocktake/listsession.html">Show All Sessions</a>
                             </li>
                             <li class="list-group-item list-group-item-action">
-                                <a href="stocktake/listsession.html">Show All Sessions</a>
+                                <a href="stocktake/listSessionStocks.html">Show Session Stocks</a>
+                            </li>
+                            <li class="list-group-item list-group-item-action">
+                                <a href="stocktake/newsession.html">New Stocktake Session</a>
                             </li>
                         </ul>
                     </td>
@@ -80,10 +83,10 @@
                         <h4>Stocks Action</h4>
                         <ul class="list-group">
                             <li class="list-group-item list-group-item-action">
-                                <a href="items/listItem.html">Show Stocks Overview</a>
+                                <a href="items/listStocks.html">Show Stocks Overview</a>
                             </li>
                             <li class="list-group-item list-group-item-action">
-                                <a href="items/addlog.html">Add movement log</a>
+                                <a href="items/addlog.html" data-bs-toggle="modal" data-bs-target="#addMovementLogModal">Add movement log</a>
                             </li>
                         </ul>
                     </td>
@@ -101,6 +104,72 @@
                 </tr>
             </table>
         </div>
+
+        <!-- Add New Movement Log Model -->
+        <div class="modal fade" id="addMovementLogModal" data-bs-backdrop="static" data-bs-keyboard="false"
+            tabindex="-1" aria-labelledby="addMovementLogModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addMovementLogModalLabel">Add Movement Log
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="addMovementForm">
+                        <div class="modal-body">
+                            <div class="row">
+                                <p>Input a shelf or a product Label ID to select a product</p>
+                                <div class="col-md-6 mb-3">
+                                    <label for="inputShelfLocation" class="form-label">Shelf Location</label>
+                                    <input type="text" maxlength=3 class="form-control" id="inputShelfLocation"
+                                        aria-describedby="shelfHelp">
+                                    <div id="shelfHelp" class="form-text">Input Item location on shelf.<br>E.g. 'AN1' means item located at shelf AN, level 1</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="inputProductLabel" class="form-label">Product Label ID</label>
+                                    <input type="text" class="form-control" id="inputProductLabel"
+                                        aria-describedby="labelHelp">
+                                    <div id="labelHelp" class="form-text">Input Product Label ID to find specific LOT</div>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="formSelectAction" class="form-label">Action</label>
+                                    <select class="form-select" id="formSelectAction" aria-label="Default select example">
+                                        <option value="consume">Unwrapped / Shipped</option>
+                                        <option value="move">Move to another shelf</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="inputNewLocation" class="form-label">New Location</label>
+                                    <input type="text" class="form-control" maxlength=3 id="inputNewLocation" disabled>
+                                </div>
+                            </div>
+                            <hr>  <!--以下部分由脚本填充用户核对，提交时候忽略-->
+                            <h5>Automatic fetched Data</h5>
+                            <div class="mb-2 row">
+                                <div class="col-md-6 mb-2">
+                                    <label for="inputProductName" class="form-label">Product Name</label>
+                                    <input type="text" class="form-control" id="inputProductName" disabled>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label for="inputQuantity" class="form-label">Product Quantity</label>
+                                    <input type="text" class="form-control" id="inputQuantity" disabled>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label for="inputBestBefore" class="form-label">Product Expire Date </label>
+                                    <input type="text" class="form-control" id="inputBestBefore" disabled>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div> <!-- Add New Movement Log Model End-->
         <hr>
         <div class="container-fluid">
             <h3>Current active stocktake session:</h3>
@@ -132,7 +201,7 @@
                 <tr>
                     <td>Server Info:</td>
                     <td>Address: <p id="serverAddressText"></p></td>
-                    <td>Port<p id="serverPortText"></p><td>
+                    <td>Port<p id="serverPortText"></p></td>
                     <td></td>
                 </tr>
             </table>

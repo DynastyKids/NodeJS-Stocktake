@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="../node_modules/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="../node_modules/flatpickr/dist/flatpickr.min.css">
-    <title>Available Stocks - Warehouse Electron</title>
+    <title>Stocks by Session - Warehouse Electron</title>
 </head>
 
 <body>
@@ -25,8 +25,8 @@
                         <a class="nav-link active" aria-current="page" href="../index.html">Home</a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                           data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle" href="#" id="sessionDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
                             Sessions
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
@@ -46,7 +46,7 @@
     <nav class="m-2" aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
-            <li class="breadcrumb-item"><a href="../items/listProduct.html">Products</a></li>
+            <li class="breadcrumb-item"><a href="listsession.html">Sessions</a></li>
             <li class="breadcrumb-item active" aria-current="page">Stocks</li>
         </ol>
     </nav>
@@ -66,7 +66,8 @@
                 <th scope="col">Lot Code</th>
                 <th scope="col">Product</th>
                 <th scope="col">Quantity</th>
-                <th scope="col">BestBefore</th>
+                <th scope="col">Best Before</th>
+                <th scope="col">Shelf Location</th>
                 <th scope="col">Action</th>
             </tr>
             </thead>
@@ -75,21 +76,69 @@
                 <th scope="col">Lot Code</th>
                 <th scope="col">Product</th>
                 <th scope="col">Quantity</th>
-                <th scope="col">BestBefore</th>
+                <th scope="col">Best Before</th>
+                <th scope="col">Shelf Location</th>
                 <th scope="col">Action</th>
             </tr>
             </tfoot>
             <tbody id="activeTBody">
             <tr>
-                <td colspan="4">Select a session to view available stock</td>
+                <td colspan="5">Select a session to view available stock</td>
             </tr>
             </tbody>
         </table>
     </div>
 </div>
+<!--Consume Modal-->
+    <div class="modal fade" id="consumeModal" tabindex="-1" aria-labelledby="consumeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="consumeModalLabel">Consume / Unwrap Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure to unwrap Item:
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+<!--  Edit Modal  -->
+    <div class="modal fade" id="stockEditModal" tabindex="-1" aria-labelledby="stockEditModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="stockEditModalLabel">Edit Stock</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="col-form-label">Lot Code:</label>
+                        <p id="edit-lotcode"></p>
+                        <label class="col-form-label">Product Info:</label>
+                        <p id="edit-product"></p>
+                    </div>
+                    <form>
+                        <div class="mb-3">
+                            <label for="message-text" class="col-form-label">Message:</label>
+                            <textarea class="form-control" id="message-text"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Send message</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../node_modules/flatpickr/dist/flatpickr.min.js"></script>
-<script src="listItem.js"></script>
+<script src="listSessionStocks.js"></script>
 </body>
 </html>

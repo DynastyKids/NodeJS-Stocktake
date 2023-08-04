@@ -8,7 +8,7 @@ const moment = require('moment-timezone')
 
 const uri = encodeURI(credentials.mongodb_protocol+"://" + credentials.mongodb_username + ":" + credentials.mongodb_password + "@" + credentials.mongodb_server + "/?retryWrites=true&w=majority");
 
-const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true,useNewUrlParser: true, useUnifiedTopology: true}});
+const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1,useNewUrlParser: true, useUnifiedTopology: true}});
 
 window.onload = () => {
     // initialize the date pickers
