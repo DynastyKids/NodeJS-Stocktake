@@ -9,6 +9,7 @@ const expressApp = express()
 const wechatGetRequests = require('./apiserver/apimain');
 const { main } = require("@popperjs/core");
 const port = 3000
+require('electron-reload')(__dirname);
 
 let mainWindow;
 function createWindow() {
@@ -25,7 +26,7 @@ function createWindow() {
     });
 
     try{
-        let fileStatus = fs.statSync(path.join(__dirname,"config/localconfig.json"))
+        let fileStatus = fs.statSync(path.join(__dirname,"config/localsettings.json"))
         if (fileStatus.size > 10) {
             mainWindow.loadFile('index.html')
         } else {
@@ -45,10 +46,8 @@ function createWindow() {
 
     for (let name in networkInterfaces) {
         const iface = networkInterfaces[name];
-
         for (let i = 0; i < iface.length; i++) {
             const alias = iface[i];
-
             if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
                 address = alias.address;
                 break;
@@ -59,11 +58,25 @@ function createWindow() {
 
     // mainWindow.loadURL(`http://localhost:${port}`);
     mainWindow.webContents.on('did-finish-load', () => {
-        mainWindow.webContents.send('server-info', { address, port });
+        const addressSet = getIPAddress() ? getIPAddress() : [];
+        mainWindow.webContents.send('server-info', { address, port, addressSet});
     });
 }
 
-// app.on("ready", createWindow);
+function getIPAddress(){
+    const networkInterfaces = os.networkInterfaces();
+    let addressSet=[];
+
+    for (let interface in networkInterfaces) {
+        networkInterfaces[interface].forEach(details => {
+            // Skip internal (i.e. 127.0.0.1) and non-ipv4 addresses
+            if (!details.internal && details.family === 'IPv4' && details.address !== '127.0.0.1') {
+                addressSet.push(details.address);
+            }
+        });
+    }
+    return addressSet
+}
 
 app.on("window-all-closed", function () {
     if (process.platform !== "darwin") app.quit();

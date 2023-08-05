@@ -54,7 +54,7 @@ async function insertOneData(data){
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         // Send a ping to confirm a successful connection
-        await client.db("chatestsyd").collection("pollingsession")
+        await client.db(credentials.mongodb_db).collection("pollingsession")
             .insertOne(data, (err, res) => {
             if (err) {
                 console.error('Failed to insert document', err);
@@ -89,7 +89,7 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         // Send a ping to confirm a successful connection
-        await client.db("chatestsyd").command({ ping: 1 });
+        await client.db(credentials.mongodb_db).command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error

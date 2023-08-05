@@ -1,3 +1,6 @@
+// 使用pollingsession的结果，distinct掉相同的labelid，然后删除所有在listproduct中标注
+// 了已经使用的产品，再加入到productlist中展示出来，，页面每30s刷新一次
+
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const flatpickr = require("flatpickr");
@@ -18,7 +21,7 @@ async function getAllSession(){
     let nowTime= moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
     const tomorrow = (new Date('today')).setDate(new Date('today').getDate()+1)
     const options = {sort: { startDate: -1 },};
-    const sessions = client.db(credentials.mongodb_db).collection("pollingsession");
+    const sessions = client.db(credentials.mongodb_db).collection("products");
     let cursor;
     let htmlContent=""
     try {
@@ -29,8 +32,8 @@ async function getAllSession(){
         }
 
         for await (const  x of cursor) {
-            htmlContent += `<tr><td>${x.session}</td><td>${x.startDate}</td><td>${x.endDate}</td><td>${x.logTime}` +
-                `</td><td><a href="../stocktake/viewsession.html?id=${x.session}">View</a></td></tr>`
+            htmlContent += `<tr><td>${x.itemcode}</td><td>${x.description.replace(x.itemcode+" - ","")}</td><td>${x.palletqty} ${x.productUnit}</td><td>${(x.withBestbefore>0 ? "√": "")}` +
+                `</td><td><a href="editProduct.html?id=${x.itemcode}">Edit</a></td></tr>`
         }
 
         if (htmlContent.length > 0){

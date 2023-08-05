@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Warehouse Stocktake via Swagger",
-    "description": "This is a Sample Warehouse Stocktake application based on the OpenAPI 3.0 specification.\n\nThis application are require in coherience running with Wechat Miniprogram and Electron distributed package. If you are require customization, please contact author via Github.",
+    "description": "This is a Sample Warehouse Stocktake application based on the OpenAPI 3.0 specification.\n\nThis application are require in coherience running with Wechat Miniprogram and Electron distributed package. If you are require customization, please contact author via Github.\n\n*** \nAPI接口信息由DyanstyKids制作，项目开源于 https://github.com/DynastyKids/NodeJS-Stocktake\n***",
     "contact": {
       "email": "shabibox@outlook.com"
     },
@@ -10,56 +10,142 @@
       "name": "Apache 2.0",
       "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "version": "0.9.0"
+    "version": "0.9.2"
   },
   "servers": [
     {
-      "url": "http://192.168.2.1:3000/api/v1"
+      "url": "http://<Your Server IP>:<Your Server Port>/api"
     },
     {
-      "url": "ws://CHA-PC-04.local:3000/api/v1"
+      "url": "http://192.168.2.1:3000/api"
     }
   ],
   "tags": [
     {
       "name": "Sessions",
-      "description": "Everything about your stocktake sessions"
+      "description": "Everything about your stocktake sessions | 所有会话相关接口"
     },
     {
-      "name": "Session Logs",
-      "description": "View about your each session details and product infos"
+      "name": "Stocks",
+      "description": "Everything about your stocks inhouse and products | 所有库存商品相关接口"
     }
   ],
   "paths": {
-    "/sessions": {
+    "/v1/sessions": {
       "get": {
         "tags": [
           "Sessions"
         ],
-        "summary": "Get all current sessions available",
-        "description": "Get sessions available to join, user will require to use this while scanning products",
+        "summary": "Get all current sessions available | 获取当前可用的所有Session",
+        "description": "Get sessions available to join, user will require to use this while scanning products | 获取可以加入的Session，该端口为开放以允许所有用户加入",
         "operationId": "selectSessions",
         "responses": {
           "200": {
-            "description": "Successful operation",
+            "description": "Successful | 成功",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/pollingsession"
+                  "$ref": "#/components/schemas/session"
                 }
               }
             }
           },
           "500": {
-            "description": "System Internal error"
+            "description": "System Internal error | 失败"
           }
         }
       }
     },
-    "/sessionlogs/itemadd": {
+    "/v1/sessions/join": {
       "post": {
         "tags": [
-          "Session Logs"
+          "Sessions"
+        ],
+        "summary": "Join a Session from client | 使用客户端加入一个会话",
+        "description": "(Optional *) It's not mandatory requirement as long as user send a valid request from with valid session code, this only for check if session exist purpose. | 非必要请求，仅用于识别用户加入的会话是否是合法会话",
+        "operationId": "sessionJoin",
+        "parameters": [
+          {
+            "name": "session",
+            "in": "query",
+            "description": "Session code that available from /sessions request",
+            "required": true,
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item",
+            "in": "query",
+            "description": "A base64 encrypted string contains all product info as schema shows",
+            "required": true,
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/sessions"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "会话不存在"
+          }
+        }
+      }
+    },
+    "/v1/sessionlog": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Get all current sessions stock available | 获取当前可用的所有Session",
+        "description": "Get sessions available to join, user will require to use this while scanning products | 获取可以加入的Session，该端口为开放以允许所有用户加入",
+        "operationId": "getSessionlog",
+        "parameters": [
+          {
+            "name": "session",
+            "in": "query",
+            "description": "Session Code of request session log | 需要获取列表的sessioncode",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful | 成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/session"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "System Internal error | 失败"
+          }
+        }
+      }
+    },
+    "/v1/sessionlogs/itemadd": {
+      "post": {
+        "tags": [
+          "Sessions"
         ],
         "summary": "Adding items by scanner",
         "description": "Wechat program will automatic input scanning items via this interface",
@@ -105,17 +191,132 @@
           }
         }
       }
+    },
+    "/v1/products": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Get all available products | 获取所有产品信息",
+        "description": "Get all available product information, and pre-fill some detail description when needed | Products接口用于获取产品信息",
+        "operationId": "getProducts",
+        "responses": {
+          "200": {
+            "description": "Successful | 成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/products"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "System Internal error | 失败",
+            "content": {
+              "application/json": {
+                "example": {
+                  "acknowledged": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/stocks": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Get all available current Stocks inhouse | 获取所有当前库存信息",
+        "description": "Stock information are pulled across all session, user needs to tick off from page when used | 库存页面会展示所有当前可用库存，当库存信息有差异时可以选择仅使用某次的盘点结果对库存进行核对",
+        "operationId": "getStocks",
+        "responses": {
+          "200": {
+            "description": "Successful | 成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/stocks"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "System Internal error | 失败",
+            "content": {
+              "application/json": {
+                "example": {
+                  "acknowledged": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Add  / Move / Consume Stocks | 添加，修改，移动和删除货架上的货品信息",
+        "description": "对货架上的商品信息进行增改删时需要action和新信息，",
+        "operationId": "poststocks",
+        "parameters": [
+          {
+            "name": "action",
+            "in": "query",
+            "description": "Intending action including add / move / consume | 操作关键词，增加(add)、移动(move)、使用(consume)",
+            "required": true,
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "content",
+            "in": "query",
+            "description": "JSON字符串传入需要的操作的物品信息，若为新增物品则需要按照标准格式创建对象",
+            "required": true,
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "example": {
+                  "acknowledged": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request / Unsuccessful operation",
+            "content": {
+              "application/json": {
+                "example": {
+                  "acknowledged": false
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
-      "pollingsession": {
+      "session": {
         "type": "object",
         "properties": {
           "session": {
             "type": "string",
-            "description": "7bit HEX code [0-9A-F]",
-            "format": "A1B2C3D"
+            "description": "7bit code of session identifier"
           },
           "startDate": {
             "type": "string",
@@ -132,6 +333,12 @@
             "format": "date-time",
             "description": "System automated logged time when entry inputed"
           }
+        }
+      },
+      "sessions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/session"
         }
       },
       "pollinglog": {
@@ -180,6 +387,51 @@
             "type": "integer",
             "format": "int32"
           }
+        }
+      },
+      "stocks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/pollinglog"
+        }
+      },
+      "product": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "itemcode": {
+            "type": "string"
+          },
+          "labelname": {
+            "type": "string"
+          },
+          "palletqty": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "productUnit": {
+            "type": "string",
+            "example": "carton"
+          },
+          "vendorCode": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withBestbefore": {
+            "type": "integer",
+            "format": "int"
+          }
+        }
+      },
+      "products": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/product"
         }
       }
     }

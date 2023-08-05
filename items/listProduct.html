@@ -25,14 +25,14 @@
                     <a class="nav-link active" aria-current="page" href="../index.html">Home</a>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="sessionDropdown" role="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
                         Sessions
                     </a>
-                    <ul class="dropdown-menu" aria-labelledby="sessionDropdown">
-                        <li><a class="dropdown-item" href="../stocktake/newsession.html">New Stocktake Session</a></li>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="../stocktake/newsession.html">New Session</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="../stocktake/listsession.html">Show all Sessions</a></li>
+                        <li><a class="dropdown-item" href="../stocktake/listsession.html">Sessions list</a></li>
                     </ul>
                 </li>
                 <li class="nav-item dropdown">
@@ -44,9 +44,12 @@
                         <li><a class="dropdown-item" href="../items/listProduct.html">Show all products</a></li>
                         <li><a class="dropdown-item" href="../items/addProduct.html">Add product</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="../items/listItem.html">Show stocks overview</a></li>
+                        <li><a class="dropdown-item" href="../items/listStocks.html">Show stocks overview</a></li>
                         <li><a class="dropdown-item" href="../items/addlog.html">Add new movement log</a></li>
                     </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" aria-current="page" href="../settings.html">Settings</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" aria-current="page" href="../settings.html">Settings</a>
@@ -59,48 +62,32 @@
     <nav class="m-2" aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
-            <li class="breadcrumb-item"><a href="listsession.html">Sessions</a></li>
-            <li class="breadcrumb-item active" aria-current="page">View Session</li>
+            <li class="breadcrumb-item active" aria-current="page">Products</li>
         </ol>
     </nav>
     <div class="container-fluid">
-        <h1 id="sessionTitle">Loading Session</h1>
-        <table class="table bor">
-            <tr>
-                <th>Server Address</th>
-                <th>Server Port</th>
-                <th colspan="2">Session Time</th>
-            </tr>
-            <tr>
-                <td id="sessionConfigAddress"></td>
-                <td id="sessionConfigPort"></td>
-                <td colspan="2" id="sessionTimeText"></td>
-            </tr>
-        </table>
-        
+        <h1 class="m-2" id="sessionTitle">Loading Products</h1>
         <h4>Actions</h4>
-        <ul id="actionList">
-            <li><a href="#">Add Item</a></li>
+        <ul>
+            <li><a href="../items/listItem.html">Check Stock items</a></li>
         </ul>
         <hr>
-        <table class="table" id="viewSessionTable">
+        <table class="table">
             <thead class="thead-light">
             <tr>
-                <th scope="col">Product</th>
                 <th scope="col">Lot Code</th>
-                <th scope="col">Location</th>
-                <th scope="col">Quantity / Unit</th>
-                <th scope="col">Expire Date</th>
+                <th scope="col">Product</th>
+                <th scope="col">Default Quantity</th>
+                <th scope="col">Has BestBefore</th>
                 <th scope="col">Action</th>
             </tr>
             </thead>
             <tfoot>
             <tr>
-                <th scope="col">Product</th>
                 <th scope="col">Lot Code</th>
-                <th scope="col">Location</th>
-                <th scope="col">Quantity / Unit</th>
-                <th scope="col">Expire Date</th>
+                <th scope="col">Product</th>
+                <th scope="col">Default Quantity</th>
+                <th scope="col">Has BestBefore</th>
                 <th scope="col">Action</th>
             </tr>
             </tfoot>
@@ -115,6 +102,6 @@
 
 <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../node_modules/flatpickr/dist/flatpickr.min.js"></script>
-<script src="viewsession.js"></script>
+<script src="listProduct.js"></script>
 </body>
 </html>
