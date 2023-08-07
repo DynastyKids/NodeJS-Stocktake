@@ -19,41 +19,16 @@ require('datatables.net-responsive');
 document.addEventListener("DOMContentLoaded", (event) => {
     getAllStockItems().then(result=>{
         let dataArray=[]
-        console.log(result)
         if(result.acknowledged){
                 result.resultSet.forEach(element => {
-                    dataArray.push([element.productLabel,`${element.productCode} - ${element.productName}`,`${element.quantity} ${element.quantityUnit}`, element.bestbefore, element.shelfLocation, `<a href="#" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-stockid="${element.productLabel}">Consume</a>
-                    <a href="#" data-bs-toggle="modal" data-bs-target="#stockEditModal" data-bs-stockid="${element.productLabel}">Edit</a>`])
+                    dataArray.push([element.productLabel,`${element.productCode} - ${element.productName}`,`${element.quantity} ${element.quantityUnit}`, element.bestbefore, element.shelfLocation, `<a href="#" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-stockid="${element.productLabel}">Consume</a>`])
                 })
         }
         let table = new DataTable('#stockTable', {
             responsive: true,
             data: dataArray
         });
-        // document.querySelector().DataTable({
-        //     data: dataArray,
-        //     responsive: true
-        // })
-        // let htmlContent =""
-        // result.resultSet.forEach(element => {
-        //     htmlContent+=`<tr>
-        //         <td><small>${element.productLabel}</small></td>
-        //         <td><small>${element.productCode} - ${element.productName}</small></td>
-        //         <td><small>${element.quantity} ${element.quantityUnit}</small></td>
-        //         <td>${element.bestbefore}</td>
-        //         <td>${element.shelfLocation}</td>
-        //         <td class="action">
-        //             <a href="#" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-stockid="${element.productLabel}">Consume</a>
-        //             <a href="#" data-bs-toggle="modal" data-bs-target="#stockEditModal" data-bs-stockid="${element.productLabel}">Edit</a>
-        //         </td></tr>`
-        // });
-        // document.querySelector("#activeTBody").innerHTML = htmlContent
     })
-
-    
-    // let stockTable = new DataTable("#stockTable",{
-    //     data: dataArray
-    // });
 });
 
 async function getAllStockItems(){
