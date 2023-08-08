@@ -1,23 +1,29 @@
 const MongoClient = require('mongodb').MongoClient;
-const {ServerApiVersion} = require('mongodb');
+const { ServerApiVersion } = require('mongodb');
 const path = require('path');
-const fs=require('fs');
+const fs = require('fs');
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
 const moment = require('moment-timezone')
 
 const { ipcRenderer } = require('electron');
 
-const uri = encodeURI(credentials.mongodb_protocol+"://" + credentials.mongodb_username + ":" + credentials.mongodb_password + "@" + credentials.mongodb_server + "/?retryWrites=true&w=majority");
-const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}});
-    
-async function getSessionInfo(sessionCode){
-    const options = {sort: { loggingTime: -1 }};
+var $ = require('jquery');
+var DataTable = require('datatables.net')(window, $);
+require('datatables.net-responsive');
+
+const uri = encodeURI(credentials.mongodb_protocol + "://" + credentials.mongodb_username + ":" + credentials.mongodb_password + "@" + credentials.mongodb_server + "/?retryWrites=true&w=majority");
+const client = new MongoClient(uri, { serverApi: { version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true } });
+
+let table = new DataTable('#viewSessionTable', { responsive: true, pageLength:50});
+
+async function getSessionInfo(sessionCode) {
+    const options = { sort: { loggingTime: -1 } };
     const sessions = client.db(credentials.mongodb_db).collection("pollingsession");
     let cursor;
-    let htmlContent=""
+    let htmlContent = ""
     try {
         await client.connect();
-        cursor = sessions.find({session:sessionCode});
+        cursor = sessions.find({ session: sessionCode });
         if ((await sessions.countDocuments({})) === 0) {
             console.log("[MongoDB] Nothing Found");
         }
@@ -26,38 +32,44 @@ async function getSessionInfo(sessionCode){
             htmlContent = `From:\t${x.startDate}<br>Until:\t${x.endDate}`
         }
 
-        if (htmlContent.length > 0){
+        if (htmlContent.length > 0) {
             document.querySelector("#sessionTimeText").innerHTML = htmlContent
         }
-    } catch(err){
+    } catch (err) {
         console.error(err)
     }
     return htmlContent;
 }
 
-async function getSessionItems(sessionCode){
-    const options = {sort: { startDate: -1 },};
+async function getSessionItems(sessionCode) {
+    // let table = new DataTable('#viewSessionTable',{responsive: true});
+    // document.querySelector("#stockTable").DataTable().clear().draw()
+    // table.clear.draw()
+    
+    const options = { sort: { startDate: -1 }, };
     const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
     let cursor;
-    let htmlContent=""
-    let alreadyInserted=[]
+    let htmlContent = ""
+    let alreadyInserted = []
+    var tableData = []
     try {
         await client.connect();
-        cursor = sessions.find({session:sessionCode});
+        cursor = sessions.find({ session: sessionCode });
         if ((await sessions.countDocuments({})) === 0) {
             console.log("[MongoDB] Nothing Found");
         }
 
+        table.clear().draw()
         for await (const x of cursor) {
-            if(!alreadyInserted.includes(`${x.productCode}:${x.productLabel}`)){
-                htmlContent += `<tr><td>${x.productCode} - ${x.productName}</td><td><small>${x.productLabel}</small></td><td>${x.shelfLocation}</td><td style="text-align:center">${x.quantity} ${x.quantityUnit}</td><td>${x.bestbefore}</td><td><a href="#">Edit</a></td></tr>`
-                alreadyInserted.push(`${x.productCode}:${x.productLabel}`)
-            }
-            if (htmlContent.length > 0){
-                document.querySelector("#activeTBody").innerHTML = htmlContent
+            console.log(x)
+            if (!alreadyInserted.includes(`${x.productCode}:${x.productLabel}`)) {
+                table.row.add([`${x.productCode} - ${x.productName}`, x.productLabel, x.shelfLocation, `${x.quantity} ${x.quantityUnit}`, x.bestbefore, "<a href='#'>Edit</a>"]).draw(false);
+                // tableData.push([`${x.productCode} - ${x.productName}`, x.productLabel, x.shelfLocation, `${x.quantity} ${x.quantityUnit}`, x.bestbefore, "<a href='#'>Edit</a>"]).draw();
+                // htmlContent += `<tr><td>${x.productCode} - ${x.productName}</td><td><small>${x.productLabel}</small></td><td>${x.shelfLocation}</td><td style="text-align:center">${x.quantity} ${x.quantityUnit}</td><td>${x.bestbefore}</td><td><a href="#">Edit</a></td></tr>`
+                // alreadyInserted.push(`${x.productCode}:${x.productLabel}`)
             }
         }
-    } catch(err) {
+    } catch (err) {
         console.log(err)
     }
     return htmlContent;
@@ -77,8 +89,8 @@ window.onload = () => {
 
     ipcRenderer.on('server-info', (event, { address, port, addressSet }) => {
         let addressHTML = ""
-        if (addressSet.length > 0){
-            addressSet.forEach(eachadd =>{
+        if (addressSet.length > 0) {
+            addressSet.forEach(eachadd => {
                 addressHTML += eachadd + "<br>"
             })
             document.querySelector("#sessionConfigAddress").innerHTML = addressHTML;
@@ -88,30 +100,30 @@ window.onload = () => {
         document.querySelector("#sessionConfigPort").innerText = `${port}`;
     });
 
-    setInterval(function(){qrv2patch()},120000) // 120秒更新一次V2的数据信息
+    setInterval(function () { qrv2patch() }, 120000) // 120秒更新一次V2的数据信息
 }
 
-async function qrv2patch(){
-	const logsessions = client.db(credentials.mongodb_db).collection("pollinglog");
-	const productsessions = client.db(credentials.mongodb_db).collection("products");
-	var productList = productsessions.find({})
-	for await (const x of productList) {
-		var whereCondition = {productCode: x.labelname}
-		var updateInfo = {
-			$set:{productCode:x.itemcode, productName:x.labelname}
-		}
-		var updateResult = await logsessions.updateMany(whereCondition,updateInfo)
-	}
+async function qrv2patch() {
+    const logsessions = client.db(credentials.mongodb_db).collection("pollinglog");
+    const productsessions = client.db(credentials.mongodb_db).collection("products");
+    var productList = productsessions.find({})
+    for await (const x of productList) {
+        var whereCondition = { productCode: x.labelname }
+        var updateInfo = {
+            $set: { productCode: x.itemcode, productName: x.labelname }
+        }
+        var updateResult = await logsessions.updateMany(whereCondition, updateInfo)
+    }
 
-	var logLists = logsessions.find({})
-	for await(const x of logLists){
-		if (String(x.productCode).includes("TP") || String(x.productCode).includes("SP") || String(x.productCode).includes("IG001")) {
-			if (x.quantityUnit == "" && x.quantity<50) {
-				logsessions.updateOne({_id:x._id},{$set:{quantityUnit:"carton"}})
-			} else if (x.quantityUnit == "" && x.quantity>=50) {
-				logsessions.updateOne({_id:x._id},{$set:{quantityUnit:"bottles"}})
-			}
-		}
-		
-	}
+    var logLists = logsessions.find({})
+    for await (const x of logLists) {
+        if (String(x.productCode).includes("TP") || String(x.productCode).includes("SP") || String(x.productCode).includes("IG001")) {
+            if (x.quantityUnit == "" && x.quantity < 50) {
+                logsessions.updateOne({ _id: x._id }, { $set: { quantityUnit: "carton" } })
+            } else if (x.quantityUnit == "" && x.quantity >= 50) {
+                logsessions.updateOne({ _id: x._id }, { $set: { quantityUnit: "bottles" } })
+            }
+        }
+
+    }
 }
