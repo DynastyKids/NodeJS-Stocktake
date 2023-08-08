@@ -3,10 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="content-security-policy" content="default-src 'none'; script-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self' 'sha256-hayZOzBvvn7l/gT0R05KrZqQiIwY2vq78eOJFqJFGsI=';" />
+    <meta http-equiv="content-security-policy" content="default-src 'none'; script-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline' 'unsafe-eval';" />
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="../node_modules/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="../node_modules/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="../node_modules/datatables.net-dt/css/jquery.dataTables.min.css">
     <title>Session Viewer - Warehouse Electron</title>
 </head>
 
@@ -86,28 +87,25 @@
         <table class="table" id="viewSessionTable">
             <thead class="thead-light">
             <tr>
-                <th scope="col">Product</th>
-                <th scope="col">Lot Code</th>
-                <th scope="col">Location</th>
-                <th scope="col">Quantity / Unit</th>
-                <th scope="col">Expire Date</th>
-                <th scope="col">Action</th>
+                <th>Product</th>
+                <th>Lot Code</th>
+                <th>Location</th>
+                <th>Quantity / Unit</th>
+                <th>Expire Date</th>
+                <th>Action</th>
             </tr>
             </thead>
             <tfoot>
             <tr>
-                <th scope="col">Product</th>
-                <th scope="col">Lot Code</th>
-                <th scope="col">Location</th>
-                <th scope="col">Quantity / Unit</th>
-                <th scope="col">Expire Date</th>
-                <th scope="col">Action</th>
+                <th>Product</th>
+                <th>Lot Code</th>
+                <th>Location</th>
+                <th>Quantity / Unit</th>
+                <th>Expire Date</th>
+                <th>Action</th>
             </tr>
             </tfoot>
             <tbody id="activeTBody">
-            <tr>
-                <td colspan="4">Loading Data...</td>
-            </tr>
             </tbody>
         </table>
     </div>
@@ -115,6 +113,9 @@
 
 <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../node_modules/flatpickr/dist/flatpickr.min.js"></script>
+<script> window.$ = window.jQuery = require('jquery');</script>
+<script src="../node_modules/jquery/dist/jquery.min.js"></script>
 <script src="viewsession.js"></script>
+<script> if(window.module) module = window.module</script>
 </body>
 </html>
