@@ -175,14 +175,12 @@ router.get("/api/v1/products", async (req, res) => {
 // 其中GET请求为无条件获取当前可用库存信息，可选参数为session code
 // 其中POST请求为商品添加、库位移动
 router.get("/api/v1/stocks", async (req, res) => {
-    // 获取所有当前session的产品盘点信息，使用labelid去重，并且剔除所有consumed的商品
+    // 获取所有当前session的产品盘点信息，使用labelid去重，并且剔除所有consumed的商品, 每次pull限5000条
     const sessions = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
+    const product = req.params.prod
     try {
         await sessionClient.connect();
-        // let cursor = await sessions.find(query, options);
-        // let cursor2 = await sessions.distinct("productLabel",query, options);
-        let cursor2 = await sessions.aggregate([
-            { $sort: { productLabel: 1 } },
+        let pipeline = [ { $sort: { productLabel: 1 } },
             { 
                 $group:{
                     _id: {productLabel: "$productLabel"},
@@ -214,8 +212,17 @@ router.get("/api/v1/stocks", async (req, res) => {
                     productLabel: 1, 
                     labelBuild: 1
                 }
-            }
-        ]).toArray();
+            },
+        ]
+        if (req.params.prod) {
+            pipeline.push({$match:{productCode: req.params.prod}})
+        }
+        if (req.params.limit && parseInt(req.params.limit) < 5000) {
+            pipeline.push({$limit:parseInt(req.params.limit)})
+        } else {
+            pipeline.push({$limit:5000})
+        }
+        let cursor2 = await sessions.aggregate(pipeline).toArray();
         let resultArray = []
         for (let index = 0; index < cursor2.length; index++) {
             if (cursor2[index].productLabel === "") {
