@@ -78,7 +78,6 @@ async function qrv2patch() {
 				logsessions.updateOne({ _id: x._id }, { $set: { quantityUnit: "bottles" } })
 			}
 		}
-
 	}
 }
 

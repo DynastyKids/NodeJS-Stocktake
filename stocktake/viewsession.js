@@ -8,6 +8,7 @@ const moment = require('moment-timezone')
 const { ipcRenderer } = require('electron');
 
 var $ = require('jquery');
+const { setInterval } = require('timers');
 var DataTable = require('datatables.net')(window, $);
 require('datatables.net-responsive');
 
@@ -15,6 +16,10 @@ const uri = encodeURI(credentials.mongodb_protocol + "://" + credentials.mongodb
 const client = new MongoClient(uri, { serverApi: { version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true } });
 
 let table = new DataTable('#viewSessionTable', { responsive: true, pageLength:50});
+
+let shouldRefresh = true;
+const countdownFrom = 15;
+let countdown = countdownFrom;
 
 async function getSessionInfo(sessionCode) {
     const options = { sort: { loggingTime: -1 } };
@@ -42,10 +47,6 @@ async function getSessionInfo(sessionCode) {
 }
 
 async function getSessionItems(sessionCode) {
-    // let table = new DataTable('#viewSessionTable',{responsive: true});
-    // document.querySelector("#stockTable").DataTable().clear().draw()
-    // table.clear.draw()
-    
     const options = { sort: { startDate: -1 }, };
     const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
     let cursor;
@@ -63,10 +64,7 @@ async function getSessionItems(sessionCode) {
         for await (const x of cursor) {
             console.log(x)
             if (!alreadyInserted.includes(`${x.productCode}:${x.productLabel}`)) {
-                table.row.add([`${x.productCode} - ${x.productName}`, x.productLabel, x.shelfLocation, `${x.quantity} ${x.quantityUnit}`, x.bestbefore, "<a href='#'>Edit</a>"]).draw(false);
-                // tableData.push([`${x.productCode} - ${x.productName}`, x.productLabel, x.shelfLocation, `${x.quantity} ${x.quantityUnit}`, x.bestbefore, "<a href='#'>Edit</a>"]).draw();
-                // htmlContent += `<tr><td>${x.productCode} - ${x.productName}</td><td><small>${x.productLabel}</small></td><td>${x.shelfLocation}</td><td style="text-align:center">${x.quantity} ${x.quantityUnit}</td><td>${x.bestbefore}</td><td><a href="#">Edit</a></td></tr>`
-                // alreadyInserted.push(`${x.productCode}:${x.productLabel}`)
+                table.row.add([`${x.productCode} - ${x.productName}`, x.productLabel, x.shelfLocation, `${x.quantity} ${x.quantityUnit}`, x.bestbefore, (x.consumed===1 ? "√": ""), "<a href='#'>Edit</a>"]).draw(false);
             }
         }
     } catch (err) {
@@ -82,10 +80,18 @@ window.onload = () => {
     document.querySelector('#sessionTitle').innerText = `Session ${sessionId}`
     getSessionInfo(sessionId)
     getSessionItems(sessionId)
-    setInterval(function () {
-        console.log("database Refreshed")
-        getSessionItems(sessionId)
-    }, 10000);
+    const automaticRefresh = setInterval(() =>{
+        if (shouldRefresh) {
+            getSessionItems(sessionId)
+            countdown = countdownFrom;
+        }
+    }, countdownFrom*1000)
+    const countdownInterval = setInterval(() =>{
+        if (shouldRefresh) {
+             countdown -= 1
+             document.querySelector("#toggleRefreshText").innerText = `Automatic refresh in: ${countdown}s`
+        }
+    },1000)
 
     ipcRenderer.on('server-info', (event, { address, port, addressSet }) => {
         let addressHTML = ""
@@ -100,7 +106,20 @@ window.onload = () => {
         document.querySelector("#sessionConfigPort").innerText = `${port}`;
     });
 
-    setInterval(function () { qrv2patch() }, 120000) // 120秒更新一次V2的数据信息
+    document.querySelector('#toggleRefresh').addEventListener('click', function() {
+        shouldRefresh = !shouldRefresh;
+        if (shouldRefresh) {
+            document.querySelector("#toggleRefresh").innerText = "Pause"
+            document.querySelector("#toggleRefresh").classList.remove("btn-outline-success")
+            document.querySelector("#toggleRefresh").classList.add("btn-outline-warning")
+            countdown = countdownFrom; // 重置倒计时
+        } else {
+            document.querySelector("#toggleRefresh").innerText = "Resume"
+            document.querySelector("#toggleRefresh").classList.remove("btn-outline-warning")
+            document.querySelector("#toggleRefresh").classList.add("btn-outline-success")
+            document.querySelector('#toggleRefreshText').innerText = "Automatic refresh paused";
+        }
+    });
 }
 
 async function qrv2patch() {
