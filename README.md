@@ -57,3 +57,11 @@ This section contains some features that may involve in future developing with w
 **Product log editor / bulk importer**: Allow user setting product catalogues within Electron Application
 
 **Label Generator**: Currently generator are not available to public due to testing, will release sooner within later this year
+
+## Issues
+
+Application cannot start on windows due to listen EACCESS error
+```
+net stop winnat
+net start winnat
+```

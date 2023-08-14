@@ -33,74 +33,28 @@ router.get("/", async (req, res) => {
     res.json({ ping: true, acknowledged: true, message: "For API documentation, visit '/api' " });
 });
 
-// 所有会话相关
+/* 
+ * 获取所有当前可用的Session
+ */
 router.get("/api/v1/sessions", async (req, res) => {
-    // 获取所有当前可用的session
-    const options = { sort: { startDate: 1 } };
-    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollingsession");
-    let localTime = moment(new Date()).tz("Australia/Sydney");
-    let findingQuery = {
-        $and: [
-            { endDate: { $gte: localTime.format("YYYY-MM-DD HH:mm:ss") } },
-            { startDate: { $lte: localTime.format("YYYY-MM-DD HH:mm:ss") } },
-        ]
-    };
-    let cursor;
-    let sessionResults = [];
-
-    try {
-        await sessionClient.connect();
-        cursor = sessions.find(findingQuery, options);
-        if ((await sessions.countDocuments(findingQuery)) === 0) {
-            console.log("[MongoDB] Nothing Found");
-        }
-
-        for await (const x of cursor) {
-            sessionResults.push({
-                session: x.session,
-                startDate: x.startDate,
-                endDate: x.endDate,
-            });
-        }
-        res.json(sessionResults);
-    } catch (err) {
-        console.error(err)
-        res.status(500).json(JSON.stringify(err));
-    }
+    let results = await getSessionLists()
+    res.json(results.data);
 });
 
+/* 
+ * 验证当前Session是否有效
+ */
 router.post("/api/v1/sessions/join", async (req, res) => {
-    //检查当前session是否可用，如果可用返回session信息
     const sessioncode = req.body.session;
-    const options = { sort: { startDate: 1 }, projection: { _id: 0, session: 1, startDate: 1, endDate: 1, logTime: 1 } };
-    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollingsession");
-    let localTime = moment(new Date()).tz("Australia/Sydney");
-    // let findingQuery = {session:sessioncode,endDate:{$gte: localTime.format('YYYY-MM-DD HH:mm:ss')},startDate:{$lte: localTime.format('YYYY-MM-DD HH:mm:ss')}}
-    let findingQuery = {
-        session: sessioncode,
-        endDate: { $gte: localTime.format("YYYY-MM-DD HH:mm:ss") },
-    };
-    let cursor;
-    let sessionResults = [];
-
-    try {
-        await client.connect();
-        cursor = sessions.find(findingQuery, options);
-        if ((await sessions.countDocuments(findingQuery)) === 0) {
-            console.log("[MongoDB] Nothing Found");
-        }
-        for await (const x of cursor) {
-            sessionResults.push({ session: x.session, startDate: x.startDate, endDate: x.endDate, });
-        }
-        res.status(200).json(sessionResults);
-    } catch (err) {
-        sessionResults = JSON.stringify(err)
-        res.status(400).json(sessionResults);
-    }
+    var sessionResults = await checkSession(sessioncode)
+    res.json(sessionResults.data);
 });
 
+/* 
+ * GET方法，Sessionlog用来查看某个会话的所有产品；Query:sessioncode
+ * 获取所有当前session的产品盘点信息，使用labelid去重
+ */ 
 router.get("/api/v1/sessionlog", async (req, res) => {
-    // 获取所有当前session的产品盘点信息，使用labelid去重
     const sessions = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
     let localTime = moment(new Date()).tz("Australia/Sydney");
     let findingQuery = { session: req.query.session };
@@ -124,8 +78,10 @@ router.get("/api/v1/sessionlog", async (req, res) => {
     res.json(sessionResults);
 });
 
+/* 
+ * 扫描信息按照sessioncode进入系统
+ */
 router.post("/api/v1/sessionlog/add", async (req, res) => {
-    //扫描信息入
     const sessioncode = (req.body.session ? req.body.session : "");
     const iteminfo = req.body.item;
     let localTime = moment(new Date()).tz("Australia/Sydney");
@@ -133,7 +89,6 @@ router.post("/api/v1/sessionlog/add", async (req, res) => {
     let purposedRes = { acknowledged: false };
     if (isBase64String(iteminfo)) {
         mongodata = createLogObject(sessioncode, iteminfo);
-        console.log("/sessionlog/add POST data:",mongodata)
         if (mongodata !== {}) {
             purposedRes.acknowledged = true
             mongodata.loggingTime = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss");
@@ -146,8 +101,86 @@ router.post("/api/v1/sessionlog/add", async (req, res) => {
     res.json(purposedRes);
 });
 
+/* 
+ * 默认使用最后一个开启的session号码来添加库存信息
+ * 如果没有session可用，则返回失败，如果添加成功则返回成功信息
+ */
+router.post("/api/v1/sessionlog/autoadd",async(req, res)=>{
+    let sessionResults = await getSessionLists();
+
+})
+
+async function getSessionLists(){
+    const options = { sort: { startDate: 1 } };
+    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollingsession");
+    let localTime = moment(new Date()).tz("Australia/Sydney");
+    let findingQuery = {
+        $and: [
+            { endDate: { $gte: localTime.format("YYYY-MM-DD HH:mm:ss") } },
+            { startDate: { $lte: localTime.format("YYYY-MM-DD HH:mm:ss") } },
+        ]
+    };
+    let cursor;
+    let sessionResults = {acknowledged:false, data:[], message:""};
+
+    try {
+        await sessionClient.connect();
+        cursor = sessions.find(findingQuery, options);
+        if ((await sessions.countDocuments(findingQuery)) === 0) {
+            console.log("[MongoDB] Nothing Found");
+        }
+
+        for await (const x of cursor) {
+            sessionResults.data.push({
+                session: x.session,
+                startDate: x.startDate,
+                endDate: x.endDate,
+                logTime: x.logTime
+            });
+        }
+        sessionResults.acknowledged = true
+    } catch (err) {
+        console.error(err)
+        sessionResults.message = JSON.stringify(err)
+    }
+    
+    return sessionResults;
+}
+
+async function checkSession(sessionId){
+    let sessionResults = {acknowledged:false, data:[], message:""};
+    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollingsession");
+    let findingQuery = {
+        $and: [
+            { endDate: { $gte: localTime.format("YYYY-MM-DD HH:mm:ss") } },
+            { startDate: { $lte: localTime.format("YYYY-MM-DD HH:mm:ss") } },
+            { session: sessionId}
+        ]
+    };
+    try {
+        await sessionClient.connect();
+        let result = await sessions.find(findingQuery)
+        if ((await sessions.countDocuments(findingQuery)) === 0) {
+            console.log("[MongoDB] Nothing Found");
+        }
+
+        for await (const x of result) {
+            sessionResults.data.push({
+                session: x.session,
+                startDate: x.startDate,
+                endDate: x.endDate,
+                logTime: x.logTime
+            });
+        }
+        sessionResults.acknowledged = true
+    } catch (err) {
+        console.error(err)
+    }
+    return sessionResults
+}
+
+// 查看目前库存中所有的产品信息
 router.get("/api/v1/products", async (req, res) => {
-    // 获取所有当前session的产品盘点信息，使用labelid去重
     const sessions = sessionClient.db(credentials.mongodb_db).collection("products");
     let cursor;
     let products = [];
@@ -167,11 +200,11 @@ router.get("/api/v1/products", async (req, res) => {
     }
 });
 
-// Stock分为GET请求和POST请求
-// 其中GET请求为无条件获取当前可用库存信息，可选参数为session code
-// 其中POST请求为商品添加、库位移动
+/*
+ * GET Stock，获取当前的库存信息和下一板位位置
+ * 获取所有当前session的产品盘点信息，使用labelid去重，并且剔除所有consumed的商品, 每次pull限5000条
+ */
 router.get("/api/v1/stocks", async (req, res) => {
-    // 获取所有当前session的产品盘点信息，使用labelid去重，并且剔除所有consumed的商品, 每次pull限5000条
     const sessions = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
     const product = req.query.prod
     try {
@@ -236,52 +269,16 @@ router.get("/api/v1/stocks", async (req, res) => {
     }
 });
 
-router.get("/api/v1/stocks/consume",async(req, res) =>{
-    let localTime = moment(new Date()).tz("Australia/Sydney");
-    let response = { acknowledged: false }
-    const productLabel = req.query.label
-    if (productLabel !== undefined && productLabel.length> 0) {
-        try {
-            let result = await findOneAndUpdateOnLog({itemcode: productLabel, consumed: 0}, {consumed: 1, loggingTime: localTime.format("YYYY-MM-DD HH:mm:ss")})
-            if (result.modifiedCount > 0 && result.matchedCount > 0) {
-                response.acknowledged= true
-            }
-        } catch (err) {
-            console.error(err)
-            res.status(500).json(err)
-        }
-    }
-    
-    if(req.header("Referer")){
-        res.redirect(req.header("Referer"))
-    } else {
-        res.redirect("/")
-    }
-    res.status(200).response
-    
-})
-
-async function findOneAndUpdateOnLog(findCondition, updateQuery) {
-    let returnResult = {}
-    try {
-        await sessionClient.connect()
-        const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
-        var result = await session.updateOne(findCondition,{$set:updateQuery}, {upsert: false})
-        if (result !== null) {
-            returnResult = result
-        }
-    } catch (e) {
-        console.error(e)
-    }
-
-    return returnResult
-}
-
+/*
+ * POST Stock请求为商品添加、库位移动
+ * 需要传入参数
+ * Consume 使用api/v1/stocks/consume
+ */
 router.post("/api/v1/stocks", async (req, res) => {
     let localTime = moment(new Date()).tz("Australia/Sydney");
     let response = { acknowledged: false }
     try {
-        const { action, content } = req.body // Action: move / add / consume
+        const { action, content, shelf } = req.body // Action: move / add / consume
         if (action && action == "consume" && content.labelId) {
             // content: {labelid: xxxxxx}
             let updateObject = { consumed: 1, loggingTime: localTime.format("YYYY-MM-DD HH:mm:ss") }
@@ -293,6 +290,9 @@ router.post("/api/v1/stocks", async (req, res) => {
         } else if (action && action == "add" && content) {
             response = await insertOneLot(content)
         }
+        if (shelf) {
+            editStockShelfLocation(content.labelId, shelf)
+        }
     } catch (err) {
         console.error(err)
         res.status(500).json(err)
@@ -301,25 +301,10 @@ router.post("/api/v1/stocks", async (req, res) => {
 });
 
 function createLogObject(sessioncode, iteminfo) {
-    var mongodata = {};
+    var mongodata = { session: sessioncode , productCode: "" , quantity: 0 , quantityUnit: "" , shelfLocation: "" , POIPnumber: "" , productName: "" , bestbefore: "" , productLabel: "" , productName: "" , labelBuild: 2 , consumed: 0 , loggingTime: moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss") }
     try {
         if (isBase64String(iteminfo)) {
             var productInfo = JSON.parse(atob(iteminfo));
-            mongodata = {
-                session: sessioncode,
-                productCode: "",
-                quantity: 0,
-                quantityUnit: "",
-                shelfLocation: "",
-                POIPnumber: "",
-                productName: "",
-                bestbefore: "",
-                productLabel: "",
-                productName: "",
-                labelBuild: 2,
-                loggingTime: moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss"),
-                consumed: 0,
-            }
             if (productInfo.hasOwnProperty("Code")) {
                 mongodata.productCode = productInfo.Code
             }
@@ -333,7 +318,7 @@ function createLogObject(sessioncode, iteminfo) {
                 mongodata.productName = productInfo.Prod
                 if (String(productInfo.Prod).toLowerCase().includes("jelly") || String(productInfo.Prod).toLowerCase().includes("popping")
                     || String(productInfo.Prod).toLowerCase().includes("syrup")) {
-                        mongodata.quantityUnit = "carton"
+                    mongodata.quantityUnit = "carton"
                 }
             }
             if (productInfo.hasOwnProperty("POIP")) {
@@ -346,7 +331,7 @@ function createLogObject(sessioncode, iteminfo) {
                 console.log("Item label is V3");
             }
 
-            if (productInfo.hasOwnProperty("Unit") && typeof(productInfo.Unit) == "string") {
+            if (productInfo.hasOwnProperty("Unit") && typeof (productInfo.Unit) == "string") {
                 mongodata.quantityUnit = String(productInfo.Unit).toLowerCase().replace("ctns", "carton")
                     .replace("btls", "bottle");
             }
@@ -357,8 +342,86 @@ function createLogObject(sessioncode, iteminfo) {
     } catch (error) {
         console.error(error);
     }
-
     return mongodata;
+}
+
+async function editStockShelfLocation(labelId, location){
+    let returnResult = {acknowledged:false}
+    try {
+        await session.connect()
+        const session = sessionClient.db(credentials.mongodb_db)
+        var result = await session.updateMany({productLabel: labelId, consumed: 0}, {$set: {}},{upsert: false})
+        if (result !== null) {
+            returnResult = result
+        }
+    } catch (err) {
+        console.error(err)
+    }
+    return returnResult
+}
+
+/*
+ * Stock中的consume方法，当某个板位被使用后需要标注所有的该id信息为consumed
+ */
+router.get("/api/v1/stocks/consume", async (req, res) => {
+    let localTime = moment(new Date()).tz("Australia/Sydney");
+    let response = { acknowledged: false }
+    const productLabel = req.query.label
+    if (productLabel !== undefined && productLabel.length > 0) {
+        try {
+            let result = await findAndUpdateLogs({ itemcode: productLabel, consumed: 0 }, { consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")})
+            if (result.modifiedCount > 0 && result.matchedCount > 0) {
+                response.acknowledged = true
+            }
+        } catch (err) {
+            console.error(err)
+            res.status(500).json(err)
+        }
+    }
+
+    if (req.header("Referer")) {
+        res.redirect(req.header("Referer"))
+    } else {
+        res.redirect("/")
+    }
+    res.status(200).response
+})
+router.post("api/v1/stocks/consume", async(req,res) =>{
+    let localTime = moment(new Date()).tz("Australia/Sydney");
+    let response = { acknowledged: false }
+    const { productLabel }= req.body
+    if (productLabel !== undefined && productLabel.length > 0) {
+        try {
+            let result = await findAndUpdateLogs({ itemcode: productLabel, consumed: 0 }, { consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")})
+            if (result.modifiedCount > 0 && result.matchedCount > 0) {
+                response.acknowledged = true
+            }
+        } catch (err) {
+            console.error(err)
+            res.status(500).json(err)
+        }
+    }
+    if (req.header("Referer")) {
+        res.redirect(req.header("Referer"))
+    } else {
+        res.redirect("/")
+    }
+    res.status(200).response
+})
+
+async function findAndUpdateLogs(findCondition, updateQuery) {
+    let returnResult = {}
+    try {
+        await sessionClient.connect()
+        const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
+        var result = await session.updateMany(findCondition, { $set: updateQuery }, { upsert: false })
+        if (result !== null) {
+            returnResult = result
+        }
+    } catch (e) {
+        console.error(e)
+    }
+    return returnResult
 }
 
 async function getProductInfo(productCode) {
@@ -418,28 +481,7 @@ async function insertOneToLog(insertData) {
     }
 }
 
-async function isValidSession(sessioncode) {
-    let findQuery = {
-        session: sessioncode,
-        endDate: { $gte: localTime.format("YYYY-MM-DD HH:mm:ss") },
-        startDate: { $lte: localTime.format("YYYY-MM-DD HH:mm:ss") },
-    };
-    try {
-        await sessionClient.connect();
-        const session = sessionClient.db(credentials.mongodb_db).collection("pollingsession");
-        const result = await session.find(findQuery).count();
-        if (result > 0) {
-            return true;
-        } else {
-            return false;
-        }
-    } catch (err) {
-        console.error(err);
-        return false;
-    }
-}
-
-async function findALot(labelId) {
+async function findLastPollionglog(labelId) {
     try {
         await sessionClient.connect()
         const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog")
@@ -508,19 +550,4 @@ function isBase64String(text) {
         return false;
     }
     return true;
-}
-
-function base64product(text) {
-    try {
-        var productInfo = atob(text);
-        if (productInfo.Build !== undefined) {
-            // V3 or later, using all info provided
-        } else if (productInfo.POIP !== undefined) {
-            // V2 code or higher
-        } else {
-            // V1 Code, direct read
-        }
-    } catch (e) {
-        return "";
-    }
 }
