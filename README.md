@@ -19,9 +19,9 @@ If you wish to self-compile this application, you are require to download [NodeJ
 
 ## User Manual
 ### First Time using
-1. On first time use, the setting page will pops up, you will needs to setup your MongoDB server information and click `submit`, all your information are stored locally in plaintext. If you wish to migrate to another computer, you will require to setup with same process again.
+1. On first time use, the setting page will pops up, you will need to set up your MongoDB server information and click `submit`, all your information are stored locally in plaintext. If you wish to migrate to another computer, you will require to setup with same process again.
 
-2. You will needs to import product information to MongoDB.
+2. You will need to import product information to MongoDB.
 
 ### Create / Start a stocktake session
 1. On Electron application homepage, click `New Stocktake Session`
@@ -58,6 +58,7 @@ This section contains some features that may involve in future developing with w
 
 **Label Generator**: Currently generator are not available to public due to testing, will release sooner within later this year
 
+**Languages Support**: Everyone could help the project by adding i18n locale files and help to translate the product to your own languages
 ## Issues
 
 Application cannot start on windows due to listen EACCESS error

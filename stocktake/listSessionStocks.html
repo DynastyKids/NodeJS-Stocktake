@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="content-security-policy" content="default-src 'none'; script-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self' 'sha256-hayZOzBvvn7l/gT0R05KrZqQiIwY2vq78eOJFqJFGsI=';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline';">
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="../node_modules/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="../node_modules/flatpickr/dist/flatpickr.min.css">
@@ -11,37 +11,16 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="../index.html">Stocktake Electron</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
-                    aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="../index.html">Home</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="sessionDropdown" role="button"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            Sessions
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="../stocktake/newsession.html">New Session</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../stocktake/listsession.html">Sessions list</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" aria-current="page" href="../settings.html">Settings</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+<nav class="navbar navbar-expand-lg navbar-light bg-light" id="navbar_top">
+    <script>
+        const navbarContent = document.querySelector("#navbar_top")
+        fetch('../layouts/template_navbar.html')
+            .then(response => response.text())
+            .then(data => {
+                navbarContent.innerHTML = data
+            })
+    </script>
+</nav>
 <div class="container">
     <nav class="m-2" aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -53,12 +32,12 @@
     <div class="container-fluid">
         <h1 id="sessionTitle">Current Stocks</h1>
         <div id="datasource">
-            Using datasource from
+            <p>Using datasource from</p>
             <select class="form-select" aria-label="Latest" id="sessionSelector">
                 <option value="latest" selected>latest</option>
             </select>
         </div>
-        
+
         <hr>
         <table class="table">
             <thead class="thead-light">
@@ -90,52 +69,52 @@
     </div>
 </div>
 <!--Consume Modal-->
-    <div class="modal fade" id="consumeModal" tabindex="-1" aria-labelledby="consumeModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="consumeModalLabel">Consume / Unwrap Item</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    Are you sure to unwrap Item:
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Save changes</button>
-                </div>
+<div class="modal fade" id="consumeModal" tabindex="-1" aria-labelledby="consumeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="consumeModalLabel">Consume / Unwrap Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure to unwrap Item:
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
             </div>
         </div>
     </div>
+</div>
 <!--  Edit Modal  -->
-    <div class="modal fade" id="stockEditModal" tabindex="-1" aria-labelledby="stockEditModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="stockEditModalLabel">Edit Stock</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal fade" id="stockEditModal" tabindex="-1" aria-labelledby="stockEditModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stockEditModalLabel">Edit Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="col-form-label">Lot Code:</label>
+                    <p id="edit-lotcode"></p>
+                    <label class="col-form-label">Product Info:</label>
+                    <p id="edit-product"></p>
                 </div>
-                <div class="modal-body">
+                <form>
                     <div class="mb-3">
-                        <label class="col-form-label">Lot Code:</label>
-                        <p id="edit-lotcode"></p>
-                        <label class="col-form-label">Product Info:</label>
-                        <p id="edit-product"></p>
+                        <label for="message-text" class="col-form-label">Message:</label>
+                        <textarea class="form-control" id="message-text"></textarea>
                     </div>
-                    <form>
-                        <div class="mb-3">
-                            <label for="message-text" class="col-form-label">Message:</label>
-                            <textarea class="form-control" id="message-text"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Send message</button>
-                </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Send message</button>
             </div>
         </div>
     </div>
+</div>
 
 <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../node_modules/flatpickr/dist/flatpickr.min.js"></script>

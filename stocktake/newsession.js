@@ -2,13 +2,74 @@ const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const flatpickr = require("flatpickr");
 const path = require('path');
-const fs=require('fs');
+const fs = require('fs');
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
 const moment = require('moment-timezone')
 
-const uri = encodeURI(credentials.mongodb_protocol+"://" + credentials.mongodb_username + ":" + credentials.mongodb_password + "@" + credentials.mongodb_server + "/?retryWrites=true&w=majority");
+const uriCompents = [credentials.mongodb_protocol, "://"]
+if (credentials.mongodb_username && credentials.mongodb_password) {
+    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
+}
+uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
+const uri = encodeURI(uriCompents.join(""))
+const client = new MongoClient(uri, {
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    }
+});
 
-const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true,useNewUrlParser: true, useUnifiedTopology: true}});
+const i18next = require('i18next');
+const Backend = require('i18next-fs-backend');
+i18next.use(Backend).init({
+    lng: 'en', backend: {loadPath: 'i18nLocales/{{lng}}/translations.json'}
+}).then(() => {
+    updateTexts();
+});
+
+document.getElementById('languageSelector').addEventListener('change', (e) => {
+    i18next.changeLanguage(e.target.value).then(() => {
+        updateTexts();
+    });
+});
+
+function updateTexts() {
+    document.title = `${i18next.t('newsession.pagetitle')} - Warehouse Electron`
+    document.title = `${i18next.t('navbar.home')} - Warehouse Electron`
+    // Navbar Section
+    document.querySelector("#navHome").textContent = i18next.t('navbar.home');
+    document.querySelector("#sessionDropdown").textContent = i18next.t('navbar.sessions');
+    var sessionDropdownLinks = document.querySelectorAll("#sessionDropdownList a");
+    sessionDropdownLinks[0].textContent = i18next.t('navbar.newsession');
+    sessionDropdownLinks[1].textContent = i18next.t('navbar.allsession');
+
+    document.querySelector("#productDropdown").textContent = i18next.t('navbar.products');
+    var productDropdownLinks = document.querySelectorAll("#productDropdownList a");
+    productDropdownLinks[0].textContent = i18next.t('navbar.showallproducts');
+    productDropdownLinks[1].textContent = i18next.t('navbar.addproduct');
+    productDropdownLinks[2].textContent = i18next.t('navbar.showstocksoverview');
+    productDropdownLinks[3].textContent = i18next.t('navbar.showmovementlog');
+    productDropdownLinks[4].textContent = i18next.t('navbar.addmovementlog');
+
+    document.querySelector("#navSettings").textContent = i18next.t('navbar.settings');
+    document.querySelector("#LanguageDropdown").textContent = i18next.t('navbar.language');
+
+    // Content Section
+    var breadcrumbs = document.querySelectorAll(".breadcrumb-item");
+    breadcrumbs[0].querySelector("a").innerText = i18next.t('index.pagetitle');
+    breadcrumbs[1].querySelector("a").innerText = i18next.t('session.pagetitle');
+    breadcrumbs[2].innerText = i18next.t('newsession.pagetitle');
+
+    var inputlabels = document.querySelectorAll(".container label");
+    inputlabels[0].textContent = i18next.t("newsession.sessioncode");
+    inputlabels[1].textContent = i18next.t("newsession.starttime");
+    inputlabels[2].textContent = i18next.t("newsession.endtime");
+
+    document.querySelector("#btnSubmit").value = i18next.t("newsession.submitbtn");
+}
 
 window.onload = () => {
     // initialize the date pickers
@@ -27,18 +88,18 @@ window.onload = () => {
 
     document.getElementById('newSessionForm').addEventListener('submit', (e) => {
         e.preventDefault();
-        
+
         let data = {
             session: document.getElementById("staticSessionCode").value,
             startDate: document.getElementById("inputStartDate").value,
             endDate: document.getElementById("inputEndDate").value,
             logTime: moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
         }
-        console.log("Run Submit Form",data)
+        console.log("Run Submit Form", data)
 
-        insertOneData(data).then((result) =>{
-            console.log("[MongoDB] InsertOne:"+result)
-        }).finally(()=>{
+        insertOneData(data).then((result) => {
+            console.log("[MongoDB] InsertOne:" + result)
+        }).finally(() => {
             window.location.replace("../index.html");
         })
     });
@@ -49,19 +110,19 @@ window.onload = () => {
     })
 }
 
-async function insertOneData(data){
+async function insertOneData(data) {
     try {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         // Send a ping to confirm a successful connection
         await client.db(credentials.mongodb_db).collection("pollingsession")
             .insertOne(data, (err, res) => {
-            if (err) {
-                console.error('Failed to insert document', err);
-                return ;
-            }
-            return res
-        });
+                if (err) {
+                    console.error('Failed to insert document', err);
+                    return;
+                }
+                return res
+            });
     } finally {
         client.close();
     }
@@ -70,17 +131,17 @@ async function insertOneData(data){
 function generateSessionHex() {
     let sessioncode = Math.floor(Math.random() * 0x10000000).toString(16)
         .padStart(7, '0').toLocaleUpperCase()
-    var findQuery = { session: sessioncode };
+    var findQuery = {session: sessioncode};
 
     client.db(credentials.mongodb_db).collection("pollingsession")
         .findOne(findQuery, (err, res) => {
-        if (err) {
-            console.error('Failed to insert document', err);
-            return;
-        }
-        console.log('Document inserted', res);
-        client.db(credentials.mongodb_db).close();
-    });
+            if (err) {
+                console.error('Failed to insert document', err);
+                return;
+            }
+            console.log('Document inserted', res);
+            client.db(credentials.mongodb_db).close();
+        });
     return sessioncode
 }
 
@@ -89,7 +150,7 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         // Send a ping to confirm a successful connection
-        await client.db(credentials.mongodb_db).command({ ping: 1 });
+        await client.db(credentials.mongodb_db).command({ping: 1});
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error

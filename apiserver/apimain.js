@@ -19,7 +19,13 @@ const credentials = JSON.parse(
 );
 const moment = require("moment-timezone");
 const { session } = require("electron");
-const uri = encodeURI(`${credentials.mongodb_protocol}://${credentials.mongodb_username}:${credentials.mongodb_password}@${credentials.mongodb_server}/?retryWrites=true&w=majority`);
+
+const uriCompents = [credentials.mongodb_protocol,"://"]
+if (credentials.mongodb_username && credentials.mongodb_password) {
+    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
+}
+uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
+const uri = encodeURI(uriCompents.join(""))
 
 const sessionClient = new MongoClient(uri, {
     serverApi: {
@@ -44,6 +50,12 @@ router.get("/api/v1/sessions", async (req, res) => {
 /* 
  * 验证当前Session是否有效
  */
+router.get("/api/v1/sessions/join", async (req, res) => {
+    const sessioncode = req.query.session;
+    var sessionResults = await checkSession(sessioncode)
+    res.json(sessionResults.data);
+});
+
 router.post("/api/v1/sessions/join", async (req, res) => {
     const sessioncode = req.body.session;
     var sessionResults = await checkSession(sessioncode)
@@ -53,7 +65,7 @@ router.post("/api/v1/sessions/join", async (req, res) => {
 /* 
  * GET方法，Sessionlog用来查看某个会话的所有产品；Query:sessioncode
  * 获取所有当前session的产品盘点信息，使用labelid去重
- */ 
+ */
 router.get("/api/v1/sessionlog", async (req, res) => {
     const sessions = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
     let localTime = moment(new Date()).tz("Australia/Sydney");
@@ -105,12 +117,12 @@ router.post("/api/v1/sessionlog/add", async (req, res) => {
  * 默认使用最后一个开启的session号码来添加库存信息
  * 如果没有session可用，则返回失败，如果添加成功则返回成功信息
  */
-router.post("/api/v1/sessionlog/autoadd",async(req, res)=>{
+router.post("/api/v1/sessionlog/autoadd", async (req, res) => {
     let sessionResults = await getSessionLists();
 
 })
 
-async function getSessionLists(){
+async function getSessionLists() {
     const options = { sort: { startDate: 1 } };
     const sessions = sessionClient.db(credentials.mongodb_db).collection("pollingsession");
     let localTime = moment(new Date()).tz("Australia/Sydney");
@@ -121,7 +133,7 @@ async function getSessionLists(){
         ]
     };
     let cursor;
-    let sessionResults = {acknowledged:false, data:[], message:""};
+    let sessionResults = { acknowledged: false, data: [], message: "" };
 
     try {
         await sessionClient.connect();
@@ -143,18 +155,18 @@ async function getSessionLists(){
         console.error(err)
         sessionResults.message = JSON.stringify(err)
     }
-    
+
     return sessionResults;
 }
 
-async function checkSession(sessionId){
-    let sessionResults = {acknowledged:false, data:[], message:""};
+async function checkSession(sessionId) {
+    let sessionResults = { acknowledged: false, data: [], message: "" };
     const sessions = sessionClient.db(credentials.mongodb_db).collection("pollingsession");
     let findingQuery = {
         $and: [
             { endDate: { $gte: localTime.format("YYYY-MM-DD HH:mm:ss") } },
             { startDate: { $lte: localTime.format("YYYY-MM-DD HH:mm:ss") } },
-            { session: sessionId}
+            { session: sessionId }
         ]
     };
     try {
@@ -301,7 +313,7 @@ router.post("/api/v1/stocks", async (req, res) => {
 });
 
 function createLogObject(sessioncode, iteminfo) {
-    var mongodata = { session: sessioncode , productCode: "" , quantity: 0 , quantityUnit: "" , shelfLocation: "" , POIPnumber: "" , productName: "" , bestbefore: "" , productLabel: "" , productName: "" , labelBuild: 2 , consumed: 0 , loggingTime: moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss") }
+    var mongodata = { session: sessioncode, productCode: "", quantity: 0, quantityUnit: "", shelfLocation: "", POIPnumber: "", productName: "", bestbefore: "", productLabel: "", productName: "", labelBuild: 2, consumed: 0, loggingTime: moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss") }
     try {
         if (isBase64String(iteminfo)) {
             var productInfo = JSON.parse(atob(iteminfo));
@@ -338,6 +350,9 @@ function createLogObject(sessioncode, iteminfo) {
             if (productInfo.hasOwnProperty("Bestbefore")) {
                 mongodata.bestbefore = productInfo.Bestbefore;
             }
+            if (productInfo.hasOwnProperty("shelfLocation")) {
+                mongodata.shelfLocation = productInfo.shelfLocation;
+            }
         }
     } catch (error) {
         console.error(error);
@@ -345,14 +360,21 @@ function createLogObject(sessioncode, iteminfo) {
     return mongodata;
 }
 
-async function editStockShelfLocation(labelId, location){
-    let returnResult = {acknowledged:false}
+/*
+ * 更新商品存放的库位信息，需要LabelID，新库位
+ * 注：新库位上如果已经有其他东西存在，默认不会覆盖，而会选择并存
+ */
+async function editStockShelfLocation(labelId, location) {
+    let returnResult = { acknowledged: false }
     try {
-        await session.connect()
-        const session = sessionClient.db(credentials.mongodb_db)
-        var result = await session.updateMany({productLabel: labelId, consumed: 0}, {$set: {}},{upsert: false})
+        await sessionClient.connect()
+        const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog")
+        var result = await session.updateMany({ productLabel: labelId, consumed: 0 }, { $set: { shelfLocation: location } }, { upsert: false })
         if (result !== null) {
             returnResult = result
+        }
+        if (result.hasOwnProperty("matchedCount") && result.hasOwnProperty("modifiedCount")) {
+            returnResult.acknowledged = true
         }
     } catch (err) {
         console.error(err)
@@ -361,16 +383,61 @@ async function editStockShelfLocation(labelId, location){
 }
 
 /*
+ * Stock中的fetch方法，用来获取产品的在某个位置上的库存信息
+ * 需要传入参数：Location 或 label
+ * 返回参数：Array[ProductInfo]
+ */
+router.get("/api/v1/stocks/get", async (req, res) => {
+    let productLocation = req.query.shelf
+    let productLabel = req.query.label
+    let response = { acknowledged: false, results: [], info: null }
+    await sessionClient.connect()
+    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
+
+    try {
+        let findingQuery = {}
+        if (productLabel && productLabel.length > 0) {
+            findingQuery = { itemcode: productLabel, consumed: 0 }
+        } else if (productLocation && productLocation.length > 0) {
+            findingQuery = { shelfLocation: productLocation, consumed: 0 }
+        }
+        let result = await sessions.find(findingQuery)
+        if ((await sessions.countDocuments({})) >= 0) {
+            response.acknowledged = true
+            for await (const x of result) {
+                response.results.push(x);
+            }
+        }
+    }
+    catch (err) {
+        console.error(err)
+        response.info = err
+    }
+    res.json(response)
+})
+
+/*
  * Stock中的consume方法，当某个板位被使用后需要标注所有的该id信息为consumed
  */
 router.get("/api/v1/stocks/consume", async (req, res) => {
     let localTime = moment(new Date()).tz("Australia/Sydney");
     let response = { acknowledged: false }
     const productLabel = req.query.label
-    if (productLabel !== undefined && productLabel.length > 0) {
+    const productLocation = req.query.shelf
+    if (productLabel && productLabel.length > 0) {
         try {
-            let result = await findAndUpdateLogs({ itemcode: productLabel, consumed: 0 }, { consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")})
-            if (result.modifiedCount > 0 && result.matchedCount > 0) {
+            let result = await findAndUpdateLogs({ itemcode: productLabel, consumed: 0 }, { consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss") })
+            if (result.modifiedCount > 0 && result.matchedCount == result.modifiedCount) {
+                response.acknowledged = true
+            }
+        } catch (err) {
+            console.error(err)
+            res.status(500).json(err)
+        }
+    } else if (productLocation && productLocation.length > 0) {
+        try {
+            let result = await findAndUpdateLogs({ shelfLocation: productLocation, consumed: 0 }, { consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss") })
+            if (result.modifiedCount > 0 && result.matchedCount == result.modifiedCount) {
                 response.acknowledged = true
             }
         } catch (err) {
@@ -378,21 +445,16 @@ router.get("/api/v1/stocks/consume", async (req, res) => {
             res.status(500).json(err)
         }
     }
-
-    if (req.header("Referer")) {
-        res.redirect(req.header("Referer"))
-    } else {
-        res.redirect("/")
-    }
-    res.status(200).response
+    res.json(response)
 })
-router.post("api/v1/stocks/consume", async(req,res) =>{
+
+router.post("api/v1/stocks/consume", async (req, res) => {
     let localTime = moment(new Date()).tz("Australia/Sydney");
     let response = { acknowledged: false }
-    const { productLabel }= req.body
+    const { productLabel } = req.body
     if (productLabel !== undefined && productLabel.length > 0) {
         try {
-            let result = await findAndUpdateLogs({ itemcode: productLabel, consumed: 0 }, { consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")})
+            let result = await findAndUpdateLogs({ itemcode: productLabel, consumed: 0 }, { consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss") })
             if (result.modifiedCount > 0 && result.matchedCount > 0) {
                 response.acknowledged = true
             }
@@ -401,12 +463,7 @@ router.post("api/v1/stocks/consume", async(req,res) =>{
             res.status(500).json(err)
         }
     }
-    if (req.header("Referer")) {
-        res.redirect(req.header("Referer"))
-    } else {
-        res.redirect("/")
-    }
-    res.status(200).response
+    res.json(response)
 })
 
 async function findAndUpdateLogs(findCondition, updateQuery) {

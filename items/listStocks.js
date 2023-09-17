@@ -1,16 +1,29 @@
 const MongoClient = require('mongodb').MongoClient;
-const { ServerApiVersion } = require('mongodb');
+const {ServerApiVersion} = require('mongodb');
 const fs = require('fs');
 const path = require('path');
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
 const moment = require('moment-timezone')
-const { ipcRenderer } = require('electron')
-const uri = encodeURI(credentials.mongodb_protocol + "://" + credentials.mongodb_username + ":" + credentials.mongodb_password + "@" + credentials.mongodb_server + "/?retryWrites=true&w=majority");
-const { setInterval } = require('timers');
-const client = new MongoClient(uri, { serverApi: { version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true } });
+const {ipcRenderer} = require('electron')
+
+const uriCompents = [credentials.mongodb_protocol, "://"]
+if (credentials.mongodb_username && credentials.mongodb_password) {
+    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
+}
+uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
+const uri = encodeURI(uriCompents.join(""))
+
+const {setInterval} = require('timers');
+const client = new MongoClient(uri, {
+    serverApi: {
+        version: ServerApiVersion.v1,
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    }
+});
 
 var $ = require('jquery');
-const { response } = require('express');
+const {response} = require('express');
 var DataTable = require('datatables.net')(window, $);
 require('datatables.net-responsive');
 
@@ -18,7 +31,7 @@ require('datatables.net-responsive');
 let table = new DataTable('#stockTable', {
     responsive: true,
     pageLength: 50,
-    columns: [{ "width": "25%" }, null, null, { "width": "10%" }, null, null],
+    columns: [{"width": "25%"}, null, null, {"width": "10%"}, null, null],
     order: [[2, 'asc']]
 });
 let shouldRefresh = true;
@@ -56,23 +69,26 @@ document.addEventListener("DOMContentLoaded", (event) => {
             document.querySelector('#toggleRefreshText').innerText = "Automatic refresh paused";
         }
     });
-
-    // document.querySelector('#toggleLot').addEventListener('click', function () {
-    //     displayAll = !displayAll;
-    //     loadStockInfoToTable()
-    //     if (!displayAll) {
-    //         document.querySelector("#toggleLot").innerText = "Show All"
-    //         document.querySelector("#toggleLot").classList.remove("btn-outline-info")
-    //         document.querySelector("#toggleLot").classList.add("btn-outline-warning")
-    //         document.querySelector('#toggleLotText').innerText = "Listing: Next 3 lots by date";
-    //     } else {
-    //         document.querySelector("#toggleLot").innerText = "Show next 3"
-    //         document.querySelector("#toggleLot").classList.remove("btn-outline-warning")
-    //         document.querySelector("#toggleLot").classList.add("btn-outline-info")
-    //         document.querySelector('#toggleLotText').innerText = "Listing: All products by date";
-    //     }
-    // });
 });
+
+var consumeModal = document.querySelector("#consumeModal")
+consumeModal.addEventListener("show.bs.modal", function (ev) {
+    var button = ev.relatedTarget
+    var lableID = button.getAttribute("data-bs-labelid")
+    let hiddenInput = consumeModal.querySelector("#modalInputLabelid")
+    hiddenInput.value = lableID
+})
+
+consumeModal.querySelector("#consumeModalYes").addEventListener("click", function (ev) {
+    ev.preventDefault()
+    var labelId = consumeModal.querySelector("#modalInputLabelid").value
+    console.log(labelId)
+    fetch(`./api/v1/stocks/consume?label=${labelId}`).then(response => response.json()).then(result => {
+        console.log(result)
+        var model = bootstrap.model.getInstance(document.querySelector("#consumeModal"));
+        model.hide();
+    })
+})
 
 function loadStockInfoToTable() {
     table.clear().draw()
@@ -82,9 +98,8 @@ function loadStockInfoToTable() {
             table.column(2).order('asc');
             for (let index = 0; index < results.length; index++) {
                 const element = results[index];
-                // table.row.add([`${element.productCode} - ${element.productName}`, `${element.quantity} ${element.quantityUnit}`, element.bestbefore, element.shelfLocation, element.productLabel, `<a href="#" data-bs-labelid="${element.productLabel}">Consume</a>`]).draw(false);
-                table.row.add([`${element.productCode} - ${element.productName}`, `${element.quantity} ${element.quantityUnit}`, element.bestbefore, element.shelfLocation, element.productLabel, ``]).draw(false);
-                // table.row.add([ `${element.productCode} - ${element.productName}`, `${element.quantity} ${element.quantityUnit}`, element.bestbefore, element.shelfLocation, element.productLabel,`<a href="#" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-labelid="${element.productLabel}">Consume</a>`]).draw(false);
+                // table.row.add([`${element.productCode} - ${element.productName}`, `${element.quantity} ${element.quantityUnit}`, element.bestbefore, element.shelfLocation, element.productLabel, ``]).draw(false);
+                table.row.add([`${element.productCode} - ${element.productName}`, `${element.quantity} ${element.quantityUnit}`, element.bestbefore, element.shelfLocation, element.productLabel, `<a href="#" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-labelid="${element.productLabel}">Use</a>`]).draw(false);
             }
         }
     })
@@ -94,10 +109,10 @@ async function getAllStockItems() {
     let nowTime = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
     const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
     let cursor;
-    let result = { acknowledged: false, resultSet: [], message: "" }
+    let result = {acknowledged: false, resultSet: [], message: ""}
     try {
-        const query = { consumed: 0 }
-        const options = { sort: { bestbefore: -1 }, }
+        const query = {consumed: 0}
+        const options = {sort: {bestbefore: -1},}
         await client.connect();
         cursor = await sessions.find(query, options)
         if ((await sessions.countDocuments(query)) > 0) {
