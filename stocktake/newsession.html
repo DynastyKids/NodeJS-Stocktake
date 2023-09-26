@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="content-security-policy" content="default-src 'none'; script-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self' 'sha256-hayZOzBvvn7l/gT0R05KrZqQiIwY2vq78eOJFqJFGsI=';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline';">
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="../node_modules/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="../node_modules/flatpickr/dist/flatpickr.min.css">
@@ -11,92 +11,58 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="../index.html">Stocktake Electron</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
-                aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="../index.html">Home</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="sessionDropdown" role="button"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            Sessions
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="sessionDropdown">
-                            <li><a class="dropdown-item" href="../stocktake/newsession.html">New Stocktake Session</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../stocktake/listsession.html">Show all Sessions</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="productDropdown" role="button"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            Products
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="productDropdown">
-                            <li><a class="dropdown-item" href="../items/listProduct.html">Show all products</a></li>
-                            <li><a class="dropdown-item" href="../items/addProduct.html">Add product</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../items/listItem.html">Show stocks overview</a></li>
-                            <li><a class="dropdown-item" href="../items/addlog.html">Add new movement log</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" aria-current="page" href="../settings.html">Settings</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
+<nav class="navbar navbar-expand-lg navbar-light bg-light" id="navbar_top">
+    <script>
+        const navbarContent = document.querySelector("#navbar_top")
+        fetch('../layouts/template_navbar.html')
+            .then(response => response.text())
+            .then(data => {
+                navbarContent.innerHTML = data
+            })
+    </script>
+</nav>
+<div class="container">
+    <nav class="m-2" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
+            <li class="breadcrumb-item"><a href="listsession.html">Sessions</a></li>
+            <li class="breadcrumb-item active" aria-current="page">New Session</li>
+        </ol>
     </nav>
-    <div class="container">
-        <nav class="m-2" aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
-                <li class="breadcrumb-item"><a href="listsession.html">Sessions</a></li>
-                <li class="breadcrumb-item active" aria-current="page">New Session</li>
-            </ol>
-        </nav>
-        <div class="container-fluid">
-            <div class="mt-2 mb-5">
+    <div class="container-fluid">
+        <div class="mt-2 mb-5">
             <form id="newSessionForm">
                 <div class="form-group row mb-2">
                     <label for="staticSessionCode" class="col-sm-2 col-form-label">Session Code</label>
                     <div class="col-sm-6">
                         <input type="text" readonly class="form-control plaintext m-2" id="staticSessionCode"
-                            value="Please Wait...">
+                               value="Please Wait...">
                     </div>
                 </div>
                 <div class="form-group row mb-2">
-                    <label for="inputStartTime" class="col-sm-2 col-form-label">Start Time</label>
+                    <label for="inputStartDate" class="col-sm-2 col-form-label">Start Time</label>
                     <div class="col-sm-6">
                         <input type="text" class="form-control m-2" id="inputStartDate">
                     </div>
                 </div>
                 <div class="form-group row mb-2">
-                    <label for="inputEndTime" class="col-sm-2 col-form-label">End Time</label>
+                    <label for="inputEndDate" class="col-sm-2 col-form-label">End Time</label>
                     <div class="col-sm-6">
                         <input type="text" class="form-control m-2" id="inputEndDate">
                     </div>
                 </div>
                 <input type="submit" id="btnSubmit" value="Submit" class="btn btn-primary">
             </form>
-            </div>
-            <div class="row mt-4">
-                <small>* Session Code are available in numbers from 0-9 and characters A-F</small>
-            </div>
+        </div>
+        <div class="row mt-4" id="infotext">
+            <small>* Session Code are available in numbers from 0-9 and characters A-F</small>
         </div>
     </div>
+</div>
 
-    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../node_modules/flatpickr/dist/flatpickr.min.js"></script>
-    <script src="newsession.js"></script>
+<script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../node_modules/flatpickr/dist/flatpickr.min.js"></script>
+<script src="newsession.js"></script>
 </body>
 
 </html>

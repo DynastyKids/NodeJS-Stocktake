@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcRenderer, ipcMain } = require("electron");
+const {app, BrowserWindow, ipcRenderer, ipcMain} = require("electron");
 const path = require("path");
 const fs = require('fs');
 const os = require('os');
@@ -7,11 +7,30 @@ const moment = require('moment-timezone');
 const express = require('express')
 const expressApp = express()
 const wechatGetRequests = require('./apiserver/apimain');
-const { main } = require("@popperjs/core");
+const {main} = require("@popperjs/core");
 const port = 3000
 require('electron-reload')(__dirname);
 
+const i18next = require('i18next');
+const Backend = require('i18next-electron-fs-backend');
+const i18nextOptions = {
+    debug: true,
+    lng: 'en', // 默认语言
+    fallbackLng: 'en',
+    ns: ['translations'],
+    defaultNS: 'translations',
+    backend: {
+        loadPath: path.join(__dirname, '/i18nLocales/{{lng}}/{{ns}}.json'),
+        addPath: path.join(__dirname, '/i18nLocales/{{lng}}/{{ns}}.missing.json')
+    }
+};
+ipcMain.on('change-language', (event, language) => {
+    i18next.changeLanguage(language);
+    mainWindow.webContents.send('set-language', language);
+});
+
 let mainWindow;
+
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1024,
@@ -25,14 +44,14 @@ function createWindow() {
         },
     });
 
-    try{
-        let fileStatus = fs.statSync(path.join(__dirname,"config/localsettings.json"))
-        if (fileStatus.size > 10) {
+    try {
+        let fileStatus = fs.statSync(path.join(__dirname, "config/localsettings.json"))
+        if (fileStatus.isFile() && fileStatus.size > 10) {
             mainWindow.loadFile('index.html')
         } else {
-            mainWindow.loadFile("settings.html")
+            mainWindow.loadFile("settings/settings.html")
         }
-    } catch (err){
+    } catch (err) {
         mainWindow.loadFile('index.html')
         console.error(err)
     }
@@ -59,13 +78,18 @@ function createWindow() {
     // mainWindow.loadURL(`http://localhost:${port}`);
     mainWindow.webContents.on('did-finish-load', () => {
         const addressSet = getIPAddress() ? getIPAddress() : [];
-        mainWindow.webContents.send('server-info', { address, port, addressSet});
+        mainWindow.webContents.send('server-info', {address, port, addressSet});
+    });
+
+    mainWindow.on('resize', () => {
+        let [width, height] = mainWindow.getSize();
+        mainWindow.webContents.send('window-resize', {width, height});
     });
 }
 
-function getIPAddress(){
+function getIPAddress() {
     const networkInterfaces = os.networkInterfaces();
-    let addressSet=[];
+    let addressSet = [];
 
     for (let interface in networkInterfaces) {
         networkInterfaces[interface].forEach(details => {
@@ -87,7 +111,7 @@ app.on("activate", function () {
 });
 
 expressApp.get('/api/test', (req, res) => {
-    res.json({ message: 'Hello from server!' })
+    res.json({message: 'Hello from server!'})
 })
 
 expressApp.use("/", wechatGetRequests)
@@ -102,3 +126,4 @@ app.whenReady().then(() => {
 ipcMain.on('get-user-data-path', (event) => {
     event.returnValue = app.getPath('userData')
 })
+

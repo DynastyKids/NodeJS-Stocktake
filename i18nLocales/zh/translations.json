@@ -1,0 +1,113 @@
+{
+  "navbar": {
+    "home": "首页",
+    "sessions": "会话",
+    "newsession": "创建盘点会话",
+    "allsession": "展示会话列表",
+    "products": "产品",
+    "showallproducts": "列出所有产品",
+    "addproduct": "添加产品",
+    "showstocksoverview": "展示库存总览",
+    "showmovementlog": "列出货品移动记录",
+    "addmovementlog": "添加货品移动记录",
+    "settings": "设置",
+    "language": "语言"
+  },
+  "index": {
+    "pagetitle": "首页",
+    "label_hometitle": "首页",
+    "h4label_stocktakeaction": "盘点操作",
+    "link_allsessions": "所有会话",
+    "session_stocks": "会话中的库存",
+    "new_stocktake": "创建盘点会话",
+    "h4label_stocksaction": "库存操作",
+    "showstocksoverview": "展示库存总览",
+    "showmovementlog": "列出货品移动记录",
+    "addmovementlog": "添加货品移动记录",
+    "nextpallet2unwrap": "产品出库顺序表",
+    "h4label_productaction": "产品操作",
+    "showallproducts": "展示产品列表",
+    "addproduct": "添加产品",
+    "h3label_currentactivestocktake": "当前可用的盘点会话",
+    "h3label_environment": "当前系统环境"
+  },
+  "pageTitle": {
+    "note": "使用文件名作为关键字标记符",
+    "index": "主页",
+    "listsession": "会话列表"
+  },
+  "tables": {
+    "stocktable_sessionid": "会话ID",
+    "stocktable_startTime": "开始时间",
+    "stocktable_endTime": "截止时间",
+    "stocktable_setupTime": "创建时间",
+    "stocktable_action": "操作",
+    "btn_view": "查看",
+    "btn_edit": "编辑",
+    "btn_delete": "删除",
+    "btn_consume": "核销"
+  },
+  "session": {
+    "pagetitle": "会话管理"
+  },
+  "newsession": {
+    "pagetitle": "添加新会话",
+    "sessioncode": "会话编号",
+    "starttime": "开始时间",
+    "endtime": "结束时间",
+    "submitbtn": "提交",
+    "infotext": "* 会话编号的字符均为16进制，即0-9和A-F大写字母"
+  },
+  "listsession": {
+    "pagetitle": "会话列表",
+    "tablehead_sessionid": "会话ID",
+    "tablehead_starttime": "开始时间",
+    "tablehead_endtime": "结束时间",
+    "tablehead_setuptime": "创建时间"
+  },
+  "listsessionstock": {
+    "pagetitle": "当前会话库存",
+    "selectlabeltext": "选择盘点会话",
+    "table_titles": [  "产品批号", "产品信息", "数量", "结束时间", "有效期", "库位", "操作"]
+  },
+  "viewsession": {
+    "pagetitle": "库存盘点会话",
+    "h1title": "库存盘点会话",
+    "autorefresh": "距下次自动刷新还有 "
+  },
+  "setting": {
+    "pagetitle": "设置",
+    "dbform_labels": ["链接协议", "访问地址", "用户名", "密码", "数据库名"],
+    "dbform_placeholders": [ "数据库服务器地址", "数据库用户名", "数据库密码", "数据库名"],
+    "placeholderprotocol": "请选择一个链接协议",
+    "titleaboutdb": "关于数据库",
+    "titlescheme": "关于链接协议",
+    "titleenvironment": "环境变量",
+    "textaboutdb": "MongoDB 是一种文档数据库，它所具备的可扩展性和灵活性可以满足您对查询和索引的需求。",
+    "textscheme": "mongodb://是用于标识这是标准连接格式的字符串。从MongoDB v3.6起还支持DNS种子列表。使用DNS构造可用的服务器列表，可以提供更大的部署灵活性，并可以轮流更改服务器而无需重新配置客户端。此时则应当使用mongodb+srv:而不是标准的mongodb:"
+  },
+  "listproducts": {
+    "pagetitle": "产品列表",
+    "h4title_action": "相关操作",
+    "a_checkstockitems": "查看库存内容",
+    "table_entries": ["每页显示 "," 条目"],
+    "table_searchlabel": "搜索",
+    "table_titles": ["产品号", "产品名", "箱内数量", "板内数量", "有效期要求", "操作"]
+  },
+  "addproducts": {
+    "pagetitle": "添加产品",
+    "inputlabel": ["产品代码","产品标签名","产品详情","默认数量","数量单位","单位重量（克）","供应商代码","是否有保质期要求"],
+    "inputplaceholder": ["产品代码必须唯一", "产品标签用于标签打印", "产品描述（可选参数）", "产品默认数量，用于标签打印（可选参数）",
+      "产品重量（克）（可选参数）", "供应商代码（可选参数）"],
+    "submitbtn": "提交",
+    "unitSelections": [["Bottle","瓶"],["Bag","包"],["Box","盒"],["Carton","箱（纸箱）"],["Crate","箱（板条箱）"],["Each","个"],["Piece","件"]],
+    "expireSelection": [["0","否"],["1","是"]]
+  },
+  "scanner": {
+    "pagetitle": "终端扫描模式",
+    "inputplaceholder": "使用扫码枪或者手工输入条码",
+    "submitbtn": "提交",
+    "resultTableTitle": ["产品名称","数量","在此日期前最佳","标签识别号","货架位", "操作"],
+    "inputPlaceholder": ["使用扫码枪扫描一个二维码", "","","","","请填入货架位"]
+  }
+}

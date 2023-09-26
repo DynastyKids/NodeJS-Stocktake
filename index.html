@@ -3,214 +3,236 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="content-security-policy" content="default-src 'none'; script-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self' 'sha256-XRIee9ZEiz4ckviuCDVuStkiSW6Ij9/ExbttGnzRsb8=';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline';">
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="node_modules/font-awesome/css/font-awesome.min.css">
     <title>Home - Warehouse Electron</title>
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">Stocktake Electron</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+<nav class="navbar navbar-expand-lg navbar-light bg-light" id="navbar_top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">Stock-take Electron</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
                 aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">Home</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="sessionDropdown" role="button"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            Sessions
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="sessionDropdown">
-                            <li><a class="dropdown-item" href="stocktake/newsession.html">New Stocktake Session</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="stocktake/listsession.html">Show all Sessions</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="productDropdown" role="button"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            Products
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="productDropdown">
-                            <li><a class="dropdown-item" href="items/listProduct.html">Show all products</a></li>
-                            <li><a class="dropdown-item" href="items/addProduct.html">Add product</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="items/stocks.html">Show stocks overview</a></li>
-                            <li><a class="dropdown-item" href="items/listlog.html">Show movement log</a></li>
-                            <li><a class="dropdown-item" href="items/addlog.html">Add new movement log</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" aria-current="page" href="settings.html">Settings</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    <div class="container">
-        <nav class="m-2" aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item active" aria-current="page">Home</li>
-            </ol>
-        </nav>
-        <h1>Homepage</h1>
-        <div class="container-fluid">
-            <table class="table">
-                <tr>
-                    <td>
-                        <h4>Stocktake Action</h4>
-                        <ul class="list-group">
-                            <li class="list-group-item list-group-item-action">
-                                <a href="stocktake/listsession.html">Show All Sessions</a>
-                            </li>
-                            <li class="list-group-item list-group-item-action">
-                                <a href="stocktake/listSessionStocks.html">Show Session Stocks</a>
-                            </li>
-                            <li class="list-group-item list-group-item-action">
-                                <a href="stocktake/newsession.html">New Stocktake Session</a>
-                            </li>
-                        </ul>
-                    </td>
-                    <td>
-                        <h4>Stocks Action</h4>
-                        <ul class="list-group">
-                            <li class="list-group-item list-group-item-action">
-                                <a href="items/listStocks.html">Show Stocks Overview</a>
-                            </li>
-                            <li class="list-group-item list-group-item-action">
-                                <a href="items/addlog.html" data-bs-toggle="modal" data-bs-target="#addMovementLogModal">Add movement log</a>
-                            </li>
-                        </ul>
-                    </td>
-                    <td>
-                        <h4>Product Action</h4>
-                        <ul class="list-group">
-                            <li class="list-group-item list-group-item-action">
-                                <a href="items/listProduct.html">Show all products</a>
-                            </li>
-                            <li class="list-group-item list-group-item-action">
-                                <a href="items/addProduct.html">Add a product</a>
-                            </li>
-                        </ul>
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-        <!-- Add New Movement Log Model -->
-        <div class="modal fade" id="addMovementLogModal" data-bs-backdrop="static" data-bs-keyboard="false"
-            tabindex="-1" aria-labelledby="addMovementLogModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addMovementLogModalLabel">Add Movement Log
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <form id="addMovementForm">
-                        <div class="modal-body">
-                            <div class="row">
-                                <p>Input a shelf or a product Label ID to select a product</p>
-                                <div class="col-md-6 mb-3">
-                                    <label for="inputShelfLocation" class="form-label">Shelf Location</label>
-                                    <input type="text" maxlength=3 class="form-control" id="inputShelfLocation"
-                                        aria-describedby="shelfHelp">
-                                    <div id="shelfHelp" class="form-text">Input Item location on shelf.<br>E.g. 'AN1' means item located at shelf AN, level 1</div>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="inputProductLabel" class="form-label">Product Label ID</label>
-                                    <input type="text" class="form-control" id="inputProductLabel"
-                                        aria-describedby="labelHelp">
-                                    <div id="labelHelp" class="form-text">Input Product Label ID to find specific LOT</div>
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="formSelectAction" class="form-label">Action</label>
-                                    <select class="form-select" id="formSelectAction" aria-label="Default select example">
-                                        <option value="consume">Unwrapped / Shipped</option>
-                                        <option value="move">Move to another shelf</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="inputNewLocation" class="form-label">New Location</label>
-                                    <input type="text" class="form-control" maxlength=3 id="inputNewLocation" disabled>
-                                </div>
-                            </div>
-                            <hr>  <!--以下部分由脚本填充用户核对，提交时候忽略-->
-                            <h5>Automatic fetched Data</h5>
-                            <div class="mb-2 row">
-                                <div class="col-md-6 mb-2">
-                                    <label for="inputProductName" class="form-label">Product Name</label>
-                                    <input type="text" class="form-control" id="inputProductName" disabled>
-                                </div>
-                                <div class="col-md-6 mb-2">
-                                    <label for="inputQuantity" class="form-label">Product Quantity</label>
-                                    <input type="text" class="form-control" id="inputQuantity" disabled>
-                                </div>
-                                <div class="col-md-6 mb-2">
-                                    <label for="inputBestBefore" class="form-label">Product Expire Date </label>
-                                    <input type="text" class="form-control" id="inputBestBefore" disabled>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary">Submit</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div> <!-- Add New Movement Log Model End-->
-        <hr>
-        <div class="container-fluid">
-            <h3>Current active stocktake session:</h3>
-            <table class="table">
-                <thead>
-                    <th>Session ID</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
-                    <th>Action</th>
-                </thead>
-                <!-- 用来展示当前没有结束的sessions -->
-                <tbody id="activeSessionTBody">
-                    <tr>
-                        <td colspan="4">None</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <hr>
-        <div class="container-fluid">
-            <h3>Environment Info:</h3>
-            <table class="table" style="width: auto;">
-                <tr>
-                    <td>Environment Info:</td>
-                    <td>Node.js: <p id="node-version"></p></td>
-                    <td>Chromium: <p id="chrome-version"></p></td>
-                    <td>Electron: <p id="electron-version"></p></td>
-                </tr>
-                <tr>
-                    <td>Server Info:</td>
-                    <td>Address: <p id="serverAddressText"></p></td>
-                    <td>Port<p id="serverPortText"></p></td>
-                    <td></td>
-                </tr>
-            </table>
-            <hr>
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="#" id="navHome">Home</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="sessionDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        Sessions
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="sessionDropdown" id="sessionDropdownList">
+                        <li><a class="dropdown-item" href="stocktake/newsession.html">New Stocktake Session</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="stocktake/listsession.html">Show all Sessions</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="productDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        Products
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="productDropdown" id="productDropdownList">
+                        <li><a class="dropdown-item" href="items/listProduct.html">Show all products</a></li>
+                        <li><a class="dropdown-item" href="items/addProduct.html">Add product</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="items/stocks.html">Show stocks overview</a></li>
+                        <li><a class="dropdown-item" href="items/listlog.html">Show movement log</a></li>
+                        <li><a class="dropdown-item" href="items/addlog.html">Add new movement log</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" aria-current="page" href="config/settings.html" id="navSettings">Settings</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="LanguageDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        Language
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="productDropdown">
+                        <li>
+                            <select id="languageSelector" onchange="updateTexts(this.value)">
+                                <option value="en">English</option>
+                                <option value="zh">简体中文</option>
+                            </select>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" aria-current="page" href="scanner/scanner.html" id="scannermode">Scanner Mode</a>
+                </li>
+            </ul>
         </div>
     </div>
+</nav>
+<div class="container">
+    <nav class="m-2" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page">Home</li>
+        </ol>
+    </nav>
+    <h1>Homepage</h1>
+    <div class="container-fluid">
+        <table class="table">
+            <tr>
+                <td>
+                    <h4>Stocktake Action</h4>
+                    <ul class="list-group">
+                        <li class="list-group-item list-group-item-action">
+                            <a href="stocktake/listsession.html">Show All Sessions</a>
+                        </li>
+                        <li class="list-group-item list-group-item-action">
+                            <a href="stocktake/listSessionStocks.html">Show Session Stocks</a>
+                        </li>
+                        <li class="list-group-item list-group-item-action">
+                            <a href="stocktake/newsession.html">New Stocktake Session</a>
+                        </li>
+                    </ul>
+                </td>
+                <td>
+                    <h4>Stocks Action</h4>
+                    <ul class="list-group">
+                        <li class="list-group-item list-group-item-action">
+                            <a href="items/listStocks.html">Show Stocks Overview</a>
+                        </li>
+                        <li class="list-group-item list-group-item-action">
+                            <a href="items/addlog.html" data-bs-toggle="modal" data-bs-target="#addMovementLogModal">Add
+                                movement log</a>
+                        </li>
+                        <li class="list-group-item list-group-item-action">
+                            <a href="items/listnext3.html">Next pallet to unwrap</a>
+                        </li>
+                    </ul>
+                </td>
+                <td>
+                    <h4>Product Action</h4>
+                    <ul class="list-group">
+                        <li class="list-group-item list-group-item-action">
+                            <a href="items/listProduct.html">Show all products</a>
+                        </li>
+                        <li class="list-group-item list-group-item-action">
+                            <a href="items/addProduct.html">Add a product</a>
+                        </li>
+                    </ul>
+                </td>
+            </tr>
+        </table>
+    </div>
 
-    <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="index.js"></script>
+    <!-- Add New Movement Log Model -->
+    <div class="modal fade" id="addMovementLogModal" data-bs-backdrop="static" data-bs-keyboard="false"
+         tabindex="-1" aria-labelledby="addMovementLogModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addMovementLogModalLabel">Add Movement Log
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="addMovementForm">
+                    <div class="modal-body">
+                        <div class="row">
+                            <p>Input a shelf or a product Label ID to select a product</p>
+                            <div class="col-md-6 mb-3">
+                                <label for="inputShelfLocation" class="form-label">Shelf Location</label>
+                                <input type="text" maxlength=3 class="form-control" id="inputShelfLocation"
+                                       aria-describedby="shelfHelp">
+                                <div id="shelfHelp" class="form-text">Input Item location on shelf.<br>E.g. 'AN1' means
+                                    item located at shelf AN, level 1
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="inputProductLabel" class="form-label">Product Label ID</label>
+                                <input type="text" class="form-control" id="inputProductLabel"
+                                       aria-describedby="labelHelp">
+                                <div id="labelHelp" class="form-text">Input Product Label ID to find specific LOT</div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="formSelectAction" class="form-label">Action</label>
+                                <select class="form-select" id="formSelectAction" aria-label="Default select example">
+                                    <option value="consume">Unwrapped / Shipped</option>
+                                    <option value="move">Move to another shelf</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="inputNewLocation" class="form-label">New Location</label>
+                                <input type="text" class="form-control" maxlength=3 id="inputNewLocation" disabled>
+                            </div>
+                        </div>
+                        <hr>  <!--以下部分由脚本填充用户核对，提交时候忽略-->
+                        <h5>Automatic fetched Data</h5>
+                        <div class="mb-2 row">
+                            <div class="col-md-6 mb-2">
+                                <label for="inputProductName" class="form-label">Product Name</label>
+                                <input type="text" class="form-control" id="inputProductName" disabled>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label for="inputQuantity" class="form-label">Product Quantity</label>
+                                <input type="text" class="form-control" id="inputQuantity" disabled>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label for="inputBestBefore" class="form-label">Product Expire Date </label>
+                                <input type="text" class="form-control" id="inputBestBefore" disabled>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div> <!-- Add New Movement Log Model End-->
+    <hr>
+    <div class="container-fluid" id="activeStocktakeContainer">
+        <h3>Current active stocktake session:</h3>
+        <table class="table">
+            <thead>
+            <th>Session ID</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Action</th>
+            </thead>
+            <!-- 用来展示当前没有结束的sessions -->
+            <tbody id="activeSessionTBody">
+            <tr>
+                <td colspan="4">None</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <hr>
+    <div class="container-fluid" id="environmentContainer">
+        <h3>Environment Info:</h3>
+        <table class="table" style="font-size: small">
+            <tr>
+                <td>Server Address: <p id="serverAddressText"></p></td>
+                <td>Server Port: <p id="serverPortText"></p></td>
+                <td>Node.js: <p id="node-version"></p></td>
+                <td>Chromium: <p id="chrome-version"></p></td>
+                <td>Electron: <p id="electron-version"></p></td>
+            </tr>
+        </table>
+        <hr>
+    </div>
+</div>
+
+<script src="node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="index.js"></script>
 </body>
 
 </html>

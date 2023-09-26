@@ -1,97 +1,147 @@
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
-const flatpickr = require("flatpickr");
-const fs=require('fs');
+const fs = require('fs');
 const path = require('path');
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
 const moment = require('moment-timezone')
-let lastSession=""
-const uri = encodeURI(credentials.mongodb_protocol+"://" + credentials.mongodb_username + ":" + credentials.mongodb_password + "@" + credentials.mongodb_server + "/?retryWrites=true&w=majority");
+const {ipcRenderer} = require('electron')
 
-const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}});
+const uriCompents = [credentials.mongodb_protocol, "://"]
+if (credentials.mongodb_username && credentials.mongodb_password) {
+    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
+}
+uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
+const uri = encodeURI(uriCompents.join(""))
+
+const {setInterval} = require('timers');
+const client = new MongoClient(uri, {
+    serverApi: {
+        version: ServerApiVersion.v1,
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    }
+});
 
 var $ = require('jquery');
 var DataTable = require('datatables.net')(window, $);
 require('datatables.net-responsive');
 
 
+let table = new DataTable('#stockTable', {
+    responsive: true,
+    pageLength: 50,
+    columns: [{"width": "25%"}, null, null, {"width": "10%"}, null, null],
+    order: [[2, 'asc']]
+});
+let shouldRefresh = true;
+const countdownFrom = 120;
+let countdown = 120;
+
+let displayAll = false;
 
 document.addEventListener("DOMContentLoaded", (event) => {
-    getAllStockItems().then(result=>{
-        let dataArray=[]
-        if(result.acknowledged){
-                result.resultSet.forEach(element => {
-                    dataArray.push([element.productLabel,`${element.productCode} - ${element.productName}`,`${element.quantity} ${element.quantityUnit}`, element.bestbefore, element.shelfLocation, `<a href="#" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-stockid="${element.productLabel}">Consume</a>`])
-                })
+    loadStockInfoToTable()
+    const automaticRefresh = setInterval(() => {
+        if (shouldRefresh) {
+            loadStockInfoToTable()
+            countdown = countdownFrom;
         }
-        let table = new DataTable('#stockTable', {
-            responsive: true,
-            data: dataArray
-        });
-    })
+    }, countdownFrom * 1000)
+    const countdownInterval = setInterval(() => {
+        if (shouldRefresh) {
+            countdown -= 1
+            document.querySelector("#toggleRefreshText").innerText = `Automatic refresh in: ${countdown}s`
+        }
+    }, 1000)
+
+    document.querySelector('#toggleRefresh').addEventListener('click', function () {
+        shouldRefresh = !shouldRefresh;
+        if (shouldRefresh) {
+            document.querySelector("#toggleRefresh").innerText = "Pause"
+            document.querySelector("#toggleRefresh").classList.remove("btn-outline-success")
+            document.querySelector("#toggleRefresh").classList.add("btn-outline-warning")
+            countdown = countdownFrom; // 重置倒计时
+        } else {
+            document.querySelector("#toggleRefresh").innerText = "Resume"
+            document.querySelector("#toggleRefresh").classList.remove("btn-outline-warning")
+            document.querySelector("#toggleRefresh").classList.add("btn-outline-success")
+            document.querySelector('#toggleRefreshText').innerText = "Automatic refresh paused";
+        }
+    });
 });
 
-async function getAllStockItems(){
+var consumeModal = document.querySelector("#consumeModal")
+consumeModal.addEventListener("show.bs.modal", function (ev) {
+    var button = ev.relatedTarget
+    var lableID = button.getAttribute("data-bs-labelid")
+    let hiddenInput = consumeModal.querySelector("#modalInputLabelid")
+    hiddenInput.value = lableID
+})
+
+consumeModal.querySelector("#consumeModalYes").addEventListener("click", async function (ev) {
+    ev.preventDefault()
+    let labelId = consumeModal.querySelector("#modalInputLabelid").value
+    let model = bootstrap.Modal.getInstance(document.querySelector("#consumeModal"));
+    let localTime = moment(new Date()).tz("Australia/Sydney");
+    try {
+        await client.connect();
+        const session = client.db(credentials.mongodb_db).collection("pollinglog");
+        let result = await session.updateMany({productLabel: labelId, consumed: 0} , {$set: {consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")}},{upsert: false})
+        if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) { //找到符合条件的数据且成功修改了
+            console.log("Successfully update status for: ",labelId)
+        } else if (result.matchedCount === 0) { //未找到符合条件的数据但成功执行了
+            console.log(`Label ID: ${labelId} Not Found`)
+        }
+    } catch (e) {
+        console.error(`Remove Stock Error when process: ${labelId};`,e)
+    } finally {
+        client.close()
+        model.hide()
+    }
+})
+
+function loadStockInfoToTable() {
+    table.clear().draw()
+    getAllStockItems().then(result => {
+        if (result.acknowledged) {
+            let results = result.resultSet
+            table.column(2).order('asc');
+            for (let index = 0; index < results.length; index++) {
+                const element = results[index];
+                table.row.add([
+                    `${element.productCode} - ${element.productName}`,
+                    `${element.quantity} ${element.quantityUnit}`,
+                    element.bestbefore,
+                    element.shelfLocation,
+                    element.productLabel,
+                    `<a href="#" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-labelid="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>`
+                ]).draw(false);
+            }
+        }
+    })
+}
+
+async function getAllStockItems() {
     let nowTime = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
     const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
     let cursor;
-    let result = {acknowledged: false, resultSet: [], message:""}
-
+    let result = {acknowledged: false, resultSet: [], message: ""}
     try {
         const query = {consumed: 0}
-        const options = {sort:{bestbefore: -1}}
+        const options = {sort: {bestbefore: -1},}
         await client.connect();
-        cursor = await sessions.find(query,options)
+        cursor = await sessions.find(query, options)
         if ((await sessions.countDocuments(query)) > 0) {
             result.acknowledged = true
             result.resultSet = await cursor.toArray()
         }
+        console.log(result.resultSet)
     } catch (err) {
         console.error(err)
         result['message'] = err
+    } finally {
+        client.close()
     }
 
     return result
-}
-
-
-async function getAllItemsFromSession(sessionCode){
-    let nowTime= moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
-    const tomorrow = (new Date('today')).setDate(new Date('today').getDate()+1)
-    const options = {sort: { startDate: -1 },};
-    const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
-    let cursor;
-    let htmlContent=""
-    if(sessionCode == ""){
-        sessionCode = lastSession
-    }
-    try {
-        await client.connect();
-        cursor = sessions.find({$or: [{session:""},{session:sessionCode}]});
-        if ((await sessions.countDocuments({})) === 0) {
-            console.log("[MongoDB] Nothing Found");
-            document.querySelector("#activeTBody").innerHTML = "<tr><td colspan=5>No item found in this session available</td></tr>"
-        } 
-
-        for await (const x of cursor) {
-            htmlContent+=`<tr>
-                <td><small>${x.productLabel}</small></td>
-                <td><small>${x.productCode} - ${x.productName}</small></td>
-                <td><small>${x.quantity} ${x.quantityUnit}</small></td>
-                <td>${x.bestbefore}</td>
-                <td>${x.shelfLocation}</td>
-                <td class="action">
-                    <a href="#" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-stockid="${x.productLabel}">Consume</a>
-                    <a href="#" data-bs-toggle="modal" data-bs-target="#stockEditModal" data-bs-stockid="${x.productLabel}">Edit</a>
-                </td></tr>`
-        }
-
-        document.querySelector("#activeTBody").innerHTML = htmlContent
-    } catch(err){
-        console.error(err)
-        htmlContent = "<tr><td colspan=5>No item found in this session available</td></tr>"
-        document.querySelector("#activeTBody").innerHTML = htmlContent
-    }
-
-    return htmlContent;
 }

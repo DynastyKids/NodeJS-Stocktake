@@ -58,13 +58,6 @@ paths:
           explode: false
           schema:
             type: string
-        - name: item
-          in: query
-          description: A base64 encrypted string contains all product info as schema shows
-          required: true
-          explode: false
-          schema:
-            type: string
       responses:
         '200':
           description: successful operation

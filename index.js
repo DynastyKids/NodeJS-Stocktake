@@ -1,173 +1,279 @@
-const { Autocomplete } = require("@tarekraafat/autocomplete.js")
-const { ipcRenderer, ipcMain } = require("electron");
+const {Autocomplete} = require("@tarekraafat/autocomplete.js")
+const {ipcRenderer, ipcMain} = require("electron");
 const MongoClient = require('mongodb').MongoClient;
-const { ServerApiVersion } = require('mongodb');
+const {ServerApiVersion} = require('mongodb');
 const path = require('path');
 const fs = require('fs');
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, 'config/localsettings.json')));
 const moment = require('moment-timezone')
 
-ipcRenderer.on('server-info', (event, { address, port, addressSet }) => {
-	let addressHTML = ""
-	if (addressSet.length > 0){
-		addressSet.forEach(eachadd =>{
-			addressHTML += eachadd + "<br>"
-		})
-		document.querySelector("#serverAddressText").innerHTML = addressHTML;
-	} else {
-		document.querySelector("#serverAddressText").innerHTML = address;
-	}
-	document.querySelector("#serverPortText").innerText = port;
+const i18next = require('i18next');
+const Backend = require('i18next-fs-backend');
+i18next.use(Backend).init({
+    lng: 'en', backend: {loadPath: 'i18nLocales/{{lng}}/translations.json'}
+}).then(() => {
+    updateTexts();
 });
 
-const uri = encodeURI(credentials.mongodb_protocol + "://" + credentials.mongodb_username + ":" + credentials.mongodb_password + "@" + credentials.mongodb_server + "/?retryWrites=true&w=majority");
-const client = new MongoClient(uri, { serverApi: { version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true } });
+document.getElementById('languageSelector').addEventListener('change', (e) => {
+    i18next.changeLanguage(e.target.value).then(() => {
+        updateTexts();
+    });
+});
+
+function updateTexts() {
+    document.title = `${i18next.t('index.pagetitle')} - Warehouse Electron`
+    // Navbar Section
+    document.querySelector("#navHome").textContent = i18next.t('navbar.home');
+    document.querySelector("#sessionDropdown").textContent = i18next.t('navbar.sessions');
+    var sessionDropdownLinks = document.querySelectorAll("#sessionDropdownList a");
+    sessionDropdownLinks[0].textContent = i18next.t('navbar.newsession');
+    sessionDropdownLinks[1].textContent = i18next.t('navbar.allsession');
+
+    document.querySelector("#productDropdown").textContent = i18next.t('navbar.products');
+    var productDropdownLinks = document.querySelectorAll("#productDropdownList a");
+    productDropdownLinks[0].textContent = i18next.t('navbar.showallproducts');
+    productDropdownLinks[1].textContent = i18next.t('navbar.addproduct');
+    productDropdownLinks[2].textContent = i18next.t('navbar.showstocksoverview');
+    productDropdownLinks[3].textContent = i18next.t('navbar.showmovementlog');
+    productDropdownLinks[4].textContent = i18next.t('navbar.addmovementlog');
+
+    document.querySelector("#navSettings").textContent = i18next.t('navbar.settings');
+    document.querySelector("#LanguageDropdown").textContent = i18next.t('navbar.language');
+
+    // Content Section
+    document.querySelector(".breadcrumb-item").textContent = i18next.t('index.pagetitle');
+    document.querySelector(".container h1").textContent = i18next.t('index.pagetitle');
+    var h4subtitles = document.querySelectorAll(".container h4")
+    h4subtitles[0].textContent = i18next.t('index.h4label_stocktakeaction');
+    h4subtitles[1].textContent = i18next.t('index.h4label_stocksaction');
+    h4subtitles[2].textContent = i18next.t('index.h4label_productaction');
+
+    var h3subtitles = document.querySelectorAll(".container h3")
+    h3subtitles[0].textContent = i18next.t('index.h3label_currentactivestocktake');
+    h3subtitles[1].textContent = i18next.t('index.h3label_environment');
+
+    var actionLinks = document.querySelectorAll(".container table a")
+    // Stock-take actions
+    actionLinks[0].textContent = i18next.t('index.link_allsessions');
+    actionLinks[1].textContent = i18next.t('index.session_stocks');
+    actionLinks[2].textContent = i18next.t('index.new_stocktake');
+    // Stock actions
+    actionLinks[3].textContent = i18next.t('index.showstocksoverview');
+    actionLinks[4].textContent = i18next.t('index.addmovementlog');
+    actionLinks[5].textContent = i18next.t('index.nextpallet2unwrap');
+    // product actions
+    actionLinks[6].textContent = i18next.t('index.showallproducts');
+    actionLinks[7].textContent = i18next.t('index.addproduct');
+
+    var tableTitles = document.querySelectorAll("#activeStocktakeContainer table th")
+    tableTitles[0].textContent = i18next.t('tables.stocktable_sessionid');
+    tableTitles[1].textContent = i18next.t('tables.stocktable_startTime');
+    tableTitles[2].textContent = i18next.t('tables.stocktable_endTime');
+    tableTitles[3].textContent = i18next.t('tables.stocktable_action');
+
+    var tableRowActions = document.querySelectorAll(".tableaction_view")
+    tableRowActions.forEach(eachRow => {
+        eachRow.textContent = i18next.t('tables.btn_view');
+    })
+}
+
+ipcRenderer.on('server-info', (event, {address, port, addressSet}) => {
+    let addressHTML = ""
+    if (addressSet.length > 0) {
+        addressSet.forEach(eachadd => {
+            addressHTML += eachadd + "<br>"
+        })
+        document.querySelector("#serverAddressText").innerHTML = addressHTML;
+    } else {
+        document.querySelector("#serverAddressText").innerHTML = address;
+    }
+    document.querySelector("#serverPortText").innerText = port;
+});
+
+const uriCompents = [credentials.mongodb_protocol, "://"]
+if (credentials.mongodb_username && credentials.mongodb_password) {
+    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
+}
+uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
+const uri = encodeURI(uriCompents.join(""))
+
+const client = new MongoClient(uri, {
+    serverApi: {
+        version: ServerApiVersion.v1,
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    }
+});
 
 
 async function getCurrentSession() {
-	let localTime = moment(new Date()).tz("Australia/Sydney")
-	const options = { sort: { startDate: 1 }, };
-	const sessions = client.db(credentials.mongodb_db).collection("pollingsession");
-	let findingQuery = { endDate: { $gte: localTime.format('YYYY-MM-DD HH:mm:ss') } }
-	let cursor;
-	let htmlContent = ""
-	try {
-		await client.connect();
-		cursor = sessions.find(findingQuery, options);
-		if ((await sessions.countDocuments(findingQuery)) === 0) {
-			console.log("[MongoDB] Nothing Found");
-		}
+    let localTime = moment(new Date()).tz("Australia/Sydney")
+    const options = {sort: {startDate: 1},};
+    const sessions = client.db(credentials.mongodb_db).collection("pollingsession");
+    let findingQuery = {endDate: {$gte: localTime.format('YYYY-MM-DD HH:mm:ss')}}
+    let cursor;
+    let htmlContent = ""
+    try {
+        await client.connect();
+        cursor = sessions.find(findingQuery, options);
+        if ((await sessions.countDocuments(findingQuery)) === 0) {
+            console.log("[MongoDB] Nothing Found");
+        }
 
-		for await (const x of cursor) {
-			htmlContent += `<tr><td>${x.session}</td><td>${x.startDate}</td><td>${x.endDate}</td><td><a href="stocktake/viewsession.html?id=${x.session}">View</a></td></tr>`
-		}
+        for await (const x of cursor) {
+            htmlContent += `<tr><td>${x.session}</td><td>${x.startDate}</td><td>${x.endDate}</td><td><a href="stocktake/viewsession.html?id=${x.session}" class="tableaction_view">View</a></td></tr>`
+        }
 
-		if (htmlContent.length > 0) {
-			document.querySelector("#activeSessionTBody").innerHTML = htmlContent
-		}
-	} catch (err) {
-		console.error(err)
-	}
+        if (htmlContent.length > 0) {
+            document.querySelector("#activeSessionTBody").innerHTML = htmlContent
+        }
+    } catch (err) {
+        console.error(err)
+    }
 
-	return [cursor, htmlContent];
+    return [cursor, htmlContent];
 }
 
 window.onload = () => {
-	console.log(getCurrentSession().catch(console.log));
-	qrv2patch()
+    console.log(getCurrentSession().catch(console.log));
+    qrv2patch()
 }
 
 async function qrv2patch() {
-	const logsessions = client.db(credentials.mongodb_db).collection("pollinglog");
-	const productsessions = client.db(credentials.mongodb_db).collection("products");
-	var productList = productsessions.find({})
-	for await (const x of productList) {
-		var whereCondition = { productCode: x.labelname }
-		var updateInfo = {
-			$set: { productCode: x.itemcode, productName: x.labelname }
-		}
-		var updateResult = await logsessions.updateMany(whereCondition, updateInfo)
-	}
+    const logsessions = client.db(credentials.mongodb_db).collection("pollinglog");
+    const productsessions = client.db(credentials.mongodb_db).collection("products");
+    var productList = productsessions.find({})
+    for await (const x of productList) {
+        var whereCondition = {productCode: x.labelname}
+        var updateInfo = {
+            $set: {productCode: x.itemcode, productName: x.labelname}
+        }
+        var updateResult = await logsessions.updateMany(whereCondition, updateInfo)
+    }
 
-	var logLists = logsessions.find({})
-	for await (const x of logLists) {
-		if (String(x.productCode).includes("TP") || String(x.productCode).includes("SP") || String(x.productCode) == "IG001") {
-			if (x.quantityUnit == "" && x.quantity < 50) {
-				logsessions.updateOne({ _id: x._id }, { $set: { quantityUnit: "carton" } })
-			} else if (x.quantityUnit == "" && x.quantity >= 50) {
-				logsessions.updateOne({ _id: x._id }, { $set: { quantityUnit: "bottles" } })
-			}
-		}
-
-	}
+    var logLists = logsessions.find({})
+    for await (const x of logLists) {
+        if (String(x.productCode).includes("TP") || String(x.productCode).includes("SP") || String(x.productCode) == "IG001") {
+            if (x.quantityUnit == "" && x.quantity < 50) {
+                logsessions.updateOne({_id: x._id}, {$set: {quantityUnit: "carton"}})
+            } else if (x.quantityUnit == "" && x.quantity >= 50) {
+                logsessions.updateOne({_id: x._id}, {$set: {quantityUnit: "bottles"}})
+            }
+        }
+    }
 }
 
-document.querySelector("#formSelectAction").addEventListener("change", function(e){
-	if (this.value === 'consume') {
-		document.querySelector("#inputNewLocation").value = ""
-		document.querySelector("#inputNewLocation").setAttribute("disabled","")
-	} else if (this.value === 'move') {
-		document.querySelector("#inputNewLocation").value= ""
-		document.querySelector("#inputNewLocation").removeAttribute("disabled")
-	}
+document.querySelector("#formSelectAction").addEventListener("change", function (e) {
+    if (this.value === 'consume') {
+        document.querySelector("#inputNewLocation").value = ""
+        document.querySelector("#inputNewLocation").setAttribute("disabled", "")
+    } else if (this.value === 'move') {
+        document.querySelector("#inputNewLocation").value = ""
+        document.querySelector("#inputNewLocation").removeAttribute("disabled")
+    }
 })
 
 document.querySelector("#inputShelfLocation").addEventListener("input", async function (e) {
-	if (this.value.length >= 3) {
-		// 当用户输入库位信息后,转换为大写,然后开始搜索是否有符合的信息,如果没有则无反应
-		const regex = /[A-Za-z]{2}[0-9]/
-		if(regex.test(String(this.value))){
-			let resultOne = await inputSearchShelf(String(this.value).toUpperCase());
-			if(resultOne !== null) {
-				document.querySelector("#inputProductLabel").value = (resultOne.productLabel ? resultOne.productLabel : "")
-				//disabled section text
-				document.querySelector("#inputProductName").value = (resultOne.productName ? resultOne.productName : "")
-				document.querySelector("#inputQuantity").value = `${(resultOne.quantity ? resultOne.quantity : "")} ${(resultOne.quantityUnit ? resultOne.quantityUnit : "")}`
-				document.querySelector("#inputBestBefore").value = (resultOne.bestbefore ? resultOne.bestbefore : "")
-			}
-		}
-	}
+    if (this.value.length >= 3) {
+        // 当用户输入库位信息后,转换为大写,然后开始搜索是否有符合的信息,如果没有则无反应
+        const regex = /[A-Za-z]{2}[0-9]/
+        if (regex.test(String(this.value))) {
+            let resultOne = await inputSearchShelf(String(this.value).toUpperCase());
+            if (resultOne !== null) {
+                document.querySelector("#inputProductLabel").value = (resultOne.productLabel ? resultOne.productLabel : "")
+                //disabled section text
+                document.querySelector("#inputProductName").value = (resultOne.productName ? resultOne.productName : "")
+                document.querySelector("#inputQuantity").value = `${(resultOne.quantity ? resultOne.quantity : "")} ${(resultOne.quantityUnit ? resultOne.quantityUnit : "")}`
+                document.querySelector("#inputBestBefore").value = (resultOne.bestbefore ? resultOne.bestbefore : "")
+            }
+        }
+    }
 });
 
-document.querySelector("#addMovementForm").addEventListener("submit", async function(e){
-	e.preventDefault();
-	var formAction = document.querySelector("#formSelectAction").value
-	var result = {acknowledged: false}
-	var regexLabel = /[0-9]{8}[A-Fa-f0-9]{7}/
-	if(regexLabel.test(document.querySelector("#inputProductLabel").value)){
-		//用户提交表单,修改loggingTime,如果是move则更新shelfLocation,如果是consumed则修改consumed为1
-		var productInfo={productLabel: document.querySelector("#inputProductLabel").value}
-		const session = client.db(credentials.mongodb_db).collection("pollinglog");
-		if(formAction === "consume"){
-			result = await session.updateMany(productInfo,{consumed :1, loggingTime: moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')}, {upsert:false})
-		}
-		if(formAction === "move"){
-			var newLocation = document.querySelector("#inputNewLocation").value
-			const regex = /[A-Za-z]{2}[0-9]/
-			if(regex.test(String(newLocation))){
-				result = await session.updateMany(productInfo,{shelfLocation: newLocation, loggingTime: moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')}, {upsert:false})
-			}
-		}
-	}
-	console.log(result)
+document.querySelector("#addMovementForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var formAction = document.querySelector("#formSelectAction").value
+    var result = {acknowledged: false}
+    var regexLabel = /[0-9]{8}[A-Fa-f0-9]{7}/
+    if (regexLabel.test(document.querySelector("#inputProductLabel").value)) {
+        //用户提交表单,修改loggingTime,如果是move则更新shelfLocation,如果是consumed则修改consumed为1
+        var productInfo = {productLabel: document.querySelector("#inputProductLabel").value}
+        const session = client.db(credentials.mongodb_db).collection("pollinglog");
+        if (formAction === "consume") {
+            result = await session.updateMany(productInfo, {
+                consumed: 1,
+                loggingTime: moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
+            }, {upsert: false})
+        }
+        if (formAction === "move") {
+            var newLocation = document.querySelector("#inputNewLocation").value
+            const regex = /[A-Za-z]{2}[0-9]/
+            if (regex.test(String(newLocation))) {
+                result = await session.updateMany(productInfo, {
+                    shelfLocation: newLocation,
+                    loggingTime: moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
+                }, {upsert: false})
+            }
+        }
+    }
+    console.log(result)
 })
 
 async function inputSearchLabel(labelid) {
-	// 通过label搜索在库物品，需要确认：物品未被使用，使用findOne，按照loggingTime -1排序
-	let result={}
-	try {
-		const logsessions = client.db(credentials.mongodb_db).collection("pollinglog");
-		const query = { productLabel: labelid, consumed: 0 }
-		const options = {
-			sort: { loggingTime: -1 },
-			projection: { _id: 1, productCode: 1, quantity: 1, quantityUnit: 1, shelfLocation: 1, productName: 1, productLabel: 1, bestbefore: 1 }
-		}
-		let productInfo = await logsessions.findOne(query, options)
-		console.log(productInfo)
-		result = productInfo
-	} catch (err) {
-		console.error(err)
-	}
+    // 通过label搜索在库物品，需要确认：物品未被使用，使用findOne，按照loggingTime -1排序
+    let result = {}
+    try {
+        const logsessions = client.db(credentials.mongodb_db).collection("pollinglog");
+        const query = {productLabel: labelid, consumed: 0}
+        const options = {
+            sort: {loggingTime: -1},
+            projection: {
+                _id: 1,
+                productCode: 1,
+                quantity: 1,
+                quantityUnit: 1,
+                shelfLocation: 1,
+                productName: 1,
+                productLabel: 1,
+                bestbefore: 1
+            }
+        }
+        let productInfo = await logsessions.findOne(query, options)
+        console.log(productInfo)
+        result = productInfo
+    } catch (err) {
+        console.error(err)
+    }
 
-	return result
+    return result
 }
 
 async function inputSearchShelf(shelfString) {
-	// 通过库位在库物品，需要确认：物品未被使用，使用loggingTime -1，只取一个findOne
-	let result={}
-	try {
-		const logsessions = client.db(credentials.mongodb_db).collection("pollinglog");
-		const query = { shelfLocation: shelfString, consumed: 0 }
-		const options = {
-			sort: { loggingTime: -1 },
-			projection: { _id: 0, productCode: 1, quantity: 1, quantityUnit: 1, shelfLocation: 1, productName: 1, productLabel: 1, bestbefore: 1 }
-		}
-		let productInfo = await logsessions.findOne(query, options)
-		console.log(productInfo)
-		result = productInfo
-	} catch (err) {
-		console.error(err)
-	}
+    // 通过库位在库物品，需要确认：物品未被使用，使用loggingTime -1，只取一个findOne
+    let result = {}
+    try {
+        const logsessions = client.db(credentials.mongodb_db).collection("pollinglog");
+        const query = {shelfLocation: shelfString, consumed: 0}
+        const options = {
+            sort: {loggingTime: -1},
+            projection: {
+                _id: 0,
+                productCode: 1,
+                quantity: 1,
+                quantityUnit: 1,
+                shelfLocation: 1,
+                productName: 1,
+                productLabel: 1,
+                bestbefore: 1
+            }
+        }
+        let productInfo = await logsessions.findOne(query, options)
+        console.log(productInfo)
+        result = productInfo
+    } catch (err) {
+        console.error(err)
+    }
 
-	return result
+    return result
 }
