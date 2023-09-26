@@ -113,6 +113,8 @@ async function getSessions() {
         }
     } catch (err) {
         console.error(err)
+    } finally {
+        client.close()
     }
 
     return htmlContent;
@@ -159,6 +161,8 @@ async function getAllItemsFromSession(sessionCode) {
         console.error(err)
         htmlContent = "<tr><td colspan=5>No item found in this session available</td></tr>"
         document.querySelector("#activeTBody").innerHTML = htmlContent
+    } finally {
+        client.close()
     }
 
     return htmlContent;

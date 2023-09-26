@@ -69,6 +69,7 @@ async function fetchProducts() {
     } catch (e) {
         console.error(e)
     } finally {
+        client.close()
         let htmlContent = '';
         productsDisplay.forEach(item => {
             if (item.bestbeforeArray.length > 0 && item.LocationArray.length > 0 && item.bestbeforeArray[0]) {

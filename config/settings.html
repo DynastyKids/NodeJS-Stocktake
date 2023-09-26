@@ -15,7 +15,7 @@
     <script>
         const navbarContent = document.querySelector("#navbar_top")
         fetch('../layouts/template_navbar.html')
-            .then(response => response.text())/**/
+            .then(response => response.text())
             .then(data => {
                 navbarContent.innerHTML = data
             })

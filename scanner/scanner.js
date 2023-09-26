@@ -91,7 +91,7 @@ async function fetchProduct(object) {
         } catch (err) {
             console.error("Error:",err)
         } finally {
-            await sessionClient.close()
+            sessionClient.close()
         }
     }
     return results

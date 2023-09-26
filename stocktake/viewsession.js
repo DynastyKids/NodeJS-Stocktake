@@ -96,6 +96,8 @@ async function getSessionInfo(sessionCode) {
         }
     } catch (err) {
         console.error(err)
+    } finally {
+        client.close()
     }
     return htmlContent;
 }

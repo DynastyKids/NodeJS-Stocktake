@@ -23,7 +23,6 @@ const client = new MongoClient(uri, {
 });
 
 var $ = require('jquery');
-const {response} = require('express');
 var DataTable = require('datatables.net')(window, $);
 require('datatables.net-responsive');
 
@@ -79,15 +78,26 @@ consumeModal.addEventListener("show.bs.modal", function (ev) {
     hiddenInput.value = lableID
 })
 
-consumeModal.querySelector("#consumeModalYes").addEventListener("click", function (ev) {
+consumeModal.querySelector("#consumeModalYes").addEventListener("click", async function (ev) {
     ev.preventDefault()
-    var labelId = consumeModal.querySelector("#modalInputLabelid").value
-    console.log(labelId)
-    fetch(`./api/v1/stocks/consume?label=${labelId}`).then(response => response.json()).then(result => {
-        console.log(result)
-        var model = bootstrap.model.getInstance(document.querySelector("#consumeModal"));
-        model.hide();
-    })
+    let labelId = consumeModal.querySelector("#modalInputLabelid").value
+    let model = bootstrap.Modal.getInstance(document.querySelector("#consumeModal"));
+    let localTime = moment(new Date()).tz("Australia/Sydney");
+    try {
+        await client.connect();
+        const session = client.db(credentials.mongodb_db).collection("pollinglog");
+        let result = await session.updateMany({productLabel: labelId, consumed: 0} , {$set: {consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")}},{upsert: false})
+        if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) { //找到符合条件的数据且成功修改了
+            console.log("Successfully update status for: ",labelId)
+        } else if (result.matchedCount === 0) { //未找到符合条件的数据但成功执行了
+            console.log(`Label ID: ${labelId} Not Found`)
+        }
+    } catch (e) {
+        console.error(`Remove Stock Error when process: ${labelId};`,e)
+    } finally {
+        client.close()
+        model.hide()
+    }
 })
 
 function loadStockInfoToTable() {
@@ -98,8 +108,14 @@ function loadStockInfoToTable() {
             table.column(2).order('asc');
             for (let index = 0; index < results.length; index++) {
                 const element = results[index];
-                // table.row.add([`${element.productCode} - ${element.productName}`, `${element.quantity} ${element.quantityUnit}`, element.bestbefore, element.shelfLocation, element.productLabel, ``]).draw(false);
-                table.row.add([`${element.productCode} - ${element.productName}`, `${element.quantity} ${element.quantityUnit}`, element.bestbefore, element.shelfLocation, element.productLabel, `<a href="#" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-labelid="${element.productLabel}">Use</a>`]).draw(false);
+                table.row.add([
+                    `${element.productCode} - ${element.productName}`,
+                    `${element.quantity} ${element.quantityUnit}`,
+                    element.bestbefore,
+                    element.shelfLocation,
+                    element.productLabel,
+                    `<a href="#" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-labelid="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>`
+                ]).draw(false);
             }
         }
     })
@@ -123,6 +139,8 @@ async function getAllStockItems() {
     } catch (err) {
         console.error(err)
         result['message'] = err
+    } finally {
+        client.close()
     }
 
     return result
