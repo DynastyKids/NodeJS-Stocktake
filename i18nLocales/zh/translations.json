@@ -102,5 +102,12 @@
     "submitbtn": "提交",
     "unitSelections": [["Bottle","瓶"],["Bag","包"],["Box","盒"],["Carton","箱（纸箱）"],["Crate","箱（板条箱）"],["Each","个"],["Piece","件"]],
     "expireSelection": [["0","否"],["1","是"]]
+  },
+  "scanner": {
+    "pagetitle": "终端扫描模式",
+    "inputplaceholder": "使用扫码枪或者手工输入条码",
+    "submitbtn": "提交",
+    "resultTableTitle": ["产品名称","数量","在此日期前最佳","标签识别号","货架位", "操作"],
+    "inputPlaceholder": ["使用扫码枪扫描一个二维码", "","","","","请填入货架位"]
   }
 }

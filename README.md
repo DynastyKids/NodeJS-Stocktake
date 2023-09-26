@@ -1,23 +1,75 @@
 # Electron Stocktake Local Server
 
+The Warehouse Manager Electron Application is an open-source tool designed to help users manage their warehouses efficiently. This document provides an overview of the application's features and instructions for configuring the MongoDB database, including MongoDB Atlas integration.
+
 This is an Electron application designed to serve as local server on Warehouse Stock assistant.
 It's a roboust, scalable and user-friendly tool to manageing current stocks.
 
-## Installation
+## Features
+- **Inventory Management**: Easily add, edit, and delete items in your warehouse inventory.
+- **Search and Filtering**: Quickly find items using search and filter functionalities.
+- **Export Data**: Export your inventory data for further analysis.
 
-### Dependency
-1. MongoDB
-    This application is rely on MongoDB as database server, if you didn't have one, you can either install locally from [MongoDB](https://mongodb.com) or using Cloud service from [MongoDB Atlas](https://www.mongodb.com/atlas/database)
-### Direct running from pre-packed application
-Application are not require installation, just run and go. 
+## Installation - Using package
+1. Download from releases available on the right.
+## Installation - From scratch
 
-If firewall prompted, allow all connections as it require accessability for online databases and listening for Local Network barcode scanner clients.
+1. Clone this repository to your local machine:
 
-### Self-complie and run the server
+   ```bash
+   $ git clone https://github.com/yourusername/warehouse-manager.git
+   ```
 
-If you wish to self-compile this application, you are require to download [NodeJS](https://nodejs.org), require minimum version 16. After installation, navigate to project folder and run `npm start`
+2. Install the project dependencies:
+
+    ```bash
+    $ cd warehouse-manager
+    $ npm install
+    ```
+
+3. Start the application:
+    ```bash
+    $ npm start
+    ```
+
+## Database Configuration
+
+This application uses MongoDB as its database. You can configure the database settings by after open the application and goes to settings page, or you can create your own ```config/localsettings.json``` file, and insert following
+```json
+{
+  "mongodb_protocol": "mongodb",
+  "mongodb_server": "your server address",
+  "mongodb_username": "your username",
+  "mongodb_password": "your password",
+  "mongodb_db": "your database"
+}
+```
+
+### MongoDB Atlas Integration
+If you prefer to use MongoDB Atlas, follow these steps:
+
+1. Sign up for a MongoDB Atlas account at https://www.mongodb.com/cloud/atlas.
+
+2. Create a new cluster and set up your MongoDB database.
+
+3. Obtain your MongoDB Atlas connection string.
+
+4. Create your own ```config/localsettings.json``` file, and insert following
+```json
+{
+  "mongodb_protocol": "mongodb+srv",
+  "mongodb_server": "your server address",
+  "mongodb_username": "your username",
+  "mongodb_password": "your password",
+  "mongodb_db": "your database"
+}
+```
+
+## Contributing
+We welcome contributions from the community! If you find any issues or have ideas for improvements, please open an issue or submit a pull request.
 
 ## User Manual
+This section will giving out basic instruction of how to use this application
 ### First Time using
 1. On first time use, the setting page will pops up, you will need to set up your MongoDB server information and click `submit`, all your information are stored locally in plaintext. If you wish to migrate to another computer, you will require to setup with same process again.
 
@@ -59,10 +111,12 @@ This section contains some features that may involve in future developing with w
 **Label Generator**: Currently generator are not available to public due to testing, will release sooner within later this year
 
 **Languages Support**: Everyone could help the project by adding i18n locale files and help to translate the product to your own languages
-## Issues
+## Known Issues
 
-Application cannot start on windows due to listen EACCESS error
-```
+### Running on windows having EACCESS related error
+
+On Windows running with certain environment, it will having error due to port cannot be opened, run the following command to restart the winnat component can resolve this issue until reboot.
+```cmd
 net stop winnat
 net start winnat
 ```

@@ -46,10 +46,10 @@ function createWindow() {
 
     try {
         let fileStatus = fs.statSync(path.join(__dirname, "config/localsettings.json"))
-        if (fileStatus.size > 10) {
+        if (fileStatus.isFile() && fileStatus.size > 10) {
             mainWindow.loadFile('index.html')
         } else {
-            mainWindow.loadFile("settings.html")
+            mainWindow.loadFile("settings/settings.html")
         }
     } catch (err) {
         mainWindow.loadFile('index.html')

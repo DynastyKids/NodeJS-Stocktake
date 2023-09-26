@@ -68,7 +68,7 @@
   "listsessionstock": {
     "pagetitle": "Session Stocks",
     "selectlabeltext": "Using datasource from",
-    "table_titles": [ "Lot Code","Product", "End Time", "Best Before", "Shelf Location", "Action"]
+    "table_titles": [ "Lot Code","Product", "Quantity", "Best Before", "Shelf Location", "Action"]
   },
   "viewsession": {
     "pagetitle": "Session Viewer",
@@ -118,5 +118,12 @@
     "submitbtn": "Submit",
     "unitSelections": [["bottle","Bottle"],["bag", "Bag"],["box", "Box"],["carton","Carton"], ["crate", "Crate"], ["each", "Each"], ["piece", "Piece"]],
     "expireSelection": [["0", "No"],["1", "Yes"]]
+  },
+  "scanner": {
+    "pagetitle": "Scanner Mode",
+    "inputplaceholder": "Use scanner or manual input",
+    "submitbtn": "Submit",
+    "resultTableTitle": ["Product","Quantity","Best Before","Label ID","Shelf Location", "Actions"],
+    "inputPlaceholder": ["Use scanner to scan the QR Code", "","","","","Input the shelf location with screen keyboard below"]
   }
 }

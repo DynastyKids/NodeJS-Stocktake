@@ -3,14 +3,14 @@ const bodyParser = require("body-parser");
 const expressApp = express();
 const port = 3000;
 const router = express.Router();
-router.use(bodyParser.urlencoded({ extended: true }));
+router.use(bodyParser.urlencoded({extended: true}));
 router.use(bodyParser.json());
 
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 
 const MongoClient = require("mongodb").MongoClient;
-const { ServerApiVersion } = require("mongodb");
+const {ServerApiVersion} = require("mongodb");
 // const credentials = JSON.parse(require("../credentials.js" ))
 const fs = require("fs");
 const path = require("path");
@@ -18,9 +18,9 @@ const credentials = JSON.parse(
     fs.readFileSync(path.join(__dirname, "../config/localsettings.json"))
 );
 const moment = require("moment-timezone");
-const { session } = require("electron");
+const {session} = require("electron");
 
-const uriCompents = [credentials.mongodb_protocol,"://"]
+const uriCompents = [credentials.mongodb_protocol, "://"]
 if (credentials.mongodb_username && credentials.mongodb_password) {
     uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
 }
@@ -36,7 +36,7 @@ const sessionClient = new MongoClient(uri, {
 });
 
 router.get("/", async (req, res) => {
-    res.json({ ping: true, acknowledged: true, message: "For API documentation, visit '/api' " });
+    res.json({ping: true, acknowledged: true, message: "For API documentation, visit '/api' "});
 });
 
 /* 
@@ -49,18 +49,53 @@ router.get("/api/v1/sessions", async (req, res) => {
 
 /* 
  * 验证当前Session是否有效
+ * 用户需要以Post请求方式发起，GET请求回弹报错
  */
 router.get("/api/v1/sessions/join", async (req, res) => {
     const sessioncode = req.query.session;
-    var sessionResults = await checkSession(sessioncode)
+    let sessionResults = {acknowledged: false, data: [], message: "Request Incorrect, GET method deprecated"};
+    sessionResults = await checkSession(sessioncode)
     res.json(sessionResults.data);
 });
-
 router.post("/api/v1/sessions/join", async (req, res) => {
+    console.log(req.body)
     const sessioncode = req.body.session;
     var sessionResults = await checkSession(sessioncode)
     res.json(sessionResults.data);
 });
+async function checkSession(sessionId) {
+    // 用户发起请求加入该session，需要先确认当前Session是否可用
+    let localTime = moment(new Date()).tz("Australia/Sydney");
+    let sessionResults = {acknowledged: false, data: [], message: ""};
+    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollingsession");
+    let findingQuery = {
+        $and: [
+            {endDate: {$gte: localTime.format("YYYY-MM-DD HH:mm:ss")}},
+            {startDate: {$lte: localTime.format("YYYY-MM-DD HH:mm:ss")}},
+            {session: sessionId}
+        ]
+    };
+    try {
+        await sessionClient.connect();
+        let result = await sessions.find(findingQuery)
+        if ((await sessions.countDocuments(findingQuery)) === 0) {
+            console.log("[MongoDB] Nothing Found");
+        }
+
+        for await (const x of result) {
+            sessionResults.data.push({
+                session: x.session,
+                startDate: x.startDate,
+                endDate: x.endDate,
+                logTime: x.logTime
+            });
+        }
+        sessionResults.acknowledged = true
+    } catch (err) {
+        console.error(err)
+    }
+    return sessionResults
+}
 
 /* 
  * GET方法，Sessionlog用来查看某个会话的所有产品；Query:sessioncode
@@ -69,8 +104,8 @@ router.post("/api/v1/sessions/join", async (req, res) => {
 router.get("/api/v1/sessionlog", async (req, res) => {
     const sessions = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
     let localTime = moment(new Date()).tz("Australia/Sydney");
-    let findingQuery = { session: req.query.session };
-    let options = { sort: { productCode: 1, loggingTime: -1 } }
+    let findingQuery = {session: req.query.session};
+    let options = {sort: {productCode: 1, loggingTime: -1}}
     let cursor;
     let sessionResults = [];
     try {
@@ -98,7 +133,7 @@ router.post("/api/v1/sessionlog/add", async (req, res) => {
     const iteminfo = req.body.item;
     let localTime = moment(new Date()).tz("Australia/Sydney");
     var mongodata = {};
-    let purposedRes = { acknowledged: false };
+    let purposedRes = {acknowledged: false};
     if (isBase64String(iteminfo)) {
         mongodata = createLogObject(sessioncode, iteminfo);
         if (mongodata !== {}) {
@@ -123,17 +158,17 @@ router.post("/api/v1/sessionlog/autoadd", async (req, res) => {
 })
 
 async function getSessionLists() {
-    const options = { sort: { startDate: 1 } };
+    const options = {sort: {startDate: 1},projection: {"_id":0}};
     const sessions = sessionClient.db(credentials.mongodb_db).collection("pollingsession");
     let localTime = moment(new Date()).tz("Australia/Sydney");
     let findingQuery = {
         $and: [
-            { endDate: { $gte: localTime.format("YYYY-MM-DD HH:mm:ss") } },
-            { startDate: { $lte: localTime.format("YYYY-MM-DD HH:mm:ss") } },
+            {endDate: {$gte: localTime.format("YYYY-MM-DD HH:mm:ss")}},
+            {startDate: {$lte: localTime.format("YYYY-MM-DD HH:mm:ss")}},
         ]
     };
     let cursor;
-    let sessionResults = { acknowledged: false, data: [], message: "" };
+    let sessionResults = {acknowledged: false, data: [], message: ""};
 
     try {
         await sessionClient.connect();
@@ -159,37 +194,7 @@ async function getSessionLists() {
     return sessionResults;
 }
 
-async function checkSession(sessionId) {
-    let sessionResults = { acknowledged: false, data: [], message: "" };
-    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollingsession");
-    let findingQuery = {
-        $and: [
-            { endDate: { $gte: localTime.format("YYYY-MM-DD HH:mm:ss") } },
-            { startDate: { $lte: localTime.format("YYYY-MM-DD HH:mm:ss") } },
-            { session: sessionId }
-        ]
-    };
-    try {
-        await sessionClient.connect();
-        let result = await sessions.find(findingQuery)
-        if ((await sessions.countDocuments(findingQuery)) === 0) {
-            console.log("[MongoDB] Nothing Found");
-        }
 
-        for await (const x of result) {
-            sessionResults.data.push({
-                session: x.session,
-                startDate: x.startDate,
-                endDate: x.endDate,
-                logTime: x.logTime
-            });
-        }
-        sessionResults.acknowledged = true
-    } catch (err) {
-        console.error(err)
-    }
-    return sessionResults
-}
 
 // 查看目前库存中所有的产品信息
 router.get("/api/v1/products", async (req, res) => {
@@ -198,7 +203,7 @@ router.get("/api/v1/products", async (req, res) => {
     let products = [];
     try {
         await sessionClient.connect();
-        cursor = await sessions.find({}, { sort: { itemcode: 1 } });
+        cursor = await sessions.find({}, {sort: {itemcode: 1}});
         if ((await sessions.countDocuments({})) === 0) {
             console.log("[MongoDB] Nothing Found");
         } else {
@@ -221,49 +226,49 @@ router.get("/api/v1/stocks", async (req, res) => {
     const product = req.query.prod
     try {
         await sessionClient.connect();
-        let pipeline = [{ $sort: { bestbefore: -1, productLabel: -1 } },
-        {
-            $group: {
-                _id: { productLabel: "$productLabel" },
-                session: { $first: "$session" },
-                productLabel: { $first: "$productLabel" },
-                productCode: { $first: "$productCode" },
-                quantity: { $first: "$quantity" },
-                quantityUnit: { $first: "$quantityUnit" },
-                shelfLocation: { $first: "$shelfLocation" },
-                consumed: { $first: "$consumed" },
-                POIPnumber: { $first: "$POIPnumber" },
-                productName: { $first: "$productName" },
-                bestbefore: { $first: "$bestbefore" },
-                labelBuild: { $first: "$labelBuild" },
-            }
-        },
-        {
-            $project: {
-                session: 1,
-                // loggingTime: 0,
-                productCode: 1,
-                quantity: 1,
-                quantityUnit: 1,
-                shelfLocation: 1,
-                consumed: 1,
-                POIPnumber: 1,
-                productName: 1,
-                bestbefore: 1,
-                productLabel: 1,
-                labelBuild: 1
-            }
-        },
-        { $match: { consumed: 0 } }
+        let pipeline = [{$sort: {bestbefore: -1, productLabel: -1}},
+            {
+                $group: {
+                    _id: {productLabel: "$productLabel"},
+                    session: {$first: "$session"},
+                    productLabel: {$first: "$productLabel"},
+                    productCode: {$first: "$productCode"},
+                    quantity: {$first: "$quantity"},
+                    quantityUnit: {$first: "$quantityUnit"},
+                    shelfLocation: {$first: "$shelfLocation"},
+                    consumed: {$first: "$consumed"},
+                    POIPnumber: {$first: "$POIPnumber"},
+                    productName: {$first: "$productName"},
+                    bestbefore: {$first: "$bestbefore"},
+                    labelBuild: {$first: "$labelBuild"},
+                }
+            },
+            {
+                $project: {
+                    session: 1,
+                    // loggingTime: 0,
+                    productCode: 1,
+                    quantity: 1,
+                    quantityUnit: 1,
+                    shelfLocation: 1,
+                    consumed: 1,
+                    POIPnumber: 1,
+                    productName: 1,
+                    bestbefore: 1,
+                    productLabel: 1,
+                    labelBuild: 1
+                }
+            },
+            {$match: {consumed: 0}}
         ]
 
         if (product) {
-            pipeline.push({ $match: { productCode: product } })
+            pipeline.push({$match: {productCode: product}})
         }
         if (req.query.limit && parseInt(req.query.limit) < 5000) {
-            pipeline.push({ $limit: parseInt(req.query.limit) })
+            pipeline.push({$limit: parseInt(req.query.limit)})
         } else {
-            pipeline.push({ $limit: 5000 })
+            pipeline.push({$limit: 5000})
         }
         let cursor2 = await sessions.aggregate(pipeline).toArray();
         let resultArray = []
@@ -273,7 +278,8 @@ router.get("/api/v1/stocks", async (req, res) => {
             }
             cursor2[index].quantity = parseInt(cursor2[index].quantity)
             resultArray.push(cursor2[index])
-        };
+        }
+        ;
         res.status(200).json(resultArray.length > 0 ? resultArray : []);
     } catch (err) {
         console.error(err)
@@ -288,16 +294,16 @@ router.get("/api/v1/stocks", async (req, res) => {
  */
 router.post("/api/v1/stocks", async (req, res) => {
     let localTime = moment(new Date()).tz("Australia/Sydney");
-    let response = { acknowledged: false }
+    let response = {acknowledged: false}
     try {
-        const { action, content, shelf } = req.body // Action: move / add / consume
+        const {action, content, shelf} = req.body // Action: move / add / consume
         if (action && action == "consume" && content.labelId) {
             // content: {labelid: xxxxxx}
-            let updateObject = { consumed: 1, loggingTime: localTime.format("YYYY-MM-DD HH:mm:ss") }
+            let updateObject = {consumed: 1, loggingTime: localTime.format("YYYY-MM-DD HH:mm:ss")}
             response = await updateOneLotByLabel(content.labelId, updateObject)
         } else if (action && action == "move" && content.labelId && content.newShelf) {
             // content: {labelid: xxxxxx, newShelf: XXX}
-            let updateObject = { shelfLocation: content.newShelf, loggingTime: localTime.format("YYYY-MM-DD HH:mm:ss") }
+            let updateObject = {shelfLocation: content.newShelf, loggingTime: localTime.format("YYYY-MM-DD HH:mm:ss")}
             response = await updateOneLotByLabel(content.labelId, updateObject)
         } else if (action && action == "add" && content) {
             response = await insertOneLot(content)
@@ -313,7 +319,21 @@ router.post("/api/v1/stocks", async (req, res) => {
 });
 
 function createLogObject(sessioncode, iteminfo) {
-    var mongodata = { session: sessioncode, productCode: "", quantity: 0, quantityUnit: "", shelfLocation: "", POIPnumber: "", productName: "", bestbefore: "", productLabel: "", productName: "", labelBuild: 2, consumed: 0, loggingTime: moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss") }
+    var mongodata = {
+        session: sessioncode,
+        productCode: "",
+        quantity: 0,
+        quantityUnit: "",
+        shelfLocation: "",
+        POIPnumber: "",
+        productName: "",
+        bestbefore: "",
+        productLabel: "",
+        productName: "",
+        labelBuild: 2,
+        consumed: 0,
+        loggingTime: moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
+    }
     try {
         if (isBase64String(iteminfo)) {
             var productInfo = JSON.parse(atob(iteminfo));
@@ -365,11 +385,14 @@ function createLogObject(sessioncode, iteminfo) {
  * 注：新库位上如果已经有其他东西存在，默认不会覆盖，而会选择并存
  */
 async function editStockShelfLocation(labelId, location) {
-    let returnResult = { acknowledged: false }
+    let returnResult = {acknowledged: false}
     try {
         await sessionClient.connect()
         const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog")
-        var result = await session.updateMany({ productLabel: labelId, consumed: 0 }, { $set: { shelfLocation: location } }, { upsert: false })
+        var result = await session.updateMany({
+            productLabel: labelId,
+            consumed: 0
+        }, {$set: {shelfLocation: location}}, {upsert: false})
         if (result !== null) {
             returnResult = result
         }
@@ -390,26 +413,64 @@ async function editStockShelfLocation(labelId, location) {
 router.get("/api/v1/stocks/get", async (req, res) => {
     let productLocation = req.query.shelf
     let productLabel = req.query.label
-    let response = { acknowledged: false, results: [], info: null }
+    let response = {acknowledged: false, results: [], info: null}
     await sessionClient.connect()
     const sessions = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
 
     try {
         let findingQuery = {}
         if (productLabel && productLabel.length > 0) {
-            findingQuery = { itemcode: productLabel, consumed: 0 }
+            findingQuery = {itemcode: productLabel, consumed: 0}
         } else if (productLocation && productLocation.length > 0) {
-            findingQuery = { shelfLocation: productLocation, consumed: 0 }
+            findingQuery = {shelfLocation: productLocation, consumed: 0}
         }
-        let result = await sessions.find(findingQuery)
+        let result = await sessions.find(findingQuery, {projection: {"_id":0}})
         if ((await sessions.countDocuments({})) >= 0) {
             response.acknowledged = true
             for await (const x of result) {
                 response.results.push(x);
             }
         }
+    } catch (err) {
+        console.error(err)
+        response.info = err
     }
-    catch (err) {
+    res.json(response)
+})
+
+/*
+ * Stock中的fetch方法，用来获取产品的在某个位置上的库存信息
+ * 需要传入参数：Location 或 label
+ * 返回参数：Array[ProductInfo]
+ */
+router.post("/api/v1/stocks/get", async (req, res) => {
+    const contents = req.body
+    let response = {acknowledged: false, results: [], info: null}
+    await sessionClient.connect()
+    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
+    const queryOptions = {projection: {"_id":0}}
+    let result;
+    let findingQuery = {}
+    try {
+        if (contents.input){
+            var object = JSON.parse(contents.input)
+            console.log(contents.input)
+            if (object.itemcode){
+                findingQuery = {itemcode: productLabel, consumed: 0}
+                result = await sessions.find(findingQuery,queryOptions)
+                if ((await sessions.countDocuments({})) >= 0) {
+                    response.acknowledged = true
+                    for await (const x of result) {
+                        response.results.push(x);
+                    }
+                }
+            } else{
+                // 如果itemcode为空则？？？
+            }
+        } else {
+            response.info = "Content is missing from the body"
+        }
+    } catch (err) {
         console.error(err)
         response.info = err
     }
@@ -421,12 +482,15 @@ router.get("/api/v1/stocks/get", async (req, res) => {
  */
 router.get("/api/v1/stocks/consume", async (req, res) => {
     let localTime = moment(new Date()).tz("Australia/Sydney");
-    let response = { acknowledged: false }
+    let response = {acknowledged: false}
     const productLabel = req.query.label
     const productLocation = req.query.shelf
     if (productLabel && productLabel.length > 0) {
         try {
-            let result = await findAndUpdateLogs({ itemcode: productLabel, consumed: 0 }, { consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss") })
+            let result = await findAndUpdateLogs({itemcode: productLabel, consumed: 0}, {
+                consumed: 1,
+                consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")
+            })
             if (result.modifiedCount > 0 && result.matchedCount == result.modifiedCount) {
                 response.acknowledged = true
             }
@@ -436,7 +500,10 @@ router.get("/api/v1/stocks/consume", async (req, res) => {
         }
     } else if (productLocation && productLocation.length > 0) {
         try {
-            let result = await findAndUpdateLogs({ shelfLocation: productLocation, consumed: 0 }, { consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss") })
+            let result = await findAndUpdateLogs({shelfLocation: productLocation, consumed: 0}, {
+                consumed: 1,
+                consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")
+            })
             if (result.modifiedCount > 0 && result.matchedCount == result.modifiedCount) {
                 response.acknowledged = true
             }
@@ -450,11 +517,14 @@ router.get("/api/v1/stocks/consume", async (req, res) => {
 
 router.post("api/v1/stocks/consume", async (req, res) => {
     let localTime = moment(new Date()).tz("Australia/Sydney");
-    let response = { acknowledged: false }
-    const { productLabel } = req.body
+    let response = {acknowledged: false}
+    const {productLabel} = req.body
     if (productLabel !== undefined && productLabel.length > 0) {
         try {
-            let result = await findAndUpdateLogs({ itemcode: productLabel, consumed: 0 }, { consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss") })
+            let result = await findAndUpdateLogs({itemcode: productLabel, consumed: 0}, {
+                consumed: 1,
+                consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")
+            })
             if (result.modifiedCount > 0 && result.matchedCount > 0) {
                 response.acknowledged = true
             }
@@ -471,7 +541,7 @@ async function findAndUpdateLogs(findCondition, updateQuery) {
     try {
         await sessionClient.connect()
         const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
-        var result = await session.updateMany(findCondition, { $set: updateQuery }, { upsert: false })
+        var result = await session.updateMany(findCondition, {$set: updateQuery}, {upsert: false})
         if (result !== null) {
             returnResult = result
         }
@@ -486,7 +556,7 @@ async function getProductInfo(productCode) {
     try {
         await sessionClient.connect()
         const session = sessionClient.db(credentials.mongodb_db).collection("products");
-        const query = { itemcode: productCode }
+        const query = {itemcode: productCode}
         const options = {
             projection: {
                 description: 1,
@@ -527,14 +597,14 @@ async function insertOneToLog(insertData) {
         var returnData;
         if (result == null) {
             result = await session.insertOne(insertData);
-            returnData = { acknowledged: true, method: "insertOne", result: result };
+            returnData = {acknowledged: true, method: "insertOne", result: result};
         } else {
-            returnData = { acknowledged: true, method: "findOne", result: result };
+            returnData = {acknowledged: true, method: "findOne", result: result};
         }
         return returnData;
     } catch (err) {
         console.error(err);
-        return { acknowledged: false, method: null, result: err.toString };
+        return {acknowledged: false, method: null, result: err.toString};
     }
 }
 
@@ -542,8 +612,22 @@ async function findLastPollionglog(labelId) {
     try {
         await sessionClient.connect()
         const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog")
-        const projection = { _id: 0, session: 1, loggingTime: 1, productCode: 1, quantity: 1, quantityUnit: 1, shelfLocation: 1, consumed: 1, POIPnumber: 1, productName: 1, bestbefore: 1, productLabel: 1, labelBuild: 1 }
-        const result = await session.findOne({ productLabel: labelId }, { projection: projection })
+        const projection = {
+            _id: 0,
+            session: 1,
+            loggingTime: 1,
+            productCode: 1,
+            quantity: 1,
+            quantityUnit: 1,
+            shelfLocation: 1,
+            consumed: 1,
+            POIPnumber: 1,
+            productName: 1,
+            bestbefore: 1,
+            productLabel: 1,
+            labelBuild: 1
+        }
+        const result = await session.findOne({productLabel: labelId}, {projection: projection})
         if (!result) {
             console.log("[MongoDB] Nothing Found");
             return {}
@@ -557,7 +641,7 @@ async function findLastPollionglog(labelId) {
 
 async function insertOneLot(productInformationObject) {
     let localTime = moment(new Date()).tz("Australia/Sydney");
-    let returnResult = { acknowledged: false }
+    let returnResult = {acknowledged: false}
     try {
         if (productInformationObject.hasOwnProperty("productCode") && productInformationObject.hasOwnProperty("quantity") && productInformationObject.hasOwnProperty("quantityUnit") && productInformationObject.hasOwnProperty("shelfLocation") && productInformationObject.hasOwnProperty("productName") && productInformationObject.hasOwnProperty("productLabel")) {
             await sessionClient.connect()
@@ -575,11 +659,11 @@ async function updateOneLotByLabel(productLabelId, updateinfoObject) {
     let localTime = moment(new Date()).tz("Australia/Sydney");
     var updateObject = updateinfoObject
     updateObject['loggingTime'] = localTime.format("YYYY-MM-DD HH:mm:ss")
-    let returnResult = { acknowledged: false }
+    let returnResult = {acknowledged: false}
     try {
         await sessionClient.connect()
         const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog")
-        const result = await session.updateOne({ productLabel: productLabelId }, { $set: updateObject }) //更新信息后也更新最后记录时间
+        const result = await session.updateOne({productLabel: productLabelId}, {$set: updateObject}) //更新信息后也更新最后记录时间
         if (result.matchedCount === result.modifiedCount, result.modifiedCount > 0) {
             returnResult.acknowledged = true
             returnResult['message'] = `${result.matchedCount} document(s) matched the filter, updated ${result.modifiedCount} document(s)`
