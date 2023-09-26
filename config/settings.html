@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../node_modules/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../node_modules/flatpickr/dist/flatpickr.min.css">
+    <title>Settings - Warehouse Electron</title>
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light" id="navbar_top">
+    <script>
+        const navbarContent = document.querySelector("#navbar_top")
+        fetch('../layouts/template_navbar.html')
+            .then(response => response.text())/**/
+            .then(data => {
+                navbarContent.innerHTML = data
+            })
+    </script>
+</nav>
+    <div class="container">
+        <nav class="m-2" aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Settings</li>
+            </ol>
+        </nav>
+        <h1>Settings</h1>
+        <form id="settings-form">
+            <div class="form-group row mb-2 mt-2">
+                <label for="db-scheme" class="col-md-3 col-lg-2 col-form-label">Database Protocol:</label>
+                <div class="col-md-9 col-lg-10">
+                    <select class="form-select" aria-label="Default select example" id="db-scheme">
+                        <option selected>Select a Connection String Scheme</option>
+                        <option value="mongodb">mongodb</option>
+                        <option value="mongodb+srv">mongodb+srv</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group row mb-2 mt-2">
+                <label for="db-address" class="col-md-3 col-lg-2 col-form-label">Database Address:</label>
+                <div class="col-md-9 col-lg-10">
+                    <input type="text" class="form-control" id="db-address" value="" placeholder="Server Address">
+                </div>
+            </div>
+            <div class="form-group row mb-2 mt-2">
+                <label for="db-username" class="col-md-3 col-lg-2 col-form-label">Database Username:</label>
+                <div class="col-md-9 col-lg-10">
+                    <input type="text" class="form-control" id="db-username" value="" placeholder="Username">
+                </div>
+            </div>
+            <div class="form-group row mb-2 mt-2">
+                <label for="db-password" class="col-md-3 col-lg-2 col-form-label">Database Password:</label>
+                <div class="col-md-9 col-lg-10">
+                    <input type="password" class="form-control" id="db-password" placeholder="Password">
+                </div>
+            </div>
+            <div class="form-group row mb-2 mt-2">
+                <label for="db-name" class="col-md-3 col-lg-2 col-form-label">Database Name:</label>
+                <div class="col-md-9 col-lg-10">
+                  <input type="text" class="form-control" id="db-name" value="" placeholder="Database Name">
+                </div>
+              </div>
+            <button class="btn btn-primary" type="submit">Submit</button>
+        </form>
+        <hr>
+        <div class="container-fluid infotext">
+            <h5>About Database:</h5>
+            <p style="font-size: small">MongoDB is a cross-platform document-oritented database System.
+                Require to be deployed on Local computer (Installer available from MongoDB) or using Cloud service (e.g. Mongo Atlas)
+            </p>
+            <hr>
+        </div>
+        <div class="container-fluid infotext">
+            <h5>About Scheme:</h5>
+            <p style="font-size: small">
+                mongodb: Standard Connection String Format. The standard format of the MongoDB connection URI is used to
+                connect to a MongoDB deployment: standalone, replica set, or a sharded cluster.<br><br>
+                mongodb+srv: DNS Seed List Connection Format. The +srv indicates to the client that the hostname that
+                follows corresponds to a DNS SRV record.
+            </p>
+            <hr>
+        </div>
+        <div class="container-fluid infotext">
+            <h5>Current Environment:</h5>
+            <div class="row">
+                <div class="col-4">Node.js:<div id="node-version"></div></div>
+                <div class="col-4">Chromium:<div id="chrome-version"></div></div>
+                <div class="col-4">Electron:<div id="electron-version"></div></div>
+            </div>
+        </div>
+    </div>
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="settings.js"></script>
+</body>
+
+</html>
