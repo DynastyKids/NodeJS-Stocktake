@@ -53,7 +53,7 @@ async function fetchProducts() {
         await client.connect();
         const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
         const query = {consumed: 0};
-        const options = {'productCode': 1, 'bestbefore': -1, 'productLabel': 1};
+        const options = {'productCode': 1, 'bestbefore': 1, 'productLabel': 1};
         const cursor = sessions.find(query).sort(options);
         if ((await sessions.countDocuments({})) === 0) {
             console.log("[MongoDB] Nothing Found");
