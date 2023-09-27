@@ -4,7 +4,14 @@ const fs = require('fs');
 const path = require('path');
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
 const moment = require('moment-timezone')
-const {ipcRenderer} = require('electron')
+const {ipcRenderer} = require('electron');
+
+const i18next = require('i18next');
+const Backend = require('i18next-fs-backend');
+
+var $ = require('jquery');
+var DataTable = require('datatables.net')(window, $);
+require('datatables.net-responsive');
 
 const uriCompents = [credentials.mongodb_protocol, "://"]
 if (credentials.mongodb_username && credentials.mongodb_password) {
@@ -22,11 +29,6 @@ const client = new MongoClient(uri, {
     }
 });
 
-var $ = require('jquery');
-var DataTable = require('datatables.net')(window, $);
-require('datatables.net-responsive');
-
-
 let table = new DataTable('#stockTable', {
     responsive: true,
     pageLength: 50,
@@ -34,10 +36,86 @@ let table = new DataTable('#stockTable', {
     order: [[2, 'asc']]
 });
 let shouldRefresh = true;
-const countdownFrom = 120;
-let countdown = 120;
+const countdownFrom = 60;
+let countdown = 60;
 
-let displayAll = false;
+i18next.use(Backend).init({
+    lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
+}).then(() => {
+    console.log(path.join(__dirname, '../i18nLocales/{{lng}}/translations.json'))
+    i18n_navbar();
+    i18n_bodyContents();
+});
+
+document.getElementById('languageSelector').addEventListener('change', (e) => {
+    i18next.changeLanguage(e.target.value).then(() => {
+        i18n_navbar();
+        i18n_bodyContents();
+    });
+});
+function i18n_navbar() {
+    // Navbar Section
+    var navlinks = document.querySelectorAll(".nav-topitem");
+    for (let i = 0; i < navlinks.length; i++) {
+        navlinks[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
+    }
+
+    var sessionDropdownLinks = document.querySelectorAll("#sessionDropdownList a");
+    for (let i = 0; i < sessionDropdownLinks.length; i++) {
+        sessionDropdownLinks[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
+    }
+
+    var productDropdownLinks = document.querySelectorAll("#productDropdownList a");
+    for (let i = 0; i < productDropdownLinks.length; i++) {
+        productDropdownLinks[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
+    }
+}
+function i18n_bodyContents() {
+    document.title = `${i18next.t('listnext3.pagetitle')} - Warehouse Electron`
+    // Content - Breadcrumbs
+    var breadcrumbs = document.querySelectorAll(".breadcrumb-item");
+    breadcrumbs[0].querySelector("a").innerText = i18next.t('index.pagetitle');
+    breadcrumbs[1].querySelector("a").innerText = i18next.t('listproducts.pagetitle');
+    breadcrumbs[2].innerText = i18next.t('liststocks.pagetitle');
+
+    // Contents
+    document.querySelector("h1").textContent = i18next.t('liststocks.pagetitle');
+    document.querySelectorAll(".toggleRefreshText")[0].textContent = i18next.t(`liststocks.refreshText.${0}`)
+    document.querySelectorAll(".toggleRefreshText")[1].textContent = i18next.t(`liststocks.refreshText.${1}`)
+    document.querySelector("#areloadTable").textContent = i18next.t("liststocks.reloadTableLink")
+
+    // Datatables
+    var innerSelection = document.querySelector("#stockTable_length select")
+    document.querySelector("#stockTable_length").innerHTML = i18next.t(`dataTables.table_pagesize.${0}`)+
+        innerSelection.outerHTML+i18next.t(`dataTables.table_pagesize.${1}`)
+    var innerSearch = document.querySelector("#stockTable_filter label input")
+    document.querySelector("#stockTable_filter label").innerHTML = i18next.t("dataTables.table_search")+
+        innerSearch.outerHTML
+    var tableheaders = document.querySelectorAll("#stockTable thead th")
+    var tablefooters = document.querySelectorAll("#stockTable tfoot th")
+    for (let i = 0; i < tableheaders.length; i++) {
+        tableheaders[i].textContent = i18next.t(`liststocks.table_head.${i}`)
+    }
+    for (let i = 0; i < tablefooters.length; i++) {
+        tablefooters[i].textContent = i18next.t(`liststocks.table_head.${i}`)
+    }
+    document.querySelector("#stockTable_info").innerText.split(" ")
+
+    // Table Actions
+    var table_action_remove = document.querySelectorAll(".table_action_remove")
+    for (let i = 0; i < table_action_remove.length; i++) {
+        table_action_remove[i].textContent = i18next.t(`liststocks.table_actionRemove`)
+    }
+
+    var infotextNumbers = document.querySelector("#stockTable_info").innerText.match(/\d+/g)
+    document.querySelector("#stockTable_info").innerText = i18next.t(`dataTables.table_entrydesc.${0}`)+
+        infotextNumbers[0]+i18next.t(`dataTables.table_entrydesc.${1}`)+infotextNumbers[1]+
+        i18next.t(`dataTables.table_entrydesc.${2}`)+infotextNumbers[2]+
+        i18next.t(`dataTables.table_entrydesc.${3}`)
+
+    document.querySelector("#stockTable_paginate .previous").textContent = i18next.t("dataTables.table_action.0")
+    document.querySelector("#stockTable_paginate .next").textContent = i18next.t("dataTables.table_action.1")
+}
 
 document.addEventListener("DOMContentLoaded", (event) => {
     loadStockInfoToTable()
@@ -50,24 +128,9 @@ document.addEventListener("DOMContentLoaded", (event) => {
     const countdownInterval = setInterval(() => {
         if (shouldRefresh) {
             countdown -= 1
-            document.querySelector("#toggleRefreshText").innerText = `Automatic refresh in: ${countdown}s`
+            document.querySelector("#toggleTimes").innerText = `${countdown}`
         }
     }, 1000)
-
-    document.querySelector('#toggleRefresh').addEventListener('click', function () {
-        shouldRefresh = !shouldRefresh;
-        if (shouldRefresh) {
-            document.querySelector("#toggleRefresh").innerText = "Pause"
-            document.querySelector("#toggleRefresh").classList.remove("btn-outline-success")
-            document.querySelector("#toggleRefresh").classList.add("btn-outline-warning")
-            countdown = countdownFrom; // 重置倒计时
-        } else {
-            document.querySelector("#toggleRefresh").innerText = "Resume"
-            document.querySelector("#toggleRefresh").classList.remove("btn-outline-warning")
-            document.querySelector("#toggleRefresh").classList.add("btn-outline-success")
-            document.querySelector('#toggleRefreshText').innerText = "Automatic refresh paused";
-        }
-    });
 });
 
 var consumeModal = document.querySelector("#consumeModal")
@@ -100,6 +163,10 @@ consumeModal.querySelector("#consumeModalYes").addEventListener("click", async f
     }
 })
 
+document.querySelector("#areloadTable").addEventListener("click",function (ev) {
+    loadStockInfoToTable()
+})
+
 function loadStockInfoToTable() {
     table.clear().draw()
     getAllStockItems().then(result => {
@@ -114,7 +181,7 @@ function loadStockInfoToTable() {
                     element.bestbefore,
                     element.shelfLocation,
                     element.productLabel,
-                    `<a href="#" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-labelid="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>`
+                    `<a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-labelid="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>`
                 ]).draw(false);
             }
         }

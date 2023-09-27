@@ -25,12 +25,12 @@ const client = new MongoClient(uri, {
 
 
 let shouldRefresh = true;
-const countdownFrom = 180;
-let countdown = 180;
+const countdownFrom = 90;
+let countdown = 90;
 
 let productsDisplay = []
 document.addEventListener("DOMContentLoaded", (event) => {
-    // 页面自动刷新，默认为180s
+    // 页面自动刷新
     const automaticRefresh = setInterval(() => {
         if (shouldRefresh) {
             countdown = countdownFrom;
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
     const countdownInterval = setInterval(() => {
         if (shouldRefresh) {
             countdown -= 1
-            document.querySelector("#refreshCountdown").innerText = `Refresh in: ${countdown}s`
+            document.querySelector("#toggleTimes").innerText = `${countdown}`
         }
     }, 1000)
 
@@ -141,11 +141,64 @@ window.onload = function () {
             } else {
                 tableBody.style.marginTop = (currentTop - step) + 'px';
             }
-
             requestAnimationFrame(scrollTable); // 递归持续滚动
         }
-
         scrollTable();
-
     }, 2500); // 2.5s滚动冷却时间
 };
+
+//添加多语言支持
+const i18next = require('i18next');
+const Backend = require('i18next-fs-backend');
+i18next.use(Backend).init({
+    lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
+}).then(() => {
+    i18n_navbar();
+    i18n_bodyContents();
+});
+
+document.getElementById('languageSelector').addEventListener('change', (e) => {
+    i18next.changeLanguage(e.target.value).then(() => {
+        i18n_navbar();
+        i18n_bodyContents();
+    });
+});
+function i18n_navbar() {
+    // Navbar Section
+    var navlinks = document.querySelectorAll(".nav-topitem");
+    for (let i = 0; i < navlinks.length; i++) {
+        navlinks[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
+    }
+
+    var sessionDropdownLinks = document.querySelectorAll("#sessionDropdownList a");
+    for (let i = 0; i < sessionDropdownLinks.length; i++) {
+        sessionDropdownLinks[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
+    }
+
+    var productDropdownLinks = document.querySelectorAll("#productDropdownList a");
+    for (let i = 0; i < productDropdownLinks.length; i++) {
+        productDropdownLinks[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
+    }
+}
+
+function i18n_bodyContents() {
+    document.title = `${i18next.t('listnext3.pagetitle')} - Warehouse Electron`
+
+    // Content - Breadcrumbs
+    var breadcrumbs = document.querySelectorAll(".breadcrumb-item");
+    breadcrumbs[0].querySelector("a").innerText = i18next.t('index.pagetitle');
+    breadcrumbs[1].querySelector("a").innerText = i18next.t('listproducts.pagetitle');
+    breadcrumbs[2].querySelector("a").innerText = i18next.t('liststocks.pagetitle');
+    breadcrumbs[3].innerText = i18next.t('listnext3.pagetitle');
+
+    // Contents
+    document.querySelector("h1").textContent = i18next.t('listnext3.pagetitle');
+    document.querySelectorAll(".toggleRefreshText")[0].textContent = i18next.t(`listnext3.refreshText.${0}`)
+    document.querySelectorAll(".toggleRefreshText")[1].textContent = i18next.t(`listnext3.refreshText.${1}`)
+
+    var tableHeads = document.querySelectorAll("#table-header thead td")
+    tableHeads[0].textContent = i18next.t(`listnext3.table_head.${0}`)
+    tableHeads[1].innerHTML = i18next.t(`listnext3.table_head.${1}`)+"<br>"+i18next.t(`listnext3.table_head.${4}`)
+    tableHeads[2].innerHTML = i18next.t(`listnext3.table_head.${2}`)+"<br>"+i18next.t(`listnext3.table_head.${4}`)
+    tableHeads[3].innerHTML = i18next.t(`listnext3.table_head.${3}`)+"<br>"+i18next.t(`listnext3.table_head.${4}`)
+}
