@@ -1,0 +1,45 @@
+name: Electron Builds
+
+on:
+  push:
+    branches:
+      - master # 可以更改为你的默认分支
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18' 
+        
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Run Package
+      run: npm run package
+
+    - name: Run Make
+      run: npm run make
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ matrix.os }}-app
+        path: ./out/make/*
+
+    - name: Release to GitHub
+      uses: "gh-actions/gh-release@v1.1.0"
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        assets: ./out/make/* # 请替换为你的应用打包后的路径
+      continue-on-error: true
