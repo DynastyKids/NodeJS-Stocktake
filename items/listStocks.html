@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' w3.org data:; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="../node_modules/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="../node_modules/flatpickr/dist/flatpickr.min.css">
@@ -30,23 +30,16 @@
             <li class="breadcrumb-item active" aria-current="page">Stocks</li>
         </ol>
     </nav>
-    <div class="container-fluid">
+    <span class="container-fluid">
         <h1 id="sessionTitle">Current Stocks</h1>
         <table style="text-align: center;">
             <tr>
                 <td>
-                    <p id="toggleRefreshText" style="float: left;">Automatic refresh in: Xs</p>
-                </td>
-                <td>
-                    <button id="toggleRefresh" class="btn btn-outline-warning btn-sm"
-                            style="float: right;;">Pause
-                    </button>
+                    <span class="toggleRefreshText" style="float: left;">Auto Refresh Text</span>
+                    <span id="toggleTimes"></span><span class="toggleRefreshText"></span>
                 </td>
             </tr>
-            <!-- <tr>
-            <td><p id="toggleLotText" style="float: left;">Listing: Next 3 lots by date</p></td>
-            <td><button id="toggleLot" class="btn btn-outline-warning btn-sm" style="float: right;">Show All</button></td>
-        </tr> -->
+            <tr><td><a href="#" id="areloadTable">Reload Now</a></td></tr>
         </table>
         <hr>
         <table class="table table-striped" id="stockTable">
@@ -98,6 +91,7 @@
 <script src="../node_modules/flatpickr/dist/flatpickr.min.js"></script>
 <script> window.$ = window.jQuery = require('jquery');</script>
 <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+<!--<script src="../layouts/template_navbar.js"></script>-->
 <script src="listStocks.js" type="module"></script>
 <script> if (window.module) module = window.module</script>
 </body>

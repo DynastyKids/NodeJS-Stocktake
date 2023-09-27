@@ -23,34 +23,37 @@ const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 i18next.use(Backend).init({
-    lng: 'en', backend: {loadPath: 'i18nLocales/{{lng}}/translations.json'}
+    lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
-    updateTexts();
+    i18n_navbar();
+    i18n_bodyContents();
 });
 
 document.getElementById('languageSelector').addEventListener('change', (e) => {
-    i18next.changeLanguage(e.target.value).then(() => {updateTexts();});
+    i18next.changeLanguage(e.target.value).then(() => {
+        i18n_navbar();
+        i18n_bodyContents();
+    });
 });
-function updateTexts() {
-    document.title = `${i18next.t('listproducts.pagetitle')} - Warehouse Electron`
+function i18n_navbar() {
     // Navbar Section
-    document.querySelector("#navHome").textContent=i18next.t('index.pagetitle');
-    document.querySelector("#sessionDropdown").textContent=i18next.t('navbar.sessions');
+    var navlinks = document.querySelectorAll(".nav-topitem");
+    for (let i = 0; i < navlinks.length; i++) {
+        navlinks[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
+    }
+
     var sessionDropdownLinks = document.querySelectorAll("#sessionDropdownList a");
-    sessionDropdownLinks[0].textContent=i18next.t('navbar.newsession');
-    sessionDropdownLinks[1].textContent=i18next.t('navbar.allsession');
+    for (let i = 0; i < sessionDropdownLinks.length; i++) {
+        sessionDropdownLinks[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
+    }
 
-    document.querySelector("#productDropdown").textContent=i18next.t('navbar.products');
     var productDropdownLinks = document.querySelectorAll("#productDropdownList a");
-    productDropdownLinks[0].textContent=i18next.t('navbar.showallproducts');
-    productDropdownLinks[1].textContent=i18next.t('navbar.addproduct');
-    productDropdownLinks[2].textContent=i18next.t('navbar.showstocksoverview');
-    productDropdownLinks[3].textContent=i18next.t('navbar.showmovementlog');
-    productDropdownLinks[4].textContent=i18next.t('navbar.addmovementlog');
-
-    document.querySelector("#navSettings").textContent=i18next.t('navbar.settings');
-    document.querySelector("#LanguageDropdown").textContent=i18next.t('navbar.language');
-
+    for (let i = 0; i < productDropdownLinks.length; i++) {
+        productDropdownLinks[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
+    }
+}
+function i18n_bodyContents() {
+    document.title = `${i18next.t('listproducts.pagetitle')} - Warehouse Electron`
     // Body section
     var breadcrumbs = document.querySelectorAll(".breadcrumb-item")
     breadcrumbs[0].querySelector('a').textContent = i18next.t('index.pagetitle');
@@ -61,22 +64,29 @@ function updateTexts() {
     document.querySelector('.container ul li a').textContent = i18next.t("listproducts.a_checkstockitems")
 
     //datatables
-    var tableentry_label =  document.querySelector("#productTable_length label").innerHTML.split(" ")
-    tableentry_label[0] = i18next.t('listproducts.table_entries.0')
-    tableentry_label[tableentry_label.length -1] = i18next.t('listproducts.table_entries.1')
-    document.querySelector("#productTable_length label").innerHTML = tableentry_label.toString().replaceAll(","," ")
+    var tableEntries_select = document.querySelector("#productTable_length label select")
+    document.querySelector("#productTable_length label").innerHTML = i18next.t('dataTables.table_pagesize.0') +tableEntries_select.outerHTML+ i18next.t('dataTables.table_pagesize.1')
 
-    var tablefilter_label = document.querySelector("#productTable_filter label").innerHTML.split(":")
-    tablefilter_label[0] = i18next.t('listproducts.table_searchlabel')
-    document.querySelector("#productTable_filter label").innerHTML = tablefilter_label.toString().replaceAll(",",": ")
+    var tableFilter_input = document.querySelector("#productTable_filter label input")
+    document.querySelector("#productTable_filter label").innerHTML = i18next.t('dataTables.table_search') + tableFilter_input.outerHTML
+
+    var infotextNumbers = document.querySelector("#productTable_info").innerText.match(/\d+/g)
+    document.querySelector("#productTable_info").innerText = i18next.t(`dataTables.table_entrydesc.${0}`)+
+        infotextNumbers[0]+i18next.t(`dataTables.table_entrydesc.${1}`)+infotextNumbers[1]+
+        i18next.t(`dataTables.table_entrydesc.${2}`)+infotextNumbers[2]+
+        i18next.t(`dataTables.table_entrydesc.${3}`)
+
+    document.querySelector("#productTable_paginate .previous").textContent = i18next.t("dataTables.table_action.0")
+    document.querySelector("#productTable_paginate .next").textContent = i18next.t("dataTables.table_action.1")
 
     //Table Head & foot
     var tableHeads = document.querySelectorAll("#productTable thead th")
     var tableFoots = document.querySelectorAll("#productTable tfoot th")
-
     for (let i = 0; i < tableHeads.length; i++) {
-        tableHeads[i].textContent = i18next.t(`listproducts.table_titles.${i}`);
-        tableFoots[i].textContent = i18next.t(`listproducts.table_titles.${i}`);
+        tableHeads[i].textContent = i18next.t(`listproducts.table_head.${i}`);
+    }
+    for (let i = 0; i < tableFoots.length; i++) {
+        tableFoots[i].textContent = i18next.t(`listproducts.table_head.${i}`);
     }
 }
 

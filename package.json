@@ -38,6 +38,7 @@
     "i18next-fs-backend": "^2.1.5",
     "jquery": "^3.7.0",
     "js-datepicker": "^5.18.2",
+    "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.43",
     "mongodb": "^5.7.0",

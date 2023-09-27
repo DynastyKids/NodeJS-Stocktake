@@ -17,13 +17,11 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
-                <a class="nav-link active" aria-current="page" href="#" id="navHome"><i class="fa fa-home" aria-hidden="true"></i> Home</a>
+                <a class="nav-link nav-topitem" aria-current="page" href="../index.html" id="navHome">Home</a>
             </li>
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="sessionDropdown" role="button"
-                   data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fa fa-users" aria-hidden="true"></i> Sessions
-                </a>
+                <a class="nav-link dropdown-toggle nav-topitem" href="#" id="sessionDropdown" role="button"
+                   data-bs-toggle="dropdown" aria-expanded="false">Sessions</a>
                 <ul class="dropdown-menu" aria-labelledby="sessionDropdown" id="sessionDropdownList">
                     <li><a class="dropdown-item" href="../stocktake/newsession.html">New Stocktake Session</a></li>
                     <li>
@@ -33,10 +31,8 @@
                 </ul>
             </li>
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="productDropdown" role="button"
-                   data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fa fa-cubes" aria-hidden="true"></i> Products
-                </a>
+                <a class="nav-link dropdown-toggle nav-topitem" href="#" id="productDropdown" role="button"
+                   data-bs-toggle="dropdown" aria-expanded="false">Products</a>
                 <ul class="dropdown-menu" aria-labelledby="productDropdown" id="productDropdownList">
                     <li><a class="dropdown-item" href="../items/listProduct.html">Show all products</a></li>
                     <li><a class="dropdown-item" href="../items/addProduct.html">Add product</a></li>
@@ -49,16 +45,15 @@
                 </ul>
             </li>
             <li class="nav-item">
-                <a class="nav-link" aria-current="page" href="../config/settings.html" id="navSettings"><i class="fa fa-cogs" aria-hidden="true"></i> Settings</a>
+                <a class="nav-link nav-topitem" aria-current="page" href="../config/settings.html" id="navSettings">Settings</a>
             </li>
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="LanguageDropdown" role="button"
-                   data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fa fa-language" aria-hidden="true"></i> Language
-                </a>
+                <a class="nav-link dropdown-toggle nav-topitem" href="#" id="LanguageDropdown" role="button"
+                   data-bs-toggle="dropdown" aria-expanded="false">Language</a>
                 <ul class="dropdown-menu" aria-labelledby="productDropdown">
                     <li>
-                        <select id="languageSelector" onchange="updateTexts(this.value)">
+<!--                        <select id="languageSelector" onchange="i18n_navbar(this.value);i18n_bodyContents(this.value)">-->
+                        <select id="languageSelector">
                             <option value="en">English</option>
                             <option value="zh">简体中文</option>
                         </select>
@@ -66,12 +61,13 @@
                 </ul>
             </li>
             <li class="nav-item">
-                <a class="nav-link" aria-current="page" href="../scanner/scanner.html" id="scannermode"><i class="fa fa-barcode" aria-hidden="true"></i> Scanner</a>
+                <a class="nav-link nav-topitem" aria-current="page" href="../scanner/scanner.html" id="scannermode">Scanner</a>
             </li>
         </ul>
     </div>
 </div>
 <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../layouts/template_navbar.js"></script>
 </body>
 
 </html>

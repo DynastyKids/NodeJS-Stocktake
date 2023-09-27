@@ -1,17 +1,15 @@
 {
   "navbar": {
     "home": "Home",
-    "sessions": "Sessions",
-    "newsession": "New stock-take session",
-    "allsession": "Show All Sessions",
-    "products": "Products",
-    "showallproducts": "Show All Products",
-    "addproduct": "Add Product",
-    "showstocksoverview": "Show Stocks Overview",
-    "showmovementlog": "Show Movement Logs",
-    "addmovementlog": "Add Movement log",
-    "settings": "Settings",
-    "language": "Language"
+    "navitems": [
+      "<i class=\"fa fa-home\" aria-hidden=\"true\"></i> Home",
+      "<i class=\"fa fa-users\" aria-hidden=\"true\"></i> Sessions",
+      "<i class=\"fa fa-cubes\" aria-hidden=\"true\"></i> Products",
+      "<i class=\"fa fa-cogs\" aria-hidden=\"true\"></i> Settings",
+      "<i class=\"fa fa-language\" aria-hidden=\"true\"></i> Language",
+      "<i class=\"fa fa-barcode\" aria-hidden=\"true\"></i> Scanner Mode"],
+    "sessions_navitems": ["New stock-take session", "Show All Sessions"],
+    "products_navitems": [ "Show All Products", "Add Product", "Show Stocks Overview", "Show Movement Logs", "Add Movement log"]
   },
   "pageTitle": {
     "note": "Using file name as title identifier",
@@ -28,6 +26,13 @@
     "btn_edit": "Edit",
     "btn_delete": "Delete",
     "btn_consume": "Consume"
+  },
+  "dataTables": {
+    "note": "This section is for DataTables.js only, table head/foot needs to be separate within page section",
+    "table_search": "Search: ",
+    "table_pagesize": ["Show "," entries per page"],
+    "table_entrydesc": ["Showing "," to "," of "," entries"],
+    "table_action": ["Previous Page","Next Page"]
   },
   "index": {
     "pagetitle": "Homepage",
@@ -101,9 +106,7 @@
     "pagetitle": "Products",
     "h4title_action": "Actions",
     "a_checkstockitems": "Check Stock Items",
-    "table_entries": ["Show "," entries"],
-    "table_searchlabel": "Search",
-    "table_titles": ["Product Code", "Product Name", "Qty Per Box", "Qty Per Pallet", "Best Before", "Action"]
+    "table_head": ["Product Code", "Product Name", "Qty Per Box", "Qty Per Pallet", "Best Before", "Action"]
   },
   "addproducts": {
     "pagetitle": "Add a product",
@@ -118,6 +121,18 @@
     "submitbtn": "Submit",
     "unitSelections": [["bottle","Bottle"],["bag", "Bag"],["box", "Box"],["carton","Carton"], ["crate", "Crate"], ["each", "Each"], ["piece", "Piece"]],
     "expireSelection": [["0", "No"],["1", "Yes"]]
+  },
+  "liststocks": {
+    "pagetitle": "Current Stocks",
+    "reloadTableLink": "Reload Table Now",
+    "refreshText": ["Automatic Refresh in: ","s"],
+    "table_head": ["Product","Quantity","Best Before","Location","Label ID","Action"],
+    "table_actionRemove": "Remove"
+  },
+  "listnext3": {
+    "pagetitle": "Current Stocks",
+    "refreshText": ["Automatic Refresh in: ","s"],
+    "table_head": ["Product","1st","2nd","3rd","Location / Date"]
   },
   "scanner": {
     "pagetitle": "Scanner Mode",

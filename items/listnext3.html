@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="refresh" content="180">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src * data:">
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="../node_modules/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="../node_modules/flatpickr/dist/flatpickr.min.css">
@@ -31,7 +31,10 @@
         </ol>
     </nav>
     <h1 class="m-2" id="sessionTitle">Next 3 pallets of product</h1>
-    <div id="refreshCountdown" style="float: left;">Refresh in: &nbsp&nbsp&nbsp&nbsp s</div>
+    <div id="refreshCountdown" style="float: left;">
+        <span class="toggleRefreshText" style="float: left;">Auto Refresh Text</span>
+        <span id="toggleTimes"></span><span class="toggleRefreshText"></span>
+    </div>
 </div>
 <div id="fill-div" class="container-fluid">
     <table id="table-header">
