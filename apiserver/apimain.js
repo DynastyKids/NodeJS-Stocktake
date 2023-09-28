@@ -17,8 +17,11 @@ const path = require("path");
 const credentials = JSON.parse(
     fs.readFileSync(path.join(__dirname, "../config/localsettings.json"))
 );
+
+const cors=require("cors")
 const moment = require("moment-timezone");
 const {session} = require("electron");
+const {result} = require("lodash");
 
 const uriCompents = [credentials.mongodb_protocol, "://"]
 if (credentials.mongodb_username && credentials.mongodb_password) {
@@ -27,7 +30,7 @@ if (credentials.mongodb_username && credentials.mongodb_password) {
 uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
 const uri = encodeURI(uriCompents.join(""))
 
-const sessionClient = new MongoClient(uri, {
+let sessionClient = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
         useNewUrlParser: true,
@@ -35,98 +38,207 @@ const sessionClient = new MongoClient(uri, {
     },
 });
 
+//直接访问则引导到/api，/可以留作其他后续使用
 router.get("/", async (req, res) => {
     res.json({ping: true, acknowledged: true, message: "For API documentation, visit '/api' "});
 });
 
+/*
+* Session
+* Session中至少包括,GET所有session，POST加入一个Session，get某个Session的stocklist，post添加一个log记录到xxx Session
+*/
 /* 
- * 获取所有当前可用的Session
+ * SESSION
+ * Getsession 获取所有当前可用的Session
+ * 默认仅获取当前可用的Session，如果添加了?all=1则给出所有的Session List
  */
 router.get("/api/v1/sessions", async (req, res) => {
-    let results = await getSessionLists()
-    res.json(results.data);
-});
-
-/* 
- * 验证当前Session是否有效
- * 用户需要以Post请求方式发起，GET请求回弹报错
- */
-router.get("/api/v1/sessions/join", async (req, res) => {
-    const sessioncode = req.query.session;
-    let sessionResults = {acknowledged: false, data: [], message: "Request Incorrect, GET method deprecated"};
-    sessionResults = await checkSession(sessioncode)
-    res.json(sessionResults.data);
-});
-router.post("/api/v1/sessions/join", async (req, res) => {
-    console.log(req.body)
-    const sessioncode = req.body.session;
-    var sessionResults = await checkSession(sessioncode)
-    res.json(sessionResults.data);
-});
-async function checkSession(sessionId) {
-    // 用户发起请求加入该session，需要先确认当前Session是否可用
-    let localTime = moment(new Date()).tz("Australia/Sydney");
     let sessionResults = {acknowledged: false, data: [], message: ""};
-    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollingsession");
-    let findingQuery = {
-        $and: [
-            {endDate: {$gte: localTime.format("YYYY-MM-DD HH:mm:ss")}},
-            {startDate: {$lte: localTime.format("YYYY-MM-DD HH:mm:ss")}},
-            {session: sessionId}
-        ]
-    };
     try {
-        await sessionClient.connect();
-        let result = await sessions.find(findingQuery)
-        if ((await sessions.countDocuments(findingQuery)) === 0) {
-            console.log("[MongoDB] Nothing Found");
-        }
-
-        for await (const x of result) {
-            sessionResults.data.push({
-                session: x.session,
-                startDate: x.startDate,
-                endDate: x.endDate,
-                logTime: x.logTime
-            });
-        }
+        let dbclient = new MongoClient(uri, {
+            serverApi: {
+                version: ServerApiVersion.v1,
+                useNewUrlParser: true,
+                useUnifiedTopology: true,
+            },
+        });
+        let options = { sort: {"startDate" : 1},  projection: {"_id" : 0} };
+        await dbclient.connect();
+        let session = dbclient.db(credentials.mongodb_db).collection("pollingsession");
+        let resultArray = await session.find({}, options).toArray();
         sessionResults.acknowledged = true
-    } catch (err) {
-        console.error(err)
+        sessionResults.data = resultArray
+    } catch (e) {
+        console.error("Error on /api/v1/sessions:",e)
+        sessionResults.message = e.toString()
+    } finally {
+        await sessionClient.close()
     }
-    return sessionResults
-}
 
-/* 
- * GET方法，Sessionlog用来查看某个会话的所有产品；Query:sessioncode
- * 获取所有当前session的产品盘点信息，使用labelid去重
- */
-router.get("/api/v1/sessionlog", async (req, res) => {
-    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
-    let localTime = moment(new Date()).tz("Australia/Sydney");
-    let findingQuery = {session: req.query.session};
-    let options = {sort: {productCode: 1, loggingTime: -1}}
-    let cursor;
-    let sessionResults = [];
-    try {
-        await sessionClient.connect();
-        cursor = sessions.find(findingQuery, options);
-        if ((await sessions.countDocuments(findingQuery)) === 0) {
-            console.log("[MongoDB] Nothing Found");
-        } else {
-            for await (const x of cursor) {
-                sessionResults.push(x);
+    if (!(req.query && req.query.all && req.query.all === '1')){
+        //修正data为返回当前有效的Sessions
+        let localMoment = moment(new Date()).tz("Australia/Sydney");
+        let localTime = (new Date(localMoment.format("YYYY-MM-DD HH:mm:ss"))).getTime()
+        let inEffectSessions = []
+        for (const eachSession of sessionResults.data) {
+            var startDateint = (new Date(eachSession.startDate)).getTime()
+            var endDateint = (new Date(eachSession.endDate)).getTime()
+            if (startDateint <= localTime && endDateint >= localTime){
+                inEffectSessions.push(eachSession)
             }
         }
-    } catch (err) {
-        console.error(err)
-        sessionResults = JSON.stringify(err)
+        sessionResults.data = inEffectSessions
     }
     res.json(sessionResults);
 });
 
 /* 
- * 扫描信息按照sessioncode进入系统
+ * SESSION
+ * 验证当前Session是否有效
+ * 用户需要以Post请求方式发起，GET请求回弹报错
+ */
+router.post("/api/v1/sessions/join", async (req, res) => {
+    let response =  {acknowledged: false, data: [], message: ""};
+    let localMoment = moment(new Date()).tz("Australia/Sydney");
+    let localTime = (new Date(localMoment.format("YYYY-MM-DD HH:mm:ss"))).getTime()
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+
+    if(req.body && req.body.session){
+        const sessionCode = req.body.session;
+        await dbclient.connect();
+        const sessions = dbclient.db(credentials.mongodb_db).collection("pollingsession");
+        let options = { sort: {"startDate" : 1},  projection: {"_id" : 0} };
+        try{
+            let result = await sessions.find({session: sessionCode}, options).toArray()
+            for (const eachSession of result) {
+                let startDate = (new Date(eachSession.startDate)).getTime()
+                let endDate = (new Date(eachSession.endDate)).getTime()
+                if (startDate <= localTime && endDate >= localTime){
+                    //当用户发起加入session请求时，需要确认session是否可用，如果可用则继续返回true，
+                    response.acknowledged = true
+                }
+            }
+
+            if (!response.acknowledged){
+                response.message = `The session '${sessionCode}' has expired or session code is incorrect.`
+            }
+        }catch (e) {
+            console.error("Error on /api/v1/sessions/join:",e)
+            response.message = "Missing body parameter of SESSION Code"
+        }
+    } else {
+        response.message = "Missing body parameter of SESSION Code"
+    }
+    res.json(response);
+});
+
+/*
+ * SESSION
+ * ADD POST方法
+ * 允许用户通过客户端直接新建一个盘点会话，而无需通过服务端执行
+ */
+router.post("/api/v1/sessions/add",async (req, res) => {
+    let response = {acknowledged: false, data: [], message: ""};
+    let localMoment = moment(new Date()).tz("Australia/Sydney");
+    let localTime = localMoment.format("YYYY-MM-DD HH:mm:ss")
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+
+    const sessionCode = req.body.session;
+    await dbclient.connect();
+    const session = dbclient.db(credentials.mongodb_db).collection("pollingsession");
+    try {
+        while (true){
+            var purposedSessionCode = randomHexGenerator().substring(1)
+            let result = await session.find({session: sessionCode}).toArray()
+            if (result.length <= 0){ //核对没有重复的Session Code， 然后插入到DB中
+                const insertTarget = {
+                    session: purposedSessionCode,
+                    startDate: localMoment.format("YYYY-MM-DD HH:mm:ss"),
+                    endDate: `${localMoment.format("YYYY-MM-DD")} 23:59:59`,
+                    logTime: localMoment.format("YYYY-MM-DD HH:mm:ss"),
+                }
+                result = await session.insertOne(insertTarget);
+                response.acknowledged=true
+                response.data.push(insertTarget)
+                break;
+            }
+        }
+    } catch (e) {
+        console.error("Error on /api/v1/sessions/join:", e)
+        response.message = "Missing Parameter of SESSION Code"
+    } finally {
+        await dbclient.close()
+    }
+    res.json(response)
+})
+
+function randomHexGenerator(){
+    return (Math.floor(Math.random() * (0xFFFFFFFF + 1))).toString(16).toUpperCase().padStart(8, '0')
+}
+
+/*
+ * SESSION
+ * session/logs GET方法
+ * 替换了原有的sessionlog，用来查看某个盘点会话中已经扫描的产品，必须要传入SessionCode作为参数，可以查看所有历史的会话
+ * 在MongoDB中每件产品可能被扫描多次，给出结果前在JS中去重
+ */
+router.get("/api/v1/session/logs",async (req, res) =>{
+    let response = {acknowledged: false, data: [], message: ""};
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+    if (req.query && req.query.session){
+        const sessionCode = String(req.query.session);
+        console.log(sessionCode)
+        try {
+            await dbclient.connect()
+            const session = dbclient.db(credentials.mongodb_db).collection("pollinglog");
+            // let options = { sort: {"productCode": 1,"productLabel" : 1},  projection: {"_id" : 0} };
+            let options = { sort: {"productLabel" : 1},  projection: {"_id" : 0} };
+            let result = await session.find({session: sessionCode}, options).toArray()
+            console.log(result)
+            response.data = result
+            response.acknowledged = true
+        } catch (e) {
+            console.error("Error on /api/v1/session/logs:", e)
+            response.message = `Error on /api/v1/session/logs: ${e}`
+        } finally {
+            await dbclient.close()
+        }
+    } else {
+        response.message = "Missing Parameter of SESSION Code"
+    }
+    res.json(response)
+});
+
+/*
+ * SESSION
+ * sessionlog GET方法
+ * 2023-09-29: 重定向到新地址，2023-12-31之后可删除
+ */
+router.get("/api/v1/sessionlog", async (req, res) => {
+    res.redirect(301,"/api/v1/session/logs")
+});
+
+/*
+ * SESSION
+ * session/addlog POST方法 (旧)
  */
 router.post("/api/v1/sessionlog/add", async (req, res) => {
     const sessioncode = (req.body.session ? req.body.session : "");
@@ -147,6 +259,62 @@ router.post("/api/v1/sessionlog/add", async (req, res) => {
     }
     res.json(purposedRes);
 });
+
+/*
+ * SESSION
+ * session/addlog POST方法 （新）
+ * 替换了原有的sessionlog/add，用户必须传入两个参数
+ * 1. 会话ID
+ * 2. 产品的Base64编码信息，仅接受base64字符串
+ */
+router.post("/api/v1/session/addlog", async (req, res) => {
+    const sessioncode = (req.body.session ? req.body.session : "STOCKS");
+    let response = {acknowledged: false, data: [], message: ""};
+    let localMoment = moment(new Date()).tz("Australia/Sydney");
+    let localTime = localMoment.format("YYYY-MM-DD HH:mm:ss")
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+
+    if (req.body.item){
+        try{
+            await dbclient.connect();
+            const session = dbclient.db(credentials.mongodb_db).collection("pollinglog");
+            let mongodata = (isBase64String(req.body.item) ? createLogObject(sessioncode, req.body.item) : {});
+            if (mongodata !== {}) {
+                mongodata.loggingTime = localTime;
+                const filter = {
+                    session: mongodata.session,
+                    productCode: mongodata.productCode,
+                    productLabel: mongodata.productLabel,
+                }
+                let updateField = {
+                    $set:mongodata
+                }
+                let result = await session.updateOne(filter,updateField,{upsert: true})
+                response.acknowledged = true
+                if (result.upsertedCount > 0){
+                    response.message = `Insert a new document, id: ${result.upsertedId._id}`
+                } else {
+                    response.message = `Update on existing document.`
+                }
+            }
+        } catch (e) {
+            response.message = `Error on /api/v1/session/addlog: ${e}`
+        } finally {
+          await dbclient.close()
+        }
+    } else {
+        response.message = "Missing Body parameter of base64(item)"
+    }
+
+    res.json(response);
+});
+
 
 /* 
  * 默认使用最后一个开启的session号码来添加库存信息

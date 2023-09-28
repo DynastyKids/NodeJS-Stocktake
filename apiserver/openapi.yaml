@@ -6,8 +6,12 @@ info:
 
     This application are require in coherience running with Wechat Miniprogram and Electron distributed package. If you are require customization, please contact author via Github.
     
+    API information was generated with Swagger Editor
+    
     *** 
-    API接口信息由DyanstyKids制作，项目开源于 https://github.com/DynastyKids/NodeJS-Stocktake
+    该项目是个仓库管理场景的开源项目，允许用户搭配小程序、移动应用（开发中）以协助管理仓库
+    
+    API接口信息由DyanstyKids使用Swagger Editor制作，采用OpenAPI 3标准，项目开源于 https://github.com/DynastyKids/NodeJS-Stocktake
     ***
   contact:
     email: shabibox@outlook.com
@@ -16,15 +20,15 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 0.9.2
 servers:
-  - url: http://<Your Server IP>:<Your Server Port>/api
-  - url: http://192.168.2.1:3000/api
-  
+  - url: http://127.0.0.1:3000/api
+  - url: https://127.0.0.1:3000/api
+
 tags:
   - name: Sessions
     description: Everything about your stocktake sessions | 所有会话相关接口
   - name: Stocks
     description: Everything about your stocks inhouse and products | 所有库存商品相关接口
-    
+
 paths:
   /v1/sessions:
     get:
@@ -42,7 +46,7 @@ paths:
                 $ref: '#/components/schemas/session'
         '500':
           description: System Internal error | 失败
-          
+
   /v1/sessions/join:
     post:
       tags:
@@ -50,32 +54,53 @@ paths:
       summary: Join a Session from client | 使用客户端加入一个会话
       description: (Optional *) It's not mandatory requirement as long as user send a valid request from with valid session code, this only for check if session exist purpose. | 非必要请求，仅用于识别用户加入的会话是否是合法会话
       operationId: sessionJoin
-      parameters:
-        - name: session
-          in: query
-          description: Session code that available from /sessions request
-          required: true
-          explode: false
-          schema:
-            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/joinSession'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/joinSession'
       responses:
         '200':
-          description: successful operation
+          description: Join Session Success | 加入会话成功
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/sessions'
+                $ref: '#/components/schemas/trueORfalse'
         '400':
-          description: 会话不存在
-          
-  /v1/sessionlog:
+          description: Join Session Failed | 加入会话失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/trueORfalse'
+
+  /v1/sessions/add:
+    post:
+      tags:
+        - Sessions
+      summary: Create a Session from user Client | 允许用户通过客户端创建一个新的会话，其他用户可以直接加入该会话
+      operationId: sessionCreate
+      responses:
+        '200':
+          description: Create session success | 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createSession'
+        '500':
+          description: Create session Failed | 创建失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/trueORfalse'
+
+  /v1/session/logs:
     get:
       tags:
         - Sessions
-      summary: Get all current sessions stock available | 获取当前可用的所有Session
-      description: Get sessions available to join, user will require to use this while scanning products | 获取可以加入的Session，该端口为开放以允许所有用户加入
+      summary: Get all products under current sort-take session | 获取某个会话的盘点结果
       operationId: getSessionlog
       parameters:
         - name: session
@@ -90,17 +115,22 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/session'
+                $ref: '#/components/schemas/pollinglogs'
+
         '500':
           description: System Internal error | 失败
-          
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/trueORfalse'
+
   /v1/sessionlogs/itemadd:
     post:
       tags:
         - Sessions
       summary: Adding items by scanner
       description: Wechat program will automatic input scanning items via this interface
-      operationId: addlog
+      operationId: addlogOld
       parameters:
         - name: session
           in: query
@@ -122,12 +152,42 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/pollinglog'
+                $ref: '#/components/schemas/pollinglog'
         '400':
           description: Invalid status value
-  
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/pollinglog'
+
+  /v1/session/addlog:
+    post:
+      tags:
+        - Sessions
+      summary: Adding items from third-party | 从API添加一个扫描记录
+      description: Thirdparty using session code + base64 string of the product to adding a session log | 该端口目前交由移动端提供会话号和产品base64编码信息
+      operationId: addlog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/sessionAddlog'
+
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/trueORfalse'
+        '500':
+          description: Invalid status value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/trueORfalse'
+
+
   /v1/products:
     get:
       tags:
@@ -147,7 +207,7 @@ paths:
           content:
             application/json:
               example: {acknowledged: false}
-          
+
   /v1/stocks:
     get:
       tags:
@@ -201,49 +261,82 @@ paths:
               example: {acknowledged: false}
 components:
   schemas:
+    trueORfalse:
+      type: object
+      properties:
+        acknowledged:
+          type: boolean
+          description: Flag of respond status
+        data:
+          type: object
+          description: This session remain as empty under this request
+        message:
+          type: string
+          description: Detail of error informations
+
     session:
+      type: object
+      properties:
+        acknowledged:
+          type: boolean
+          description: Flag of respond status
+        data:
+          type: object
+          description: Session Infos
+          properties:
+            session:
+              type: string
+              description: 7bit code of session identifier
+            startDate:
+              type: string
+              format: 'YYYY-MM-DD HH:mm:ss'
+              description: Session start time
+            endDate:
+              type: string
+              format: 'YYYY-MM-DD HH:mm:ss'
+              description: Session finish time
+            logTime:
+              type: string
+              format: 'YYYY-MM-DD HH:mm:ss'
+              description: System automated logged time when entry inputed
+        message:
+          type: string
+          description: Detail of error informations
+
+    joinSession:
       type: object
       properties:
         session:
           type: string
-          description: 7bit code of session identifier
-        startDate:
+          description: Session code
+          example: 1234567
+
+    createSession:
+      type: object
+      properties:
+        acknowledged:
+          type: boolean
+          description: Flag of respond status
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/session'
+        message:
           type: string
-          format: date-time
-          description: User defined session start time
-        endDate:
-          type: string
-          format: date-time
-          description: User defined session finish time
-        logTime:
-          type: string
-          format: date-time
-          description: System automated logged time when entry inputed
-    sessions:
-      type: array
-      items: 
-        $ref: '#/components/schemas/session'
-    
+          description: Detail of error informations
+
+
     pollinglog:
       type: object
       properties:
         session:
           type: string
           example: 1A2B3C4
-        loggingTime:
-          type: string
-          format: date-time
-        bestbefore:
-          type: string
-          format: date
         productCode:
-          type: string
-        productName:
           type: string
         quantity:
           type: integer
           format: int32
-          example: 1
         quantityUnit:
           type: string
           example: Bag
@@ -252,18 +345,57 @@ components:
           example: AA
         POIPnumber:
           type: string
-          example: POIP12345
+          description: Purchease Order Identification Number (Optional)
+        productName:
+          type: string
+        bestbefore:
+          type: string
+          format: date
         productLabel:
           type: string
-          example: YYYYMMDD1A2B3C4
-        labelBuild:
+          description: Product Label Identification Number, must be identical, format as YYYYMMDD1234567, last 7 chars can be Hexadecimal
+        loggingTime:
+          type: string
+          format: date-time
+          description: Date Format must be YYYY-MM-DD HH:mm:ss
+        consumed:
           type: integer
           format: int32
+          description: Flag used to identify whether product has been removed from DB
+        consumedTime:
+          type: string
+          format: date-time
+          description: Date Format must be YYYY-MM-DD HH:mm:ss
+
+    pollinglogs:
+      type: object
+      properties:
+        acknowledged:
+          type: boolean
+          description: Flag of respond status
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/pollinglog'
+        message:
+          type: string
+          description: Detail of error informations
+
+    sessionAddlog:
+      type: object
+      properties:
+        session:
+          type: string
+          description: session code for the adding action
+        item:
+          type: string
+          description: Base64 encoded string for the product information
+
     stocks:
       type: array
-      items: 
+      items:
         $ref: '#/components/schemas/pollinglog'
-        
+
     product:
       type: object
       properties:
@@ -289,5 +421,5 @@ components:
           format: int
     products:
       type: array
-      items: 
+      items:
         $ref: '#/components/schemas/product'
