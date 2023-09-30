@@ -18,7 +18,7 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: 0.9.2
+  version: 0.9.5
 servers:
   - url: http://127.0.0.1:3000/api
   - url: https://127.0.0.1:3000/api
@@ -26,8 +26,11 @@ servers:
 tags:
   - name: Sessions
     description: Everything about your stocktake sessions | 所有会话相关接口
+  - name: Products
+    description: Everything about your products | 所有和产品相关的增删改查操作
   - name: Stocks
-    description: Everything about your stocks inhouse and products | 所有库存商品相关接口
+    description: Everything about your stocks | 所有库存相关的增删改查操作
+
 
 paths:
   /v1/sessions:
@@ -58,10 +61,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/joinSession'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/joinSession'
+              type: object
+              properties:
+                session:
+                  type: string
+                  description: Session code, hexadecimal 7 digits
+                  example: 1a2b3c4d
       responses:
         '200':
           description: Join Session Success | 加入会话成功
@@ -88,7 +93,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/createSession'
+                $ref: '#/components/schemas/session'
         '500':
           description: Create session Failed | 创建失败
           content:
@@ -115,7 +120,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/pollinglogs'
+                $ref: '#/components/schemas/pollinglogsRespose'
 
         '500':
           description: System Internal error | 失败
@@ -191,9 +196,9 @@ paths:
   /v1/products:
     get:
       tags:
-        - Stocks
+        - Products
       summary: Get all available products | 获取所有产品信息
-      description: Get all available product information, and pre-fill some detail description when needed | Products接口用于获取产品信息
+      description: Get all available product information, or selected product information when provide a keywork | 获取产品相关信息,若用户提供了某个关键词则会执行搜索并返回所有相关的信息
       operationId: getProducts
       responses:
         '200':
@@ -201,12 +206,43 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/products'
+                $ref: '#/components/schemas/productsResponse'
         '500':
           description: System Internal error | 失败
           content:
             application/json:
-              example: {acknowledged: false}
+              schema:
+                $ref: '#/components/schemas/trueORfalse'
+    post:
+      tags:
+        - Products
+      summary: Adding/edit a product | 添加或修改一个产品
+      description: Adding a product to product list,
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  description: "Actions alloed: add, update. On update, will update based on product code & vendor code."
+                  example: "add / update"
+                item:
+                  $ref: '#/components/schemas/product'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/trueORfalse'
+        '400':
+          description: Invalid status value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/trueORfalse'
 
   /v1/stocks:
     get:
@@ -233,32 +269,32 @@ paths:
       summary: Add  / Move / Consume Stocks | 添加，修改，移动和删除货架上的货品信息
       description: 对货架上的商品信息进行增改删时需要action和新信息，
       operationId: poststocks
-      parameters:
-        - name: action
-          in: query
-          description: Intending action including add / move / consume | 操作关键词，增加(add)、移动(move)、使用(consume)
-          required: true
-          explode: false
-          schema:
-            type: string
-        - name: content
-          in: query
-          description: JSON字符串传入需要的操作的物品信息，若为新增物品则需要按照标准格式创建对象
-          required: true
-          explode: false
-          schema:
-            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  description: "Actions alloed: add, move, update, remove. | 允许操作包括增删改查，填入对应关键词，当update时，使用labelid作为主键更新，labelid本身不允许更新"
+                  example: "add / move / update / remove"
+                item:
+                  $ref: '#/components/schemas/pollinglog'
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
-              example: {acknowledged: true}
+              schema:
+                $ref: '#/components/schemas/trueORfalse'
         '400':
           description: Bad Request / Unsuccessful operation
           content:
             application/json:
-              example: {acknowledged: false}
+              schema:
+                $ref: '#/components/schemas/trueORfalse'
+
 components:
   schemas:
     trueORfalse:
@@ -290,41 +326,21 @@ components:
             startDate:
               type: string
               format: 'YYYY-MM-DD HH:mm:ss'
+              example: "2021-01-01 12:34:56"
               description: Session start time
             endDate:
               type: string
               format: 'YYYY-MM-DD HH:mm:ss'
+              example: "2021-01-01 12:34:56"
               description: Session finish time
             logTime:
               type: string
               format: 'YYYY-MM-DD HH:mm:ss'
+              example: "2021-01-01 12:34:56"
               description: System automated logged time when entry inputed
         message:
           type: string
           description: Detail of error informations
-
-    joinSession:
-      type: object
-      properties:
-        session:
-          type: string
-          description: Session code
-          example: 1234567
-
-    createSession:
-      type: object
-      properties:
-        acknowledged:
-          type: boolean
-          description: Flag of respond status
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/session'
-        message:
-          type: string
-          description: Detail of error informations
-
 
     pollinglog:
       type: object
@@ -332,6 +348,7 @@ components:
         session:
           type: string
           example: 1A2B3C4
+          description: "When adding stocks, using STOCK as session code. | 当添加库存且不指定会话代码时，可使用STOCK替代"
         productCode:
           type: string
         quantity:
@@ -367,7 +384,7 @@ components:
           format: date-time
           description: Date Format must be YYYY-MM-DD HH:mm:ss
 
-    pollinglogs:
+    pollinglogsRespose:
       type: object
       properties:
         acknowledged:
@@ -419,7 +436,17 @@ components:
         withBestbefore:
           type: integer
           format: int
-    products:
-      type: array
-      items:
-        $ref: '#/components/schemas/product'
+
+    productsResponse:
+      type: object
+      properties:
+        acknowledged:
+          type: boolean
+          description: Flag of respond status
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/product'
+        message:
+          type: string
+          description: Detail of error informations
