@@ -110,16 +110,17 @@
   },
   "addproducts": {
     "pagetitle": "Add a product",
-    "inputlabel": ["Product Code","Product Label Name","Product Description","Default quantity","Unit","Unit Weight (g)","Vendor Code","With Expire date"],
+    "inputlabel": ["Product Code","Product Label Name","Product Description","Quantity per pallet", "Quantity per carton","Unit","Unit Weight (g)","Vendor Code","With Expire date"],
     "inputplaceholder": [
-      "Product code must be unique in database",
-      "Label name to be used when printout labels.",
-      "*Optional: description text for product",
-      "*Optional: default quantity number",
-      "*Optional: weight of product (grams)",
-      "*Optional: vendor code of product"],
+      "* Product code must be unique in database",
+      "* Label name to be used when printout labels.",
+      "Optional: description text for product",
+      "Optional: quantity number per pallet",
+      "Optional: quantity number per box",
+      "Optional: weight of product (grams)",
+      "Optional: vendor code of product"],
     "submitbtn": "Submit",
-    "unitSelections": [["bottle","Bottle"],["bag", "Bag"],["box", "Box"],["carton","Carton"], ["crate", "Crate"], ["each", "Each"], ["piece", "Piece"]],
+    "unitSelections": [["bottle","Bottle"],["bag", "Bag"],["box", "Box"],["carton","Carton"], ["crate", "Crate"], ["each", "Each"], ["piece", "Piece"],["unit", "Unit"]],
     "expireSelection": [["0", "No"],["1", "Yes"]]
   },
   "liststocks": {

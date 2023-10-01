@@ -10,8 +10,8 @@ const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 
 var $ = require('jquery');
-var DataTable = require('datatables.net')(window, $);
-require('datatables.net-responsive');
+var DataTable = require('datatables.net-bs')(window, $);
+require('datatables.net-responsive-bs');
 
 const uriCompents = [credentials.mongodb_protocol, "://"]
 if (credentials.mongodb_username && credentials.mongodb_password) {
@@ -36,13 +36,12 @@ let table = new DataTable('#stockTable', {
     order: [[2, 'asc']]
 });
 let shouldRefresh = true;
-const countdownFrom = 60;
-let countdown = 60;
+const countdownFrom = 30;
+let countdown = 30;
 
 i18next.use(Backend).init({
     lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
-    console.log(path.join(__dirname, '../i18nLocales/{{lng}}/translations.json'))
     i18n_navbar();
     i18n_bodyContents();
 });
@@ -85,12 +84,6 @@ function i18n_bodyContents() {
     document.querySelector("#areloadTable").textContent = i18next.t("liststocks.reloadTableLink")
 
     // Datatables
-    var innerSelection = document.querySelector("#stockTable_length select")
-    document.querySelector("#stockTable_length").innerHTML = i18next.t(`dataTables.table_pagesize.${0}`)+
-        innerSelection.outerHTML+i18next.t(`dataTables.table_pagesize.${1}`)
-    var innerSearch = document.querySelector("#stockTable_filter label input")
-    document.querySelector("#stockTable_filter label").innerHTML = i18next.t("dataTables.table_search")+
-        innerSearch.outerHTML
     var tableheaders = document.querySelectorAll("#stockTable thead th")
     var tablefooters = document.querySelectorAll("#stockTable tfoot th")
     for (let i = 0; i < tableheaders.length; i++) {

@@ -3,15 +3,16 @@
 const { ipcRenderer } = require("electron");
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
-const flatpickr = require("flatpickr");
+
 const fs=require('fs');
 const path = require('path');
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
-const moment = require('moment-timezone')
-const $ = require("jquery");
-var DataTable = require('datatables.net')(window, $);
-require('datatables.net-responsive');
 
+var $ = require("jquery");
+const DataTable = require('datatables.net-bs')(window, $);
+require('datatables.net-responsive-bs');
+let table;
+let dataset = [];
 const uriCompents = [credentials.mongodb_protocol,"://"]
 if (credentials.mongodb_username && credentials.mongodb_password) {
     uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
@@ -22,19 +23,66 @@ const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, 
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
+
+window.onload = async () => {
+    let results = await getAllProducts();
+    results.forEach(eachItem=>{
+        dataset.push([
+            eachItem.itemcode,
+            eachItem.description.replace(eachItem.itemcode+" - ","").replace(eachItem.itemcode+"- ",""),
+            `${(eachItem.cartonQty ? eachItem.cartonQty + (eachItem.unit ? " "+eachItem.unit:""): " - ")}`,
+            `${(eachItem.palletQty ? eachItem.palletQty + (eachItem.unit ? " "+eachItem.unit:""): " - ")}`+
+            `${((eachItem.cartonQty && eachItem.palletQty) ? "<br><small>"+eachItem.palletQty/eachItem.cartonQty+" ctns</small>" : "")}`,
+            `${(eachItem.withBestbefore>0 ? "√": "")}`,
+            `<a href="addProduct.html?mode=edit&id=${eachItem._id.toHexString()}">Edit</a>`
+        ]);
+    })
+
+    table = new DataTable('#productTable', {
+        responsive: true,
+        pageLength: 15,
+        lengthMenu:[10,15,25,50,75,100],
+        columns: [null,{ "width": "45%" }, null, null, null, null],
+        order: [0, 'asc'],
+        data: dataset
+    });
+}
 i18next.use(Backend).init({
     lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();
 });
-
 document.getElementById('languageSelector').addEventListener('change', (e) => {
     i18next.changeLanguage(e.target.value).then(() => {
         i18n_navbar();
         i18n_bodyContents();
     });
 });
+
+document.querySelector("#areloadTable").addEventListener("click", async (ev) => {
+    await reloadTable()
+})
+async function reloadTable(){
+    if (table){
+        table.clear().draw()
+        let results = await getAllProducts();
+        dataset=[]
+        results.forEach(eachItem=>{
+            dataset.push([
+                eachItem.itemcode,
+                eachItem.description.replace(eachItem.itemcode+" - ","").replace(eachItem.itemcode+"- ",""),
+                `${(eachItem.cartonQty ? eachItem.cartonQty + (eachItem.unit ? " "+eachItem.unit:""): " - ")}`,
+                `${(eachItem.palletQty ? eachItem.palletQty + (eachItem.unit ? " "+eachItem.unit:""): " - ")}`+
+                `${((eachItem.cartonQty && eachItem.palletQty) ? "<br><small>"+eachItem.palletQty/eachItem.cartonQty+" ctns</small>" : "")}`,
+                `${(eachItem.withBestbefore>0 ? "√": "")}`,
+                `<a href="addProduct.html?mode=edit&id=${eachItem._id.toHexString()}">Edit</a>`
+            ]);
+        })
+        table.rows.add(dataset).draw()
+    }
+}
+
 function i18n_navbar() {
     // Navbar Section
     var navlinks = document.querySelectorAll(".nav-topitem");
@@ -63,22 +111,6 @@ function i18n_bodyContents() {
     document.querySelector('.container h4').textContent = i18next.t("listproducts.h4title_action");
     document.querySelector('.container ul li a').textContent = i18next.t("listproducts.a_checkstockitems")
 
-    //datatables
-    var tableEntries_select = document.querySelector("#productTable_length label select")
-    document.querySelector("#productTable_length label").innerHTML = i18next.t('dataTables.table_pagesize.0') +tableEntries_select.outerHTML+ i18next.t('dataTables.table_pagesize.1')
-
-    var tableFilter_input = document.querySelector("#productTable_filter label input")
-    document.querySelector("#productTable_filter label").innerHTML = i18next.t('dataTables.table_search') + tableFilter_input.outerHTML
-
-    var infotextNumbers = document.querySelector("#productTable_info").innerText.match(/\d+/g)
-    document.querySelector("#productTable_info").innerText = i18next.t(`dataTables.table_entrydesc.${0}`)+
-        infotextNumbers[0]+i18next.t(`dataTables.table_entrydesc.${1}`)+infotextNumbers[1]+
-        i18next.t(`dataTables.table_entrydesc.${2}`)+infotextNumbers[2]+
-        i18next.t(`dataTables.table_entrydesc.${3}`)
-
-    document.querySelector("#productTable_paginate .previous").textContent = i18next.t("dataTables.table_action.0")
-    document.querySelector("#productTable_paginate .next").textContent = i18next.t("dataTables.table_action.1")
-
     //Table Head & foot
     var tableHeads = document.querySelectorAll("#productTable thead th")
     var tableFoots = document.querySelectorAll("#productTable tfoot th")
@@ -90,41 +122,17 @@ function i18n_bodyContents() {
     }
 }
 
-let table = new DataTable('#productTable', {
-    responsive: true,
-    pageLength: 15,
-    lengthMenu:[10,15,25,50,75,100],
-    columns: [null,{ "width": "40%" }, null, null, null, null],
-    order: [[1, 'asc']]
-});
 async function getAllProducts(){
-    table.clear().draw()
-    const options = {sort: { itemcode: 1},};
+    let results = []
     const sessions = client.db(credentials.mongodb_db).collection("products");
-    let cursor;
-    let htmlContent=""
+    const options = {sort: { itemcode: 1}};
     try {
         await client.connect();
-        cursor = sessions.find({}, options);
-        if ((await sessions.countDocuments({})) === 0) {
-            console.log("[MongoDB] Nothing Found");
-        }
-
-        for await (const  x of cursor) {
-            console.log(x)
-            table.row.add([x.itemcode, x.description.replace(x.itemcode+" - ",""),
-                `${x.unitsInbox ? x.unitsInbox +" "+x.productUnit: " - "}`,
-                `${x.palletqty ?  x.palletqty+" " + x.productUnit: " - "}<br><small>${x.unitsInbox ? "("+x.palletqty / x.unitsInbox +" ctns)": " - "}</small>`,
-                `${(x.withBestbefore>0 ? "√": "")}`,`<a href="editProduct.html?id=${x.itemcode}">Edit</a>`
-            ]).draw(false);
-
-        }
+        results = await sessions.find({}, options).toArray();
+    } catch (e) {
+        console.error("Fetching error:" ,e)
     } finally {
-        client.close();
+        await client.close();
+        return results
     }
-    return htmlContent;
-}
-
-window.onload = () => {
-    getAllProducts()
 }

@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="../node_modules/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="../node_modules/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="../node_modules/datatables.net-dt/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="../node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css">
     <title>Products - Warehouse Electron</title>
 </head>
 
@@ -33,7 +33,9 @@
         <h1 class="m-2" id="sessionTitle">Products</h1>
         <h4>Actions</h4>
         <ul>
-            <li><a href="../items/listItem.html">Check Stock items</a></li>
+            <li><a href="../items/listStocks.html">Check Stock items</a></li>
+            <li><a href="../items/addProduct.html">Add a product</a></li>
+            <li><a href="#" id="areloadTable">Reload Table Now</a></li>
         </ul>
         <hr>
         <table class="table" id="productTable">
@@ -41,8 +43,8 @@
             <tr>
                 <th scope="col">Code</th>
                 <th scope="col">Product</th>
-                <th scope="col">Qty per box</th>
-                <th scope="col">Qty per Pallet</th>
+                <th scope="col">box</th>
+                <th scope="col">Pallet</th>
                 <th scope="col">Best Before</th>
                 <th scope="col">Action</th>
             </tr>
@@ -51,13 +53,13 @@
             <tr>
                 <th scope="col">Code</th>
                 <th scope="col">Product</th>
-                <th scope="col">Qty per box</th>
-                <th scope="col">Qty per pallet</th>
+                <th scope="col">box</th>
+                <th scope="col">pallet</th>
                 <th scope="col">Best Before</th>
                 <th scope="col">Action</th>
             </tr>
             </tfoot>
-            <tbody id="activeTBody">
+            <tbody>
             </tbody>
         </table>
     </div>

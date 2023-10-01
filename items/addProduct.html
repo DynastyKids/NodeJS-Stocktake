@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src *">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src * data:">
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="../node_modules/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="../node_modules/flatpickr/dist/flatpickr.min.css">
@@ -30,6 +30,7 @@
         </ol>
     </nav>
     <div class="container-fluid">
+        <h1 class="m-2" id="sessionTitle">Add a Product</h1>
         <div class="mt-2 mb-5">
             <form id="newProductForm">
                 <div class="form-group row mb-2">
@@ -45,11 +46,15 @@
                         <label for="inputDescription" class="col-form-label">Product Description</label>
                         <input type="text" class="form-control" id="inputDescription">
                     </div>
-                    <div class="col-6 mb-2">
-                        <label for="inputQuantity" class="col-form-label">Product default quantity</label>
-                        <input type="number" value="" class="form-control" id="inputQuantity">
+                    <div class="col-4 mb-2">
+                        <label for="inputQtyPallet" class="col-form-label">Quantity per pallet</label>
+                        <input type="number" value="" class="form-control" id="inputQtyPallet">
                     </div>
-                    <div class="col-6 mb-2">
+                    <div class="col-4 mb-2">
+                        <label for="inputQtyCarton" class="col-form-label">Quantity per carton</label>
+                        <input type="number" value="" class="form-control" id="inputQtyCarton">
+                    </div>
+                    <div class="col-4 mb-2">
                         <label for="inputUnit" class="col-form-label">Product Unit</label>
                         <select class="form-select" id="inputUnit" aria-label="Default select example">
                             <option value=""></option>
@@ -59,6 +64,7 @@
                             <option value=""></option>
                             <option value=""></option>
                             <option value=""></option>
+                            <option value=""></option><option value=""></option>
                         </select>
                     </div>
                     <div class="col-6 mb-2">
@@ -87,5 +93,4 @@
 <script src="../node_modules/flatpickr/dist/flatpickr.min.js"></script>
 <script src="addProduct.js"></script>
 </body>
-
 </html>
