@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded",async (ev) => {
             if (result.length > 0){
                 result = result[0]
                 document.querySelector("#inputDescription").value = (result.description ? result.description : "");
-                document.querySelector("#inputCode").value = (result.itemcode ? result.itemcode :"");
+                document.querySelector("#inputCode").value = (result.productCode ? result.productCode :"");
                 document.querySelector("#inputLabelName").value = (result.labelname ? result.labelname : "");
                 document.querySelector("#inputQtyPallet").value = (result.palletQty ? result.palletQty : "");
                 document.querySelector("#inputQtyCarton").value = (result.cartonQty ? result.cartonQty : "");

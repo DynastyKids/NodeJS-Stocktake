@@ -200,6 +200,14 @@ paths:
       summary: Get all available products | 获取所有产品信息
       description: Get all available product information, or selected product information when provide a keywork | 获取产品相关信息,若用户提供了某个关键词则会执行搜索并返回所有相关的信息
       operationId: getProducts
+      parameters:
+        - name: query
+          in : query
+          description: Adding Optional search query | 添加搜索条件对结果过滤
+          required: false
+          schema:
+            type: string
+
       responses:
         '200':
           description: Successful | 成功
@@ -217,7 +225,8 @@ paths:
       tags:
         - Products
       summary: Adding/edit a product | 添加或修改一个产品
-      description: Adding a product to product list,
+      description: Adding a product to product list, actions allow add/update. Under item object, productCode, description and productUnit are mandatory fields | 添加或更新一个产品信息，其中action字段允许填写add或者update;
+        item字段中，强制要求要有itemcode, description和productUnit
       requestBody:
         content:
           application/json:
@@ -225,9 +234,10 @@ paths:
               type: object
               properties:
                 action:
-                  type: string
                   description: "Actions alloed: add, update. On update, will update based on product code & vendor code."
-                  example: "add / update"
+                  enum:
+                    - add
+                    - update
                 item:
                   $ref: '#/components/schemas/product'
       responses:
@@ -249,25 +259,55 @@ paths:
       tags:
         - Stocks
       summary: Get all available current Stocks inhouse | 获取所有当前库存信息
-      description: Stock information are pulled across all session, user needs to tick off from page when used | 库存页面会展示所有当前可用库存，当库存信息有差异时可以选择仅使用某次的盘点结果对库存进行核对
+      description: Stock information are pulled across all session, user needs to tick off from page when used, all queries are NOT case-sensetive | 库存页面会展示所有当前可用库存，当库存信息有差异时可以选择仅使用某次的盘点结果对库存进行核对，所有参数均不区分大小写
       operationId: getStocks
+      parameters:
+        - name: session
+          in : query
+          description: Optional, Adding session ID for filter the result, STOCK keyword also allowed | 可选参数，使用SessionID过滤出相关的库存信息，也可以使用STOCK关键字列出所有添加库存时的记录
+          required: false
+          schema:
+            type: string
+
+        - name: location
+          in: query
+          description: Optional, Using at lease 2 characters for location to filter the result | 可选参数，需要提供至少2位字母的库位号来过滤库存信息
+          required: false
+          schema:
+            type: string
+
+        - name: label
+          in: query
+          description: Optional, typein part of label id (at least 3 characters) to filter the results | 可选参数，可以使用labelid的尾部字段（至少3位字符）来筛选需要的库存信息
+          required: false
+          schema:
+            type: string
+
+        - name: product
+          in: query
+          description: Optional, typein part of product id (at least 3 characters) to filter the results | 可选参数，使用产品ID（至少3位字符）来筛选需要的库存信息
+          required: false
+          schema:
+            type: string
+
       responses:
         '200':
           description: Successful | 成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/stocks'
+                $ref: '#/components/schemas/pollinglogsRespose'
         '500':
           description: System Internal error | 失败
           content:
             application/json:
-              example: { acknowledged: false }
+              schema:
+                $ref: '#/components/schemas/trueORfalse'
     post:
       tags:
         - Stocks
       summary: Add  / Move / Consume Stocks | 添加，修改，移动和删除货架上的货品信息
-      description: 对货架上的商品信息进行增改删时需要action和新信息，
+      description: "Actions alloed: add, move, update, remove. | 允许操作包括增删改查，填入对应关键词，当update时，使用labelid作为主键更新，labelid本身不允许更新"
       operationId: poststocks
       requestBody:
         content:
@@ -277,8 +317,11 @@ paths:
               properties:
                 action:
                   type: string
-                  description: "Actions alloed: add, move, update, remove. | 允许操作包括增删改查，填入对应关键词，当update时，使用labelid作为主键更新，labelid本身不允许更新"
-                  example: "add / move / update / remove"
+                  enum:
+                    - add
+                    - move
+                    - update
+                    - remove
                 item:
                   $ref: '#/components/schemas/pollinglog'
       responses:
@@ -403,15 +446,10 @@ components:
       properties:
         session:
           type: string
-          description: session code for the adding action
+          description: session code for the adding action | 需要针对操作的会话ID
         item:
           type: string
-          description: Base64 encoded string for the product information
-
-    stocks:
-      type: array
-      items:
-        $ref: '#/components/schemas/pollinglog'
+          description: Base64 encoded string for the product information | 产品信息，需要Base64编码后的
 
     product:
       type: object
@@ -420,22 +458,36 @@ components:
           type: string
         itemcode:
           type: string
+          description: Mandatory, the code used to identify the item, and it should be unique, unless it has unique vendor code under same productCode | 必须字段，产品的ID，该编号须独一无二，若需要复用该编号，须确认两条产品信息有不同的vendorCode
         labelname:
           type: string
-        palletqty:
+          description: Optional, the name to be used to print on label | 可选字段，用来打印托盘标签时候使用
+        cartonQty:
           type: integer
           format: int32
+          description: Optional, the number of products in a carton | 可选字段，用来标记每箱中的产品数量
+        palletQty:
+          type: integer
+          format: int32
+          description: Optional, the number of products in a pallet/skid | 可选字段，用来标记每箱中的产品数量
         productUnit:
           type: string
           example: carton
+          description: Mandatory, the minimum package unit name of the product | 必须字段，产品的最少单位名称
         vendorCode:
           type: string
+          description: Optional, the vendor's product code for this item | 可选字段，产品在上游供应商的商品ID
         weight:
           type: integer
           format: int32
+          description: Optional, the weight of each unit, recommand measure with grams | 可选字段，产品的重量（推荐用克表示）
         withBestbefore:
           type: integer
           format: int
+          description: Mandatory, does this product has expire date? (Y=1, N=0) | 产品是否有有效期（1为是，0为否）
+          enum:
+            - 0
+            - 1
 
     productsResponse:
       type: object

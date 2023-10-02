@@ -28,8 +28,8 @@ window.onload = async () => {
     let results = await getAllProducts();
     results.forEach(eachItem=>{
         dataset.push([
-            eachItem.itemcode,
-            eachItem.description.replace(eachItem.itemcode+" - ","").replace(eachItem.itemcode+"- ",""),
+            eachItem.productCode,
+            eachItem.description.replace(eachItem.productCode+" - ","").replace(eachItem.productCode+"- ",""),
             `${(eachItem.cartonQty ? eachItem.cartonQty + (eachItem.unit ? " "+eachItem.unit:""): " - ")}`,
             `${(eachItem.palletQty ? eachItem.palletQty + (eachItem.unit ? " "+eachItem.unit:""): " - ")}`+
             `${((eachItem.cartonQty && eachItem.palletQty) ? "<br><small>"+eachItem.palletQty/eachItem.cartonQty+" ctns</small>" : "")}`,
@@ -70,8 +70,8 @@ async function reloadTable(){
         dataset=[]
         results.forEach(eachItem=>{
             dataset.push([
-                eachItem.itemcode,
-                eachItem.description.replace(eachItem.itemcode+" - ","").replace(eachItem.itemcode+"- ",""),
+                eachItem.productCode,
+                eachItem.description.replace(eachItem.productCode+" - ","").replace(eachItem.productCode+"- ",""),
                 `${(eachItem.cartonQty ? eachItem.cartonQty + (eachItem.unit ? " "+eachItem.unit:""): " - ")}`,
                 `${(eachItem.palletQty ? eachItem.palletQty + (eachItem.unit ? " "+eachItem.unit:""): " - ")}`+
                 `${((eachItem.cartonQty && eachItem.palletQty) ? "<br><small>"+eachItem.palletQty/eachItem.cartonQty+" ctns</small>" : "")}`,
@@ -125,7 +125,7 @@ function i18n_bodyContents() {
 async function getAllProducts(){
     let results = []
     const sessions = client.db(credentials.mongodb_db).collection("products");
-    const options = {sort: { itemcode: 1}};
+    const options = {sort: { productCode: 1}};
     try {
         await client.connect();
         results = await sessions.find({}, options).toArray();
