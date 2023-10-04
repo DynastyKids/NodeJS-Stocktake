@@ -136,21 +136,11 @@ paths:
       summary: Adding items by scanner
       description: Wechat program will automatic input scanning items via this interface
       operationId: addlogOld
-      parameters:
-        - name: session
-          in: query
-          description: Session code that available from /sessions request
-          required: true
-          explode: false
-          schema:
-            type: string
-        - name: item
-          in: query
-          description: A base64 encrypted string contains all product info as schema shows
-          required: true
-          explode: false
-          schema:
-            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/sessionAddlog'
       responses:
         '200':
           description: successful operation
@@ -176,7 +166,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/sessionAddlog'
+              type: object
+              properties:
+                session:
+                  type: string
+                  description: session code for the adding action | 需要针对操作的会话ID
+                item:
+                  $ref: '#/components/schemas/productinfo'
 
       responses:
         '200':
@@ -225,7 +221,7 @@ paths:
       tags:
         - Products
       summary: Adding/edit a product | 添加或修改一个产品
-      description: Adding a product to product list, actions allow add/update. Under item object, productCode, description and productUnit are mandatory fields | 添加或更新一个产品信息，其中action字段允许填写add或者update;
+      description: Adding a product to product list, actions allow add/update. Under item object, itemcode, description and productUnit are mandatory fields | 添加或更新一个产品信息，其中action字段允许填写add或者update;
         item字段中，强制要求要有itemcode, description和productUnit
       requestBody:
         content:
@@ -289,6 +285,16 @@ paths:
           required: false
           schema:
             type: string
+
+        - name: consumed
+          in: query
+          description: Optional, 0 for in-stock products only(default), 1 for including all history products  | 可选参数，是否需要从已使用的产品中查找，默认为0(仅查找现有库存)，1为包括所有历史参数
+          required: false
+          schema:
+            type: string
+            enum:
+              - "0"
+              - "1"
 
       responses:
         '200':
@@ -441,6 +447,45 @@ components:
           type: string
           description: Detail of error informations
 
+    productinfo:
+      type: object
+      properties:
+        productCode:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+        quantityUnit:
+          type: string
+          example: Bag
+        shelfLocation:
+          type: string
+          example: AA
+        POIPnumber:
+          type: string
+          description: Purchease Order Identification Number (Optional)
+        productName:
+          type: string
+        bestbefore:
+          type: string
+          format: date
+        productLabel:
+          type: string
+          description: Product Label Identification Number, must be identical, format as YYYYMMDD1234567, last 7 chars can be Hexadecimal
+        loggingTime:
+          type: string
+          format: date-time
+          description: Date Format must be YYYY-MM-DD HH:mm:ss
+        consumed:
+          type: integer
+          format: int32
+          description: Flag used to identify whether product has been removed from DB
+        consumedTime:
+          type: string
+          format: date-time
+          description: Date Format must be YYYY-MM-DD HH:mm:ss
+
+
     sessionAddlog:
       type: object
       properties:
@@ -458,7 +503,7 @@ components:
           type: string
         itemcode:
           type: string
-          description: Mandatory, the code used to identify the item, and it should be unique, unless it has unique vendor code under same productCode | 必须字段，产品的ID，该编号须独一无二，若需要复用该编号，须确认两条产品信息有不同的vendorCode
+          description: Mandatory, the code used to identify the item, and it should be unique, unless it has unique vendor code under same itemcode | 必须字段，产品的ID，该编号须独一无二，若需要复用该编号，须确认两条产品信息有不同的vendorCode
         labelname:
           type: string
           description: Optional, the name to be used to print on label | 可选字段，用来打印托盘标签时候使用

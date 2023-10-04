@@ -189,28 +189,15 @@
         "summary": "Adding items by scanner",
         "description": "Wechat program will automatic input scanning items via this interface",
         "operationId": "addlogOld",
-        "parameters": [
-          {
-            "name": "session",
-            "in": "query",
-            "description": "Session code that available from /sessions request",
-            "required": true,
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "item",
-            "in": "query",
-            "description": "A base64 encrypted string contains all product info as schema shows",
-            "required": true,
-            "explode": false,
-            "schema": {
-              "type": "string"
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sessionAddlog"
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
             "description": "successful operation",
@@ -247,7 +234,16 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/sessionAddlog"
+                "type": "object",
+                "properties": {
+                  "session": {
+                    "type": "string",
+                    "description": "session code for the adding action | 需要针对操作的会话ID"
+                  },
+                  "item": {
+                    "$ref": "#/components/schemas/productinfo"
+                  }
+                }
               }
             }
           }
@@ -412,6 +408,19 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "consumed",
+            "in": "query",
+            "description": "Optional, 0 for in-stock products only(default), 1 for including all history products  | 可选参数，是否需要从已使用的产品中查找，默认为0(仅查找现有库存)，1为包括所有历史参数",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
             }
           }
         ],
@@ -624,6 +633,56 @@
           "message": {
             "type": "string",
             "description": "Detail of error informations"
+          }
+        }
+      },
+      "productinfo": {
+        "type": "object",
+        "properties": {
+          "productCode": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quantityUnit": {
+            "type": "string",
+            "example": "Bag"
+          },
+          "shelfLocation": {
+            "type": "string",
+            "example": "AA"
+          },
+          "POIPnumber": {
+            "type": "string",
+            "description": "Purchease Order Identification Number (Optional)"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "bestbefore": {
+            "type": "string",
+            "format": "date"
+          },
+          "productLabel": {
+            "type": "string",
+            "description": "Product Label Identification Number, must be identical, format as YYYYMMDD1234567, last 7 chars can be Hexadecimal"
+          },
+          "loggingTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date Format must be YYYY-MM-DD HH:mm:ss"
+          },
+          "consumed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Flag used to identify whether product has been removed from DB"
+          },
+          "consumedTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date Format must be YYYY-MM-DD HH:mm:ss"
           }
         }
       },
