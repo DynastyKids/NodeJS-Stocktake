@@ -128,7 +128,10 @@
     "reloadTableLink": "Reload Table Now",
     "refreshText": ["Automatic Refresh in: ","s"],
     "table_head": ["Product","Quantity","Best Before","Location","Label ID","Action"],
-    "table_actionRemove": "Remove"
+    "table_actionRemove": "Remove",
+    "flashtext_success": "Successfully updated the item.",
+    "flashtext_notfound": "Cannot find the item.",
+    "flashtext_failed": "Failed to update the item."
   },
   "listnext3": {
     "pagetitle": "Current Stocks",

@@ -21,13 +21,6 @@ uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
 const uri = encodeURI(uriCompents.join(""))
 
 const {setInterval} = require('timers');
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    }
-});
 
 let table = new DataTable('#stockTable', {
     responsive: true,
@@ -108,6 +101,10 @@ function i18n_bodyContents() {
 
     document.querySelector("#stockTable_paginate .previous").textContent = i18next.t("dataTables.table_action.0")
     document.querySelector("#stockTable_paginate .next").textContent = i18next.t("dataTables.table_action.1")
+
+    document.querySelector("#alert_success div").textContent = i18next.t("flashtext_success")
+    document.querySelector("#alert_warning div").textContent = i18next.t("flashtext_notfound")
+    document.querySelector("#alert_error div").textContent = i18next.t("flashtext_failed")
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
@@ -139,19 +136,31 @@ consumeModal.querySelector("#consumeModalYes").addEventListener("click", async f
     let labelId = consumeModal.querySelector("#modalInputLabelid").value
     let model = bootstrap.Modal.getInstance(document.querySelector("#consumeModal"));
     let localTime = moment(new Date()).tz("Australia/Sydney");
+    let client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        }
+    });
     try {
         await client.connect();
         const session = client.db(credentials.mongodb_db).collection("pollinglog");
         let result = await session.updateMany({productLabel: labelId, consumed: 0} , {$set: {consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")}},{upsert: false})
-        if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) { //找到符合条件的数据且成功修改了
+        if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
+            //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
             console.log("Successfully update status for: ",labelId)
+            document.querySelector("#alert_success").style.display = 'flex'
         } else if (result.matchedCount === 0) { //未找到符合条件的数据但成功执行了
             console.log(`Label ID: ${labelId} Not Found`)
+            document.querySelector("#alert_warning").style.display = 'flex'
         }
     } catch (e) {
+        document.querySelector("#alert_error").style.display = 'flex'
         console.error(`Remove Stock Error when process: ${labelId};`,e)
     } finally {
-        client.close()
+        loadStockInfoToTable()
+        await client.close()
         model.hide()
     }
 })
@@ -159,6 +168,11 @@ consumeModal.querySelector("#consumeModalYes").addEventListener("click", async f
 document.querySelector("#areloadTable").addEventListener("click",function (ev) {
     loadStockInfoToTable()
 })
+
+document.querySelector("#filterdate").addEventListener("change", (ev)=>{
+    loadStockInfoToTable();
+});
+
 
 function loadStockInfoToTable() {
     table.clear().draw()
@@ -168,6 +182,12 @@ function loadStockInfoToTable() {
             table.column(2).order('asc');
             for (let index = 0; index < results.length; index++) {
                 const element = results[index];
+                if (document.querySelector("#filterdate").value !== "") {
+                    console.log(document.querySelector("#filterdate").value)
+                    if (new Date(element.loggingTime) < new Date(document.querySelector("#filterdate").value)) {
+                        continue;
+                    }
+                }
                 table.row.add([
                     `${element.productCode} - ${element.productName}`,
                     `${element.quantity} ${element.quantityUnit}`,
@@ -182,6 +202,13 @@ function loadStockInfoToTable() {
 }
 
 async function getAllStockItems() {
+    let client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        }
+    });
     let nowTime = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
     const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
     let cursor;

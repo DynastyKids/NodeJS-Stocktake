@@ -123,7 +123,10 @@
     "reloadTableLink": "刷新数据",
     "refreshText": ["距下次刷新还有: ","秒"],
     "table_head": ["产品","数量","最佳日期","库位","标签ID","操作"],
-    "table_actionRemove": "移除"
+    "table_actionRemove": "移除",
+    "flashtext_success": "已成功更新",
+    "flashtext_notfound": "找不到相关条目",
+    "flashtext_failed": "尝试更新条目失败"
   },
   "listnext3": {
     "pagetitle": "当前库存信息",
