@@ -322,7 +322,6 @@ router.get("/api/v1/products", async (req, res) => {
         let options = { sort: {"productLabel" : 1},  projection: {"_id" : 0} };
         let result = await session.find({}, options).toArray()
         response.data = result
-
         if (req.query.query && (req.query.query).length>0){//     如果客户端添加了query字段则根据需要定制搜索结果,字符串化之后搜索文本内容
             let filteredResult=[]
             result.forEach(eachObject =>{
@@ -337,6 +336,7 @@ router.get("/api/v1/products", async (req, res) => {
             })
             response.data = filteredResult
         }
+        response.acknowledged = true
     } catch (e) {
         response.message = `Error on /api/v1/products: ${e}`
     } finally {
@@ -478,8 +478,7 @@ router.get("/api/v1/stocks", async (req, res) => {
             response.data = filteredResult
         }
 
-        console.log(response.data)
-        console.log(`Result length: ${result.length}; Filtered Length:${response.length}`)
+        console.log(`GetStocks: Result length: ${result.length}; Filtered Length:${response.length}`)
     } catch (e) {
         response.message = e
     } finally {
@@ -532,13 +531,17 @@ router.post("/api/v1/stocks", async (req, res)=>{
         let options = {upsert: false}
         if(req.body.item.productLabel){
             filter={productLabel: req.body.item.productLabel}
-            if (actionsAllowed[actionsAllowed.indexOf(req.body.action)] === "add"){
-                options.upsert = true
-            }
             updateObject = {$set:req.body.item}
             if (actionsAllowed[actionsAllowed.indexOf(req.body.action)] === "remove" ||
                 actionsAllowed[actionsAllowed.indexOf(req.body.action)] === "consume" ){
                 updateObject = {$set: {consumed: 1, loggingTime: localTime}} // 仅标注使用字段
+            }
+            if (actionsAllowed[actionsAllowed.indexOf(req.body.action)] === "add"){
+                options.upsert = true;
+                // 检查各种字段中是否由需要的对应参数，如果没有则补齐
+                // 每当切换新版本后，均需要按照新版本参数补齐
+                updateObject.consumed = 0
+                updateObject.loggingTime = localTime;
             }
 
             try {
