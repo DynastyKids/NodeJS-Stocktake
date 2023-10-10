@@ -96,8 +96,11 @@ document.addEventListener("DOMContentLoaded",async (ev) => {
                 document.querySelector("#inputQtyPallet").value = (result.palletQty ? result.palletQty : "");
                 document.querySelector("#inputQtyCarton").value = (result.cartonQty ? result.cartonQty : "");
                 document.querySelector("#inputUnit").value = (result.unit ? result.unit : "");
+                document.querySelector("#inputLength").value = (result.sizeLength ? result.sizeLength : 0);
+                document.querySelector("#inputWidth").value = (result.sizeWidth ? result.sizeWidth : 0);
+                document.querySelector("#inputHeight").value = (result.sizeHeight ? result.sizeHeight : 0);
                 document.querySelector("#inputVendorCode").value = (result.vendorCode ? result.vendorCode : "");
-                document.querySelector("#inputWeight").value = (result.weight ? result.weight : "");
+                document.querySelector("#inputWeight").value = (result.weight ? result.weight : 0);
                 document.querySelector("#inputExpire").selectedIndex = (result.withBestbefore ? result.withBestbefore : 0);
             }
         }
@@ -112,14 +115,17 @@ document.addEventListener("DOMContentLoaded",async (ev) => {
             description: (document.querySelector("#inputDescription").value ? document.querySelector("#inputDescription").value : ""),
             itemcode: (document.querySelector("#inputCode").value ? document.querySelector("#inputCode").value : ""),
             labelname: (document.querySelector("#inputLabelName").value ? document.querySelector("#inputLabelName").value : ""),
-            palletQty: (document.querySelector("#inputQtyPallet").value),
-            cartonQty: (document.querySelector("#inputQtyCarton").value),
+            palletQty: (document.querySelector("#inputQtyPallet").value ? document.querySelector("#inputQtyCarton").value : null),
+            cartonQty: (document.querySelector("#inputQtyCarton").value ? document.querySelector("#inputQtyCarton").value : null),
             unit: (document.querySelector("#inputUnit").value),
             vendorCode: (document.querySelector("#inputVendorCode").value ? document.querySelector("#inputVendorCode").value : ""),
-            weight: document.querySelector("#inputWeight").value,
-            withBestbefore: document.querySelector("#inputExpire").value,
-            loggingTime: moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:MM:ss'),
-            ineffect: 1
+            weight: document.querySelector("#inputWeight").value ? document.querySelector("#inputWeight").value : 0,
+            sizeLength: document.querySelector("#sizeLength").value ? document.querySelector("#sizeLength").value : 0,
+            sizeWidth: document.querySelector("#sizeWidth").value ? document.querySelector("#sizeWidth").value : 0,
+            sizeHeight: document.querySelector("#sizeHeight").value ? document.querySelector("#sizeHeight").value : 0,
+            withBestbefore: document.querySelector("#inputExpire").value ? document.querySelector("#inputExpire").value : 0,
+            lastupdate: moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:MM:ss'),
+            inuse: 1
         }
         let filterCondition = {itemcode: data.itemcode}
         if (data.vendorCode){
