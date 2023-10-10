@@ -29,8 +29,8 @@ let table = new DataTable('#stockTable', {
     order: [[2, 'asc']]
 });
 let shouldRefresh = true;
-const countdownFrom = 30;
-let countdown = 30;
+const countdownFrom = 60;
+let countdown = 60;
 
 i18next.use(Backend).init({
     lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
@@ -109,32 +109,45 @@ function i18n_bodyContents() {
 
 document.addEventListener("DOMContentLoaded", (event) => {
     loadStockInfoToTable()
+    let shouldRefresh = true
     const automaticRefresh = setInterval(() => {
         if (shouldRefresh) {
             loadStockInfoToTable()
             countdown = countdownFrom;
         }
     }, countdownFrom * 1000)
+
     const countdownInterval = setInterval(() => {
         if (shouldRefresh) {
             countdown -= 1
             document.querySelector("#toggleTimes").innerText = `${countdown}`
         }
     }, 1000)
+
+    document.querySelector("#apauseTimer").addEventListener("click", (ev)=> {
+        shouldRefresh= !shouldRefresh
+        if (!shouldRefresh){
+            clearInterval(automaticRefresh)
+            document.querySelector("#apauseTimer").innerText = "Resume & Refresh";
+        } else {
+            document.querySelector("#apauseTimer").innerText = "Pause";
+            location.reload()
+        }
+    })
 });
 
-var consumeModal = document.querySelector("#consumeModal")
-consumeModal.addEventListener("show.bs.modal", function (ev) {
+var removeModal = document.querySelector("#removeModal")
+removeModal.addEventListener("show.bs.modal", function (ev) {
     var button = ev.relatedTarget
     var lableID = button.getAttribute("data-bs-labelid")
-    let hiddenInput = consumeModal.querySelector("#modalInputLabelid")
+    let hiddenInput = removeModal.querySelector("#modalInputLabelid")
     hiddenInput.value = lableID
 })
 
-consumeModal.querySelector("#consumeModalYes").addEventListener("click", async function (ev) {
+removeModal.querySelector("#removeModalYes").addEventListener("click", async function (ev) {
     ev.preventDefault()
-    let labelId = consumeModal.querySelector("#modalInputLabelid").value
-    let model = bootstrap.Modal.getInstance(document.querySelector("#consumeModal"));
+    let labelId = removeModal.querySelector("#modalInputLabelid").value
+    let model = bootstrap.Modal.getInstance(document.querySelector("#removeModal"));
     let localTime = moment(new Date()).tz("Australia/Sydney");
     let client = new MongoClient(uri, {
         serverApi: {
@@ -194,7 +207,12 @@ function loadStockInfoToTable() {
                     element.bestbefore,
                     element.shelfLocation,
                     element.productLabel,
-                    `<a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-labelid="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>`
+                    (element.consumed < 1 ? `
+                    <a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
+                        data-bs-labelid="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>
+                    <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
+                        data-bs-labelid="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>
+                    ` : "")
                 ]).draw(false);
             }
         }
