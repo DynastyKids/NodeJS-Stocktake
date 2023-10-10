@@ -540,8 +540,10 @@ router.post("/api/v1/stocks", async (req, res)=>{
                 options.upsert = true;
                 // 检查各种字段中是否由需要的对应参数，如果没有则补齐
                 // 每当切换新版本后，均需要按照新版本参数补齐
-                updateObject.consumed = 0
-                updateObject.loggingTime = localTime;
+                let updateItems = req.body.item
+                updateItems.consumed = 0
+                updateItems.loggingTime = localTime;
+                updateObject = {$set: updateItems}
             }
 
             try {
