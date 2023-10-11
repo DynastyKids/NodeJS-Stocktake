@@ -10,8 +10,7 @@ const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 
 var $ = require('jquery');
-var DataTable = require('datatables.net')(window, $);
-require('datatables.net-responsive');
+var DataTable = require('datatables.net-responsive-bs5')(window, $);
 
 const uriCompents = [credentials.mongodb_protocol, "://"]
 if (credentials.mongodb_username && credentials.mongodb_password) {
@@ -21,17 +20,12 @@ uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
 const uri = encodeURI(uriCompents.join(""))
 
 const {setInterval} = require('timers');
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    }
-});
 
+let fullResultSet = [];
 let table = new DataTable('#stockTable', {
     responsive: true,
-    pageLength: 50,
+    pageLength: 25,
+    lengthMenu:[10,15,25,50,100],
     columns: [{"width": "25%"}, null, null, {"width": "10%"}, null, null],
     order: [[2, 'asc']]
 });
@@ -42,7 +36,6 @@ let countdown = 60;
 i18next.use(Backend).init({
     lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
-    console.log(path.join(__dirname, '../i18nLocales/{{lng}}/translations.json'))
     i18n_navbar();
     i18n_bodyContents();
 });
@@ -85,12 +78,6 @@ function i18n_bodyContents() {
     document.querySelector("#areloadTable").textContent = i18next.t("liststocks.reloadTableLink")
 
     // Datatables
-    var innerSelection = document.querySelector("#stockTable_length select")
-    document.querySelector("#stockTable_length").innerHTML = i18next.t(`dataTables.table_pagesize.${0}`)+
-        innerSelection.outerHTML+i18next.t(`dataTables.table_pagesize.${1}`)
-    var innerSearch = document.querySelector("#stockTable_filter label input")
-    document.querySelector("#stockTable_filter label").innerHTML = i18next.t("dataTables.table_search")+
-        innerSearch.outerHTML
     var tableheaders = document.querySelectorAll("#stockTable thead th")
     var tablefooters = document.querySelectorAll("#stockTable tfoot th")
     for (let i = 0; i < tableheaders.length; i++) {
@@ -119,46 +106,127 @@ function i18n_bodyContents() {
 
 document.addEventListener("DOMContentLoaded", (event) => {
     loadStockInfoToTable()
+    let shouldRefresh = true
     const automaticRefresh = setInterval(() => {
         if (shouldRefresh) {
             loadStockInfoToTable()
             countdown = countdownFrom;
         }
     }, countdownFrom * 1000)
+
     const countdownInterval = setInterval(() => {
         if (shouldRefresh) {
             countdown -= 1
             document.querySelector("#toggleTimes").innerText = `${countdown}`
         }
     }, 1000)
+
+    document.querySelector("#apauseTimer").addEventListener("click", (ev)=> {
+        shouldRefresh= !shouldRefresh
+        if (!shouldRefresh){
+            clearInterval(automaticRefresh)
+            document.querySelector("#apauseTimer").innerText = "Resume & Refresh";
+        } else {
+            document.querySelector("#apauseTimer").innerText = "Pause";
+            location.reload()
+        }
+    })
 });
 
-var consumeModal = document.querySelector("#consumeModal")
-consumeModal.addEventListener("show.bs.modal", function (ev) {
-    var button = ev.relatedTarget
-    var lableID = button.getAttribute("data-bs-labelid")
-    let hiddenInput = consumeModal.querySelector("#modalInputLabelid")
-    hiddenInput.value = lableID
+document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
+    //弹出后先填充表格
+    let requestLabelId = ev.relatedTarget.getAttribute("data-bs-itemId")
+    console.log(fullResultSet)
+    document.querySelector("#modalEditLabelid").value = requestLabelId
+    document.querySelector("#editModalSubmitBtn").disabled = true
+    document.querySelector("#editModalSubmitBtn").textContent = "Submit"
+    document.querySelector("#editModal .modal-title").textContent = `Loading Product Information`
+    let originProperty = {}
+    for (let i = 0; i < fullResultSet.length; i++) {
+        if (fullResultSet[i].productLabel === requestLabelId){
+            originProperty = fullResultSet[i]
+            //找到了目标信息，继续填充
+            document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${fullResultSet[i].productName}`
+            document.querySelector("#editModal .modal-body p").innerHTML = `Product Info: ${fullResultSet[i].productCode} - ${fullResultSet[i].productName}<br>Label ID: ${fullResultSet[i].productLabel}`
+            document.querySelector("#modalEditQuantity").value = (fullResultSet[i].quantity ? fullResultSet[i].quantity : "")
+            document.querySelector("#modalEditUnit").value = (fullResultSet[i].quantityUnit ? fullResultSet[i].quantityUnit : "")
+            document.querySelector("#modalEditBestbefore").value = (fullResultSet[i].bestbefore ? fullResultSet[i].bestbefore : "")
+            document.querySelector("#modelEditLocation").value = (fullResultSet[i].shelfLocation ? fullResultSet[i].shelfLocation : "")
+            document.querySelector("#editModalSubmitBtn").disabled = false
+            break;
+        }
+    }
+    
+    document.querySelector("#editModalSubmitBtn").addEventListener("click", async (ev) => {
+        let client = new MongoClient(uri, {
+            serverApi: {
+                version: ServerApiVersion.v1,
+                useNewUrlParser: true,
+                useUnifiedTopology: true
+            }
+        });
+        const session = client.db(credentials.mongodb_db).collection("pollinglog");
+        document.querySelector("#editModalSubmitBtn").disabled = true
+        document.querySelector("#editModalSubmitBtn").textContent = "Updating"
+        let result = await session.updateOne({"productLabel": requestLabelId}, {
+            $set: {
+                quantity: (document.querySelector("#modalEditQuantity").value ? document.querySelector("#modalEditQuantity").value : originProperty.quantity ),
+                quantityUnit: (document.querySelector("#modalEditUnit").value ? document.querySelector("#modalEditUnit").value : originProperty.quantityUnit ),
+                bestbefore : (document.querySelector("#modalEditBestbefore").value ? document.querySelector("#modalEditBestbefore").value : originProperty.bestbefore),
+                shelfLocation: (document.querySelector("#modelEditLocation").value ? document.querySelector("#modelEditLocation").value : originProperty.shelfLocation)
+            }
+        })
+        if (result.acknowledged){
+            bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
+            loadStockInfoToTable()
+        } else {
+            document.querySelector("#editModal .modal-body p").textContent = "Error on Update"
+        }
+    })
 })
 
-consumeModal.querySelector("#consumeModalYes").addEventListener("click", async function (ev) {
+let removeModal = document.querySelector("#removeModal")
+removeModal.addEventListener("show.bs.modal", function (ev) {
+    var lableID = ev.relatedTarget.getAttribute("data-bs-itemId")
+    let hiddenInput = removeModal.querySelector("#modalInputLabelid")
+    hiddenInput.value = lableID
+    document.querySelector("#removeModalYes").disabled = false
+    document.querySelector("#removeModalYes").textContent = "Confirm"
+})
+
+removeModal.querySelector("#removeModalYes").addEventListener("click", async function (ev) {
     ev.preventDefault()
-    let labelId = consumeModal.querySelector("#modalInputLabelid").value
-    let model = bootstrap.Modal.getInstance(document.querySelector("#consumeModal"));
+    let labelId = removeModal.querySelector("#modalInputLabelid").value
+    let model = bootstrap.Modal.getInstance(document.querySelector("#removeModal"));
     let localTime = moment(new Date()).tz("Australia/Sydney");
+    let client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        }
+    });
+
+    document.querySelector("#removeModalYes").disabled = true
+    document.querySelector("#removeModalYes").textContent = "Updating"
     try {
         await client.connect();
         const session = client.db(credentials.mongodb_db).collection("pollinglog");
         let result = await session.updateMany({productLabel: labelId, consumed: 0} , {$set: {consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")}},{upsert: false})
-        if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) { //找到符合条件的数据且成功修改了
+        if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
+            //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
             console.log("Successfully update status for: ",labelId)
+            document.querySelector("#alert_success").style.display = 'flex'
         } else if (result.matchedCount === 0) { //未找到符合条件的数据但成功执行了
             console.log(`Label ID: ${labelId} Not Found`)
+            document.querySelector("#alert_warning").style.display = 'flex'
         }
     } catch (e) {
+        document.querySelector("#alert_error").style.display = 'flex'
         console.error(`Remove Stock Error when process: ${labelId};`,e)
     } finally {
-        client.close()
+        loadStockInfoToTable()
+        await client.close()
         model.hide()
     }
 })
@@ -167,21 +235,38 @@ document.querySelector("#areloadTable").addEventListener("click",function (ev) {
     loadStockInfoToTable()
 })
 
+document.querySelector("#filterdate").addEventListener("change", (ev)=>{
+    loadStockInfoToTable();
+});
+
+
 function loadStockInfoToTable() {
     table.clear().draw()
     getAllStockItems().then(result => {
         if (result.acknowledged) {
             let results = result.resultSet
+            fullResultSet = result.resultSet
             table.column(2).order('asc');
             for (let index = 0; index < results.length; index++) {
                 const element = results[index];
+                if (document.querySelector("#filterdate").value !== "") {
+                    console.log(document.querySelector("#filterdate").value)
+                    if (new Date(element.loggingTime) < new Date(document.querySelector("#filterdate").value)) {
+                        continue;
+                    }
+                }
                 table.row.add([
                     `${element.productCode} - ${element.productName}`,
                     `${element.quantity} ${element.quantityUnit}`,
                     element.bestbefore,
                     element.shelfLocation,
                     element.productLabel,
-                    `<a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-labelid="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>`
+                    (element.consumed < 1 ? `
+                    <a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
+                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>
+                    <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
+                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>
+                    ` : "")
                 ]).draw(false);
             }
         }
@@ -189,6 +274,13 @@ function loadStockInfoToTable() {
 }
 
 async function getAllStockItems() {
+    let client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        }
+    });
     let nowTime = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
     const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
     let cursor;
@@ -202,7 +294,6 @@ async function getAllStockItems() {
             result.acknowledged = true
             result.resultSet = await cursor.toArray()
         }
-        console.log(result.resultSet)
     } catch (err) {
         console.error(err)
         result['message'] = err

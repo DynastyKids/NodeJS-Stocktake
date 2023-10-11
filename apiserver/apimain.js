@@ -17,8 +17,11 @@ const path = require("path");
 const credentials = JSON.parse(
     fs.readFileSync(path.join(__dirname, "../config/localsettings.json"))
 );
+
+const cors=require("cors")
 const moment = require("moment-timezone");
 const {session} = require("electron");
+const {result} = require("lodash");
 
 const uriCompents = [credentials.mongodb_protocol, "://"]
 if (credentials.mongodb_username && credentials.mongodb_password) {
@@ -27,7 +30,7 @@ if (credentials.mongodb_username && credentials.mongodb_password) {
 uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
 const uri = encodeURI(uriCompents.join(""))
 
-const sessionClient = new MongoClient(uri, {
+let sessionClient = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
         useNewUrlParser: true,
@@ -35,98 +38,198 @@ const sessionClient = new MongoClient(uri, {
     },
 });
 
+//直接访问则引导到/api，/可以留作其他后续使用
 router.get("/", async (req, res) => {
     res.json({ping: true, acknowledged: true, message: "For API documentation, visit '/api' "});
 });
 
+/*
+* Session
+* Session中至少包括,GET所有session，POST加入一个Session，get某个Session的stocklist，post添加一个log记录到xxx Session
+*/
 /* 
- * 获取所有当前可用的Session
+ * SESSION
+ * Getsession 获取所有当前可用的Session
+ * 默认仅获取当前可用的Session，如果添加了?all=1则给出所有的Session List
  */
 router.get("/api/v1/sessions", async (req, res) => {
-    let results = await getSessionLists()
-    res.json(results.data);
-});
-
-/* 
- * 验证当前Session是否有效
- * 用户需要以Post请求方式发起，GET请求回弹报错
- */
-router.get("/api/v1/sessions/join", async (req, res) => {
-    const sessioncode = req.query.session;
-    let sessionResults = {acknowledged: false, data: [], message: "Request Incorrect, GET method deprecated"};
-    sessionResults = await checkSession(sessioncode)
-    res.json(sessionResults.data);
-});
-router.post("/api/v1/sessions/join", async (req, res) => {
-    console.log(req.body)
-    const sessioncode = req.body.session;
-    var sessionResults = await checkSession(sessioncode)
-    res.json(sessionResults.data);
-});
-async function checkSession(sessionId) {
-    // 用户发起请求加入该session，需要先确认当前Session是否可用
-    let localTime = moment(new Date()).tz("Australia/Sydney");
     let sessionResults = {acknowledged: false, data: [], message: ""};
-    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollingsession");
-    let findingQuery = {
-        $and: [
-            {endDate: {$gte: localTime.format("YYYY-MM-DD HH:mm:ss")}},
-            {startDate: {$lte: localTime.format("YYYY-MM-DD HH:mm:ss")}},
-            {session: sessionId}
-        ]
-    };
     try {
-        await sessionClient.connect();
-        let result = await sessions.find(findingQuery)
-        if ((await sessions.countDocuments(findingQuery)) === 0) {
-            console.log("[MongoDB] Nothing Found");
-        }
-
-        for await (const x of result) {
-            sessionResults.data.push({
-                session: x.session,
-                startDate: x.startDate,
-                endDate: x.endDate,
-                logTime: x.logTime
-            });
-        }
+        let dbclient = new MongoClient(uri, {
+            serverApi: {
+                version: ServerApiVersion.v1,
+                useNewUrlParser: true,
+                useUnifiedTopology: true,
+            },
+        });
+        let options = { sort: {"startDate" : 1},  projection: {"_id" : 0} };
+        await dbclient.connect();
+        let session = dbclient.db(credentials.mongodb_db).collection("pollingsession");
+        let resultArray = await session.find({}, options).toArray();
         sessionResults.acknowledged = true
-    } catch (err) {
-        console.error(err)
+        sessionResults.data = resultArray
+    } catch (e) {
+        console.error("Error on /api/v1/sessions:",e)
+        sessionResults.message = e.toString()
+    } finally {
+        await sessionClient.close()
     }
-    return sessionResults
-}
 
-/* 
- * GET方法，Sessionlog用来查看某个会话的所有产品；Query:sessioncode
- * 获取所有当前session的产品盘点信息，使用labelid去重
- */
-router.get("/api/v1/sessionlog", async (req, res) => {
-    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
-    let localTime = moment(new Date()).tz("Australia/Sydney");
-    let findingQuery = {session: req.query.session};
-    let options = {sort: {productCode: 1, loggingTime: -1}}
-    let cursor;
-    let sessionResults = [];
-    try {
-        await sessionClient.connect();
-        cursor = sessions.find(findingQuery, options);
-        if ((await sessions.countDocuments(findingQuery)) === 0) {
-            console.log("[MongoDB] Nothing Found");
-        } else {
-            for await (const x of cursor) {
-                sessionResults.push(x);
+    if (!(req.query && req.query.all && req.query.all === '1')){
+        //修正data为返回当前有效的Sessions
+        let localMoment = moment(new Date()).tz("Australia/Sydney");
+        let localTime = (new Date(localMoment.format("YYYY-MM-DD HH:mm:ss"))).getTime()
+        let inEffectSessions = []
+        for (const eachSession of sessionResults.data) {
+            var startDateint = (new Date(eachSession.startDate)).getTime()
+            var endDateint = (new Date(eachSession.endDate)).getTime()
+            if (startDateint <= localTime && endDateint >= localTime){
+                inEffectSessions.push(eachSession)
             }
         }
-    } catch (err) {
-        console.error(err)
-        sessionResults = JSON.stringify(err)
+        sessionResults.data = inEffectSessions
     }
     res.json(sessionResults);
 });
 
 /* 
- * 扫描信息按照sessioncode进入系统
+ * SESSION
+ * 验证当前Session是否有效
+ * 用户需要以Post请求方式发起，GET请求回弹报错
+ */
+router.post("/api/v1/sessions/join", async (req, res) => {
+    let response =  {acknowledged: false, data: [], message: ""};
+    let localMoment = moment(new Date()).tz("Australia/Sydney");
+    let localTime = (new Date(localMoment.format("YYYY-MM-DD HH:mm:ss"))).getTime()
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+
+    if(req.body && req.body.session){
+        const sessionCode = req.body.session;
+        await dbclient.connect();
+        const sessions = dbclient.db(credentials.mongodb_db).collection("pollingsession");
+        let options = { sort: {"startDate" : 1},  projection: {"_id" : 0} };
+        try{
+            let result = await sessions.find({session: sessionCode}, options).toArray()
+            for (const eachSession of result) {
+                let startDate = (new Date(eachSession.startDate)).getTime()
+                let endDate = (new Date(eachSession.endDate)).getTime()
+                if (startDate <= localTime && endDate >= localTime){
+                    //当用户发起加入session请求时，需要确认session是否可用，如果可用则继续返回true，
+                    response.acknowledged = true
+                }
+            }
+
+            if (!response.acknowledged){
+                response.message = `The session '${sessionCode}' has expired or session code is incorrect.`
+            }
+        }catch (e) {
+            console.error("Error on /api/v1/sessions/join:",e)
+            response.message = "Missing body parameter of SESSION Code"
+        }
+    } else {
+        response.message = "Missing body parameter of SESSION Code"
+    }
+    res.json(response);
+});
+
+/*
+ * SESSION
+ * ADD POST方法
+ * 允许用户通过客户端直接新建一个盘点会话，而无需通过服务端执行
+ */
+router.post("/api/v1/sessions/add",async (req, res) => {
+    let response = {acknowledged: false, data: [], message: ""};
+    let localMoment = moment(new Date()).tz("Australia/Sydney");
+    let localTime = localMoment.format("YYYY-MM-DD HH:mm:ss")
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+
+    const sessionCode = req.body.session;
+    await dbclient.connect();
+    const session = dbclient.db(credentials.mongodb_db).collection("pollingsession");
+    try {
+        while (true){
+            var purposedSessionCode = randomHexGenerator().substring(1)
+            let result = await session.find({session: sessionCode}).toArray()
+            if (result.length <= 0){ //核对没有重复的Session Code， 然后插入到DB中
+                const insertTarget = {
+                    session: purposedSessionCode,
+                    startDate: localMoment.format("YYYY-MM-DD HH:mm:ss"),
+                    endDate: `${localMoment.format("YYYY-MM-DD")} 23:59:59`,
+                    logTime: localMoment.format("YYYY-MM-DD HH:mm:ss"),
+                }
+                result = await session.insertOne(insertTarget);
+                response.acknowledged=true
+                response.data.push(insertTarget)
+                break;
+            }
+        }
+    } catch (e) {
+        console.error("Error on /api/v1/sessions/join:", e)
+        response.message = "Missing Parameter of SESSION Code"
+    } finally {
+        await dbclient.close()
+    }
+    res.json(response)
+})
+
+function randomHexGenerator(){
+    return (Math.floor(Math.random() * (0xFFFFFFFF + 1))).toString(16).toUpperCase().padStart(8, '0')
+}
+
+/*
+ * SESSION
+ * session/logs GET方法
+ * 替换了原有的sessionlog，用来查看某个盘点会话中已经扫描的产品，必须要传入SessionCode作为参数，可以查看所有历史的会话
+ * 在MongoDB中每件产品可能被扫描多次，给出结果前在JS中去重
+ */
+router.get("/api/v1/session/logs",async (req, res) =>{
+    let response = {acknowledged: false, data: [], message: ""};
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+    if (req.query && req.query.session){
+        const sessionCode = String(req.query.session);
+        console.log(sessionCode)
+        try {
+            await dbclient.connect()
+            const session = dbclient.db(credentials.mongodb_db).collection("pollinglog");
+            // let options = { sort: {"productCode": 1,"productLabel" : 1},  projection: {"_id" : 0} };
+            let options = { sort: {"productLabel" : 1},  projection: {"_id" : 0} };
+            let result = await session.find({session: sessionCode}, options).toArray()
+            console.log(result)
+            response.data = result
+            response.acknowledged = true
+        } catch (e) {
+            console.error("Error on /api/v1/session/logs:", e)
+            response.message = `Error on /api/v1/session/logs: ${e}`
+        } finally {
+            await dbclient.close()
+        }
+    } else {
+        response.message = "Missing Parameter of SESSION Code"
+    }
+    res.json(response)
+});
+
+/*
+ * SESSION
+ * session/addlog POST方法 (旧)
  */
 router.post("/api/v1/sessionlog/add", async (req, res) => {
     const sessioncode = (req.body.session ? req.body.session : "");
@@ -148,175 +251,324 @@ router.post("/api/v1/sessionlog/add", async (req, res) => {
     res.json(purposedRes);
 });
 
-/* 
- * 默认使用最后一个开启的session号码来添加库存信息
- * 如果没有session可用，则返回失败，如果添加成功则返回成功信息
+/*
+ * SESSION
+ * session/addlog POST方法 （新）
+ * 替换了原有的sessionlog/add，须至少传入产品base64信息
+ * 1. 会话ID （如果不提供则默认使用STOCK）
+ * 2. 产品对象信息，可以直接使用Base64解码后的结果，如果期望传入base64，可以使用老接口/sessionlogs/itemadd
  */
-router.post("/api/v1/sessionlog/autoadd", async (req, res) => {
-    let sessionResults = await getSessionLists();
+router.post("/api/v1/session/addlog", async (req, res) => {
+    const sessioncode = (req.body.session ? req.body.session : "STOCKS");
+    let response = {acknowledged: false, data: [], message: ""};
+    let localMoment = moment(new Date()).tz("Australia/Sydney");
+    let localTime = localMoment.format("YYYY-MM-DD HH:mm:ss")
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
 
+    if (req.body.item){
+        try{
+            await dbclient.connect();
+            let session = dbclient.db(credentials.mongodb_db).collection("pollinglog");
+                const filter = {
+                    session: req.body.session,
+                    productCode: req.body.item.productCode,
+                    productLabel: req.body.item.productLabel,
+                }
+                let updateField = {
+                    $set: req.body.item
+                }
+                let result = await session.updateOne(filter,updateField,{upsert: true})
+                response.acknowledged = true
+                if (result.upsertedCount > 0){
+                    response.message = `Insert a new document, id: ${result.upsertedId._id}`
+                } else {
+                    response.message = `Update on existing document.`
+                }
+        } catch (e) {
+            response.message = `Error on /api/v1/session/addlog: ${e}`
+        } finally {
+          await dbclient.close()
+        }
+    } else {
+        response.message = "Missing Body parameter of base64(item)"
+    }
+
+    res.json(response);
+});
+/*
+* PRODUCTS
+* products GET方法
+* 用来查看目前所有产品的信息
+*/
+router.get("/api/v1/products", async (req, res) => {
+    let response = {acknowledged: false, data: [], message: ""};
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+
+    try{
+        await dbclient.connect()
+        let session = dbclient.db(credentials.mongodb_db).collection("products");
+        let options = { sort: {"productLabel" : 1},  projection: {"_id" : 0} };
+        let result = await session.find({}, options).toArray()
+        response.data = result
+        if (req.query.query && (req.query.query).length>0){//     如果客户端添加了query字段则根据需要定制搜索结果,字符串化之后搜索文本内容
+            let filteredResult=[]
+            result.forEach(eachObject =>{
+                for (const eachKey in eachObject) {
+                    console.log("searching:",eachKey)
+
+                    if(eachObject[eachKey] && eachObject[eachKey].toLowerCase().includes((req.query.query).toLowerCase())){
+                        filteredResult.push(eachObject)
+                        continue;
+                    }
+                }
+            })
+            response.data = filteredResult
+        }
+        response.acknowledged = true
+    } catch (e) {
+        response.message = `Error on /api/v1/products: ${e}`
+    } finally {
+        await dbclient.close()
+    }
+    res.json(response)
+});
+
+/*
+* PRODUCTS
+* product POST方法， 新
+* 允许用户通过客户端添加，更新产品信息
+*/
+router.post("/api/v1/products", async (req, res) =>{
+    let response = {acknowledged: false, data: [], message: ""};
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+    try {
+        let session = dbclient.db(credentials.mongodb_db).collection("products");
+        await dbclient.connect()
+
+        if(req.body && req.body.action && req.body.item){
+            let options = {upsert: false}
+            let filter = {}
+            if (req.body.action === "add" || req.body.action === "update"){
+                if(req.body.action === "add") { options = {upsert: true } } //添加操作
+                if (req.body.item && req.body.item.itemcode){
+                    filter = {itemcode: req.body.item.itemcode}
+                    if(req.body.item.vendorCode) {
+                        filter = {itemcode: req.body.item.itemcode, vendorCode: req.body.item.vendorCode}
+                    }
+
+                    const result = await session.updateOne(filter, {$set: req.body.item}, options);
+                    if(result.matchedCount === result.modifiedCount || result.upsertedCount > 0){
+                        response.acknowledged = true
+                        if(result.upsertedCount > 0){
+                            response.data = {"upsertId": result.upsertedId}
+                        }
+                    }
+                } else {
+                    response.message = `Missing mandatory field {itemcode} on update action`
+                }
+            } else {
+                response.message = `Action parameter incorrect`
+            }
+        } else {
+            response.message = `Missing parameter(s)`
+        }
+    } catch (e) {
+        response.message = `Error on /api/v1/products: ${e}`
+    } finally {
+        await dbclient.close()
+    }
+
+    res.json(response)
 })
 
-async function getSessionLists() {
-    const options = {sort: {startDate: 1},projection: {"_id":0}};
-    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollingsession");
-    let localTime = moment(new Date()).tz("Australia/Sydney");
-    let findingQuery = {
-        $and: [
-            {endDate: {$gte: localTime.format("YYYY-MM-DD HH:mm:ss")}},
-            {startDate: {$lte: localTime.format("YYYY-MM-DD HH:mm:ss")}},
-        ]
-    };
-    let cursor;
-    let sessionResults = {acknowledged: false, data: [], message: ""};
-
-    try {
-        await sessionClient.connect();
-        cursor = sessions.find(findingQuery, options);
-        if ((await sessions.countDocuments(findingQuery)) === 0) {
-            console.log("[MongoDB] Nothing Found");
-        }
-
-        for await (const x of cursor) {
-            sessionResults.data.push({
-                session: x.session,
-                startDate: x.startDate,
-                endDate: x.endDate,
-                logTime: x.logTime
-            });
-        }
-        sessionResults.acknowledged = true
-    } catch (err) {
-        console.error(err)
-        sessionResults.message = JSON.stringify(err)
-    }
-
-    return sessionResults;
-}
-
-
-
-// 查看目前库存中所有的产品信息
-router.get("/api/v1/products", async (req, res) => {
-    const sessions = sessionClient.db(credentials.mongodb_db).collection("products");
-    let cursor;
-    let products = [];
-    try {
-        await sessionClient.connect();
-        cursor = await sessions.find({}, {sort: {itemcode: 1}});
-        if ((await sessions.countDocuments({})) === 0) {
-            console.log("[MongoDB] Nothing Found");
-        } else {
-            for await (const x of cursor) {
-                products.push(x);
-            }
-        }
-        res.status(200).json(products);
-    } catch (err) {
-        res.status(500).json(JSON.stringify(err));
-    }
-});
-
 /*
- * GET Stock，获取当前的库存信息和下一板位位置
- * 获取所有当前session的产品盘点信息，使用labelid去重，并且剔除所有consumed的商品, 每次pull限5000条
+ *  STOCKS
+ *  GET 方法
+ *
+ *  获取所有产品库存信息，使用productCode+labelID去重
+ *  允许用户从label, productCode, location和session四个维度自行筛选过滤数据
  */
 router.get("/api/v1/stocks", async (req, res) => {
-    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
-    const product = req.query.prod
+    let response = {acknowledged: false, data: [], message: ""};
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
     try {
-        await sessionClient.connect();
-        let pipeline = [{$sort: {bestbefore: -1, productLabel: -1}},
-            {
-                $group: {
-                    _id: {productLabel: "$productLabel"},
-                    session: {$first: "$session"},
-                    productLabel: {$first: "$productLabel"},
-                    productCode: {$first: "$productCode"},
-                    quantity: {$first: "$quantity"},
-                    quantityUnit: {$first: "$quantityUnit"},
-                    shelfLocation: {$first: "$shelfLocation"},
-                    consumed: {$first: "$consumed"},
-                    POIPnumber: {$first: "$POIPnumber"},
-                    productName: {$first: "$productName"},
-                    bestbefore: {$first: "$bestbefore"},
-                    labelBuild: {$first: "$labelBuild"},
-                }
-            },
-            {
-                $project: {
-                    session: 1,
-                    // loggingTime: 0,
-                    productCode: 1,
-                    quantity: 1,
-                    quantityUnit: 1,
-                    shelfLocation: 1,
-                    consumed: 1,
-                    POIPnumber: 1,
-                    productName: 1,
-                    bestbefore: 1,
-                    productLabel: 1,
-                    labelBuild: 1
-                }
-            },
-            {$match: {consumed: 0}}
-        ]
+        await dbclient.connect()
+        const session = dbclient.db(credentials.mongodb_db).collection("pollinglog");
+        const options = {$sort: {productCode: 1, bestbefore: -1, productLabel: -1}, projection: {"_id" : 0}}
+        let result = await session.find({}, options).toArray()
+        response.data = result
+        response.acknowledged = true
+    //     去掉相同的重复条目
+        let filteredResult = filterDuplicate(['productLabel','productCode'],result)
+        response.data = filteredResult
 
-        if (product) {
-            pipeline.push({$match: {productCode: product}})
-        }
-        if (req.query.limit && parseInt(req.query.limit) < 5000) {
-            pipeline.push({$limit: parseInt(req.query.limit)})
+        // 根据Query筛选
+        if (req.query.consumed){
+            //
         } else {
-            pipeline.push({$limit: 5000})
+            response.data.forEach(eachitem =>{
+                if (eachitem.consumed === 0){
+                    filteredResult.push(eachitem)
+                }
+            })
+            response.data = filteredResult
         }
-        let cursor2 = await sessions.aggregate(pipeline).toArray();
-        let resultArray = []
-        for (let index = 0; index < cursor2.length; index++) {
-            if (cursor2[index].productLabel === "") {
-                continue;
-            }
-            cursor2[index].quantity = parseInt(cursor2[index].quantity)
-            resultArray.push(cursor2[index])
+
+        if (req.query.session && req.query.session.length >= 3){ // Session
+            console.log("session in")
+            filteredResult.forEach(eachitem =>{
+                if (eachitem.session.toLowerCase().includes(String(req.query.session).toLowerCase())){
+                    filteredResult.push(eachitem)
+                }
+            })
+            response.data = filteredResult
         }
-        ;
-        res.status(200).json(resultArray.length > 0 ? resultArray : []);
-    } catch (err) {
-        console.error(err)
-        res.status(500).json(err);
+
+        if(req.query && req.query.product && req.query.product.length >= 3) { //Product
+            let filteredResult = []
+            response.data.forEach(eachitem =>{
+                if (eachitem.productCode.toLowerCase().includes(String(req.query.product).toLowerCase())){
+                    filteredResult.push(eachitem)
+                }
+            })
+            response.data = filteredResult
+        }
+
+        if(req.query && req.query.location && req.query.location.length >= 2){ // Location
+            let filteredResult = []
+            response.data.forEach(eachitem =>{
+                if (eachitem.shelfLocation.toLowerCase().includes(String(req.query.location).toLowerCase())){
+                    filteredResult.push(eachitem)
+                }
+            })
+            response.data = filteredResult
+        }
+
+        if (req.query && req.query.label && req.query.label.length >= 3){ // Label
+            let filteredResult = []
+            response.data.forEach(eachitem =>{
+                if (eachitem.productLabel.toLowerCase().includes(String(req.query.label).toLowerCase())){
+                    filteredResult.push(eachitem)
+                }
+            })
+            response.data = filteredResult
+        }
+
+        console.log(`GetStocks: Result length: ${result.length}; Filtered Length:${response.length}`)
+    } catch (e) {
+        response.message = e
+    } finally {
+        await dbclient.close()
     }
+    res.json(response)
 });
+
+function filterDuplicate(fields, data) {
+    const seen = new Set();
+    return data.filter(item => {
+        const key = fields.map(field => item[field]).join('|');
+        if (seen.has(key)) {
+            return false;
+        }
+        seen.add(key);
+        return true;
+    });
+}
 
 /*
- * POST Stock请求为商品添加、库位移动
- * 需要传入参数
- * Consume 使用api/v1/stocks/consume
+ * STOCKS
+ * POST方法
+ * 重写后的STOCKS方法， 重整了关于返回值和传入值的问题
+ *
+ * 可接受的操作依旧保持为库存信息的添加，更新和删除，均使用updateOne完成，仅添加使用upsert方法
+ *
  */
-router.post("/api/v1/stocks", async (req, res) => {
-    let localTime = moment(new Date()).tz("Australia/Sydney");
-    let response = {acknowledged: false}
-    try {
-        const {action, content, shelf} = req.body // Action: move / add / consume
-        if (action && action == "consume" && content.labelId) {
-            // content: {labelid: xxxxxx}
-            let updateObject = {consumed: 1, loggingTime: localTime.format("YYYY-MM-DD HH:mm:ss")}
-            response = await updateOneLotByLabel(content.labelId, updateObject)
-        } else if (action && action == "move" && content.labelId && content.newShelf) {
-            // content: {labelid: xxxxxx, newShelf: XXX}
-            let updateObject = {shelfLocation: content.newShelf, loggingTime: localTime.format("YYYY-MM-DD HH:mm:ss")}
-            response = await updateOneLotByLabel(content.labelId, updateObject)
-        } else if (action && action == "add" && content) {
-            response = await insertOneLot(content)
+router.post("/api/v1/stocks", async (req, res)=>{
+    let localMoment = moment(new Date()).tz("Australia/Sydney");
+    let localTime = localMoment.format("YYYY-MM-DD HH:mm:ss");
+    let response = {acknowledged: false, data: [], message: ""};
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+
+
+    let actionsAllowed = ['add','update','remove',"move","consume"]
+    if(!req.body || !req.body.action){
+        response.message = "Missing action"
+    } else if (!req.body || !req.body.item){
+        response.message = "Missing item informations"
+    } else if(req.body && req.body.action && actionsAllowed.indexOf(req.body.action) >=0) {
+        let filter = {}
+        let updateObject = {$set:{}}
+        let options = {upsert: false}
+        if(req.body.item.productLabel){
+            filter={productLabel: req.body.item.productLabel}
+            updateObject = {$set:req.body.item}
+            if (actionsAllowed[actionsAllowed.indexOf(req.body.action)] === "remove" ||
+                actionsAllowed[actionsAllowed.indexOf(req.body.action)] === "consume" ){
+                updateObject = {$set: {consumed: 1, loggingTime: localTime}} // 仅标注使用字段
+            }
+            if (actionsAllowed[actionsAllowed.indexOf(req.body.action)] === "add"){
+                options.upsert = true;
+                // 检查各种字段中是否由需要的对应参数，如果没有则补齐
+                // 每当切换新版本后，均需要按照新版本参数补齐
+                let updateItems = req.body.item
+                updateItems.consumed = 0
+                updateItems.loggingTime = localTime;
+                updateObject = {$set: updateItems}
+            }
+
+            try {
+                await dbclient.connect()
+                const session = dbclient.db(credentials.mongodb_db).collection("pollinglog");
+
+                let result = await session.updateOne(filter, updateObject, options)
+                if (result.acknowledged){
+                    response.acknowledged = true
+                    response.data = result
+                }
+            } catch (e) {
+                response.message = e
+            } finally {
+                await dbclient.close()
+            }
+        } else {
+            response.message = "Missing product key information's "
         }
-        if (shelf) {
-            editStockShelfLocation(content.labelId, shelf)
-        }
-    } catch (err) {
-        console.error(err)
-        res.status(500).json(err)
+
+    } else {
+        response.message = "Action is not allowed "
     }
-    res.status(200).json(response)
-});
+    res.json(response)
+})
 
 function createLogObject(sessioncode, iteminfo) {
     var mongodata = {
@@ -379,31 +631,31 @@ function createLogObject(sessioncode, iteminfo) {
     }
     return mongodata;
 }
-
-/*
- * 更新商品存放的库位信息，需要LabelID，新库位
- * 注：新库位上如果已经有其他东西存在，默认不会覆盖，而会选择并存
- */
-async function editStockShelfLocation(labelId, location) {
-    let returnResult = {acknowledged: false}
-    try {
-        await sessionClient.connect()
-        const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog")
-        var result = await session.updateMany({
-            productLabel: labelId,
-            consumed: 0
-        }, {$set: {shelfLocation: location}}, {upsert: false})
-        if (result !== null) {
-            returnResult = result
-        }
-        if (result.hasOwnProperty("matchedCount") && result.hasOwnProperty("modifiedCount")) {
-            returnResult.acknowledged = true
-        }
-    } catch (err) {
-        console.error(err)
-    }
-    return returnResult
-}
+//
+// /*
+//  * 更新商品存放的库位信息，需要LabelID，新库位
+//  * 注：新库位上如果已经有其他东西存在，默认不会覆盖，而会选择并存
+//  */
+// async function editStockShelfLocation(labelId, location) {
+//     let returnResult = {acknowledged: false}
+//     try {
+//         await sessionClient.connect()
+//         const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog")
+//         var result = await session.updateMany({
+//             productLabel: labelId,
+//             consumed: 0
+//         }, {$set: {shelfLocation: location}}, {upsert: false})
+//         if (result !== null) {
+//             returnResult = result
+//         }
+//         if (result.hasOwnProperty("matchedCount") && result.hasOwnProperty("modifiedCount")) {
+//             returnResult.acknowledged = true
+//         }
+//     } catch (err) {
+//         console.error(err)
+//     }
+//     return returnResult
+// }
 
 /*
  * Stock中的fetch方法，用来获取产品的在某个位置上的库存信息
@@ -548,35 +800,6 @@ async function findAndUpdateLogs(findCondition, updateQuery) {
     } catch (e) {
         console.error(e)
     }
-    return returnResult
-}
-
-async function getProductInfo(productCode) {
-    let returnResult = {}
-    try {
-        await sessionClient.connect()
-        const session = sessionClient.db(credentials.mongodb_db).collection("products");
-        const query = {itemcode: productCode}
-        const options = {
-            projection: {
-                description: 1,
-                itemcode: 1,
-                labelname: 1,
-                unitsInbox: 1,
-                productUnit: 1,
-                vendorCode: 1,
-                weight: 1,
-                withBestbefore: 1
-            }
-        }
-        var result = await session.findOne(query, {})
-        if (result !== null) {
-            returnResult = result
-        }
-    } catch (e) {
-        console.error(e)
-    }
-
     return returnResult
 }
 

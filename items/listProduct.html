@@ -7,7 +7,8 @@
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="../node_modules/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="../node_modules/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="../node_modules/datatables.net-dt/css/jquery.dataTables.min.css">
+<!--    <link rel="stylesheet" href="../node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css">-->
+    <link rel="stylesheet" href="../node_modules/datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css">
     <title>Products - Warehouse Electron</title>
 </head>
 
@@ -22,7 +23,7 @@
             })
     </script>
 </nav>
-<div class="container">
+<div class="container-fluid">
     <nav class="m-2" aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
@@ -33,7 +34,9 @@
         <h1 class="m-2" id="sessionTitle">Products</h1>
         <h4>Actions</h4>
         <ul>
-            <li><a href="../items/listItem.html">Check Stock items</a></li>
+            <li><a href="../items/listStocks.html">Check Stock items</a></li>
+            <li><a href="../items/addProduct.html">Add a product</a></li>
+            <li><a href="#" id="areloadTable">Reload Table Now</a></li>
         </ul>
         <hr>
         <table class="table" id="productTable">
@@ -41,8 +44,8 @@
             <tr>
                 <th scope="col">Code</th>
                 <th scope="col">Product</th>
-                <th scope="col">Qty per box</th>
-                <th scope="col">Qty per Pallet</th>
+                <th scope="col">box</th>
+                <th scope="col">Pallet</th>
                 <th scope="col">Best Before</th>
                 <th scope="col">Action</th>
             </tr>
@@ -51,15 +54,111 @@
             <tr>
                 <th scope="col">Code</th>
                 <th scope="col">Product</th>
-                <th scope="col">Qty per box</th>
-                <th scope="col">Qty per pallet</th>
+                <th scope="col">box</th>
+                <th scope="col">pallet</th>
                 <th scope="col">Best Before</th>
                 <th scope="col">Action</th>
             </tr>
             </tfoot>
-            <tbody id="activeTBody">
+            <tbody>
             </tbody>
         </table>
+    </div>
+
+    <div class="modal fade" id="deleteRowModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirm to <span></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Confirm to <span>?</span>
+                    <form>
+                        <input type="text" class="form-control" id="recipient-name" hidden="">
+                    </form>
+                    <p style="color:darkred"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="deleteModalConfirmBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editRowModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editRowModalLabel">Edit Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="row mb-3">
+                            <div class="col-sm-6">
+                                <label for="editRowModalinput_productCode" class="col-form-label">Product Code:</label>
+                                <input type="text" class="form-control" id="editRowModalinput_productCode">
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="editRowModalinput_labelName" class="col-form-label">Product Label Name:</label>
+                                <input type="text" class="form-control" id="editRowModalinput_labelName">
+                            </div>
+                            <div class="col-12">
+                                <label for="editRowModalinput_description" class="col-form-label">Product Description:</label>
+                                <input type="text" class="form-control" id="editRowModalinput_description">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-4">
+                                <label for="editRowModalinput_cartonQty" class="col-form-label">Quantity per carton:</label>
+                                <input type="number" class="form-control" id="editRowModalinput_cartonQty">
+                            </div>
+                            <div class="col-4">
+                                <label for="editRowModalinput_palletQty" class="col-form-label">Quantity per pallet:</label>
+                                <input type="number" class="form-control" id="editRowModalinput_palletQty">
+                            </div>
+                            <div class="col-4">
+                                <label for="editRowModalinput_unit" class="col-form-label">Unit:</label>
+                                <input type="text" class="form-control" id="editRowModalinput_unit">
+                            </div>
+                            <div class="col-3">
+                                <label for="editRowModalinput_weight" class="col-form-label">Weight:</label>
+                                <input type="number" class="form-control" id="editRowModalinput_weight">
+                            </div>
+                            <div class="col-3">
+                                <label for="editRowModalinput_length" class="col-form-label">Length:</label>
+                                <input type="number" class="form-control" id="editRowModalinput_length">
+                            </div>
+                            <div class="col-3">
+                                <label for="editRowModalinput_width" class="col-form-label">Width:</label>
+                                <input type="number" class="form-control" id="editRowModalinput_width">
+                            </div>
+                            <div class="col-3">
+                                <label for="editRowModalinput_height" class="col-form-label">Height:</label>
+                                <input type="number" class="form-control" id="editRowModalinput_height">
+                            </div>
+                            <div class="col-4">
+                                <label for="editRowModalinput_vendorCode" class="col-form-label">Vendor's code:</label>
+                                <input type="text" class="form-control" id="editRowModalinput_vendorCode">
+                            </div>
+                            <div class="col-4 d-flex align-items-center">
+                                <input class="form-check-input" type="checkbox" value="" id="expiredateCheck">
+                                <label class="form-check-label" for="expiredateCheck">
+                                    Has Expire Date?
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                    <p></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="modelEditSubmitBtn">Submit</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -67,6 +166,7 @@
 <script src="../node_modules/flatpickr/dist/flatpickr.min.js"></script>
 <script> window.$ = window.jQuery = require('jquery');</script>
 <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+<!--<script src="../node_modules/datatables.net-responsive-bs5/js/responsive.bootstrap5.min.js"></script>-->
 <script src="listProduct.js"></script>
 <script> if (window.module) module = window.module</script>
 </body>

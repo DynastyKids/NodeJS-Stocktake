@@ -6,6 +6,7 @@ const os = require('os');
 const moment = require('moment-timezone');
 const express = require('express')
 const expressApp = express()
+const cors=require("cors")
 const wechatGetRequests = require('./apiserver/apimain');
 const {main} = require("@popperjs/core");
 const port = 3000
@@ -110,6 +111,7 @@ app.on("activate", function () {
     if (mainWindow === null) createWindow();
 });
 
+expressApp.use(cors())
 expressApp.get('/api/test', (req, res) => {
     res.json({message: 'Hello from server!'})
 })
