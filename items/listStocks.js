@@ -101,10 +101,6 @@ function i18n_bodyContents() {
 
     document.querySelector("#stockTable_paginate .previous").textContent = i18next.t("dataTables.table_action.0")
     document.querySelector("#stockTable_paginate .next").textContent = i18next.t("dataTables.table_action.1")
-
-    document.querySelector("#alert_success div").textContent = i18next.t("flashtext_success")
-    document.querySelector("#alert_warning div").textContent = i18next.t("flashtext_notfound")
-    document.querySelector("#alert_error div").textContent = i18next.t("flashtext_failed")
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
