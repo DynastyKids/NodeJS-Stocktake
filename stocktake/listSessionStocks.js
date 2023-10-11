@@ -166,8 +166,8 @@ async function getAllItemsFromSession(sessionCode) {
                 <td>${x.bestbefore}</td>
                 <td>${x.shelfLocation}</td>
                 <td class="action">
-                    <a href="#" data-bs-toggle="modal" data-bs-target="#consumeModal" data-bs-stockid="${x.productLabel}" class="tablebtn_consume">Consume</a>
                     <a href="#" data-bs-toggle="modal" data-bs-target="#stockEditModal" data-bs-stockid="${x.productLabel}" class="tablebtn_edit">Edit</a>
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-stockid="${x.productLabel}" class="tablebtn_consume">Remove</a>
                 </td></tr>`
         }
 

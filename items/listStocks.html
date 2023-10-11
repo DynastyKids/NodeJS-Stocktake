@@ -45,19 +45,16 @@
     </nav>
     <span class="container-fluid">
         <h1 id="sessionTitle">Current Stocks</h1>
-        <table style="text-align: center;">
+        <table style="text-align: center; justify-items: center;">
             <tr>
-                <td>
-                    <span class="toggleRefreshText" style="float: left;">Auto Refresh Text</span>
-                    <span id="toggleTimes"></span><span class="toggleRefreshText"></span>
-                </td>
+                <td><span class="toggleRefreshText" style="float: left;">Auto Refresh in</span></td>
+                <td><span id="toggleTimes"></span><span class="toggleRefreshText"></span></td>
                 <td><a href="#" id="areloadTable">Reload Now</a></td>
+                <td><a href="#" id="apauseTimer">Pause</a></td>
             </tr>
             <tr>
-                <td>
-                    <label for="filterdate">Filter records after Date:</label>
-                    <input type="date" id="filterdate" name="filterdate">
-                </td>
+                <td><label for="filterdate">Filter records after Date:</label></td>
+                <td><input type="date" id="filterdate" name="filterdate"></td>
             </tr>
         </table>
         <hr>
@@ -87,21 +84,21 @@
         </table>
     </span>
 </div>
-<!--Consume Modal-->
-<div class="modal fade" id="consumeModal" tabindex="-1" aria-labelledby="consumeModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+
+<div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="consumeModalLabel">Consume / Unwrap Item</h5>
+                <h5 class="modal-title" id="removeModalLabel">Remove Item</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                Are you sure to unwrap Item?
+                Are you sure to REMOVE Item from shelf?
                 <form><input type="text" class="form-control" id="modalInputLabelid" hidden value=""></form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="consumeModalYes">Confirm</button>
+                <button type="button" class="btn btn-primary" id="removeModalYes">Confirm</button>
             </div>
         </div>
     </div>
