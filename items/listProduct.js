@@ -49,15 +49,19 @@ document.querySelector("#deleteRowModal").addEventListener('show.bs.modal', (ev)
         document.querySelector("#deleteRowModal .modal-body span").textContent = `delete ${ev.relatedTarget.getAttribute("data-bs-productname")}?`
         document.querySelector("#deleteModalConfirmBtn").className = 'btn btn-danger'
         document.querySelector("#deleteModalConfirmBtn").textContent = "Disable"
+        document.querySelector("#deleteModalConfirmBtn").disabled = false
     } else {
         document.querySelector("#deleteRowModal .modal-title span").textContent = `Add Back?`
         document.querySelector("#deleteRowModal .modal-body span").textContent = `add back ${ev.relatedTarget.getAttribute("data-bs-productname")}?`
         document.querySelector("#deleteModalConfirmBtn").className = 'btn btn-info'
         document.querySelector("#deleteModalConfirmBtn").textContent = "Enable"
+        document.querySelector("#deleteModalConfirmBtn").disabled = false
     }
 
     document.querySelector("#deleteModalConfirmBtn").addEventListener("click", async (ev) => {
-        result = (itemStatus ? await updateRecordById(itemId, {"inuse": false}) : await updateRecordById(itemId, {"inuse": true}))
+        document.querySelector("#deleteModalConfirmBtn").disabled = true
+        document.querySelector("#deleteModalConfirmBtn").textContent = "Updating"
+        result = (itemStatus === "true" ? await updateRecordById(itemId, {"inuse": false}) : await updateRecordById(itemId, {"inuse": true}))
         console.log("Delete Model result", result)
         if (result.acknowledged) {
             location.reload()
@@ -75,6 +79,7 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
 
     //初始化设置，默认设置submit btn为不可用，清空所有input
     document.querySelector("#modelEditSubmitBtn").disabled = true;
+    document.querySelector("#modelEditSubmitBtn").textContent = "Fetching...";
     document.querySelectorAll("#editRowModal .modal-body input").forEach(item=>{
         item.disabled = true
         item.value=""
@@ -84,10 +89,9 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
 
     try {
         let result = await findOneRecordById(itemId)
-        console.log(result)
     //     回填数据到输入框，对输入框解除disabled
         if (result){
-            document.querySelector("#editRowModalLabel").textContent = `Edit Product Infos ${result.productCode ? " for "+ result.productCode + (result.labelname ? result.labelname : "") : ""}`
+            document.querySelector("#editRowModalLabel").textContent = `Edit Product Infos ${result.productCode ? " for "+ result.productCode + (result.labelname ? " - " + result.labelname : "") : ""}`
             document.querySelector("#editRowModalinput_productCode").value = (result.productCode ? result.productCode : "")
             document.querySelector("#editRowModalinput_labelName").value = (result.labelname ? result.labelname : "")
             document.querySelector("#editRowModalinput_description").value = (result.description ? result.description : "")
@@ -113,12 +117,16 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
             item.disabled = false
         })
         document.querySelector("#modelEditSubmitBtn").disabled = false
+        document.querySelector("#modelEditSubmitBtn").textContent = "Submit";
     } catch (e) {
         console.error("Error on editRowModal:", e)
     }
 
     //当用户编辑完成后，开始提交
     document.querySelector("#modelEditSubmitBtn").addEventListener("click",async (ev) => {
+        document.querySelector("#modelEditSubmitBtn").disabled = true
+        document.querySelector("#modelEditSubmitBtn").textContent = "Updating";
+
         let result = {}
         result.productCode = document.querySelector("#editRowModalinput_productCode").value
         result.labelname = document.querySelector("#editRowModalinput_labelName").value

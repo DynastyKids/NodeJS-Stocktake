@@ -10,8 +10,7 @@ const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 
 var $ = require('jquery');
-var DataTable = require('datatables.net-bs')(window, $);
-require('datatables.net-responsive-bs');
+var DataTable = require('datatables.net-responsive-bs5')(window, $);
 
 const uriCompents = [credentials.mongodb_protocol, "://"]
 if (credentials.mongodb_username && credentials.mongodb_password) {
@@ -22,9 +21,11 @@ const uri = encodeURI(uriCompents.join(""))
 
 const {setInterval} = require('timers');
 
+let fullResultSet = [];
 let table = new DataTable('#stockTable', {
     responsive: true,
-    pageLength: 50,
+    pageLength: 25,
+    lengthMenu:[10,15,25,50,100],
     columns: [{"width": "25%"}, null, null, {"width": "10%"}, null, null],
     order: [[2, 'asc']]
 });
@@ -132,12 +133,65 @@ document.addEventListener("DOMContentLoaded", (event) => {
     })
 });
 
-var removeModal = document.querySelector("#removeModal")
+document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
+    //弹出后先填充表格
+    let requestLabelId = ev.relatedTarget.getAttribute("data-bs-itemId")
+    console.log(fullResultSet)
+    document.querySelector("#modalEditLabelid").value = requestLabelId
+    document.querySelector("#editModalSubmitBtn").disabled = true
+    document.querySelector("#editModalSubmitBtn").textContent = "Submit"
+    document.querySelector("#editModal .modal-title").textContent = `Loading Product Information`
+    let originProperty = {}
+    for (let i = 0; i < fullResultSet.length; i++) {
+        if (fullResultSet[i].productLabel === requestLabelId){
+            originProperty = fullResultSet[i]
+            //找到了目标信息，继续填充
+            document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${fullResultSet[i].productName}`
+            document.querySelector("#editModal .modal-body p").innerHTML = `Product Info: ${fullResultSet[i].productCode} - ${fullResultSet[i].productName}<br>Label ID: ${fullResultSet[i].productLabel}`
+            document.querySelector("#modalEditQuantity").value = (fullResultSet[i].quantity ? fullResultSet[i].quantity : "")
+            document.querySelector("#modalEditUnit").value = (fullResultSet[i].quantityUnit ? fullResultSet[i].quantityUnit : "")
+            document.querySelector("#modalEditBestbefore").value = (fullResultSet[i].bestbefore ? fullResultSet[i].bestbefore : "")
+            document.querySelector("#modelEditLocation").value = (fullResultSet[i].shelfLocation ? fullResultSet[i].shelfLocation : "")
+            document.querySelector("#editModalSubmitBtn").disabled = false
+            break;
+        }
+    }
+    
+    document.querySelector("#editModalSubmitBtn").addEventListener("click", async (ev) => {
+        let client = new MongoClient(uri, {
+            serverApi: {
+                version: ServerApiVersion.v1,
+                useNewUrlParser: true,
+                useUnifiedTopology: true
+            }
+        });
+        const session = client.db(credentials.mongodb_db).collection("pollinglog");
+        document.querySelector("#editModalSubmitBtn").disabled = true
+        document.querySelector("#editModalSubmitBtn").textContent = "Updating"
+        let result = await session.updateOne({"productLabel": requestLabelId}, {
+            $set: {
+                quantity: (document.querySelector("#modalEditQuantity").value ? document.querySelector("#modalEditQuantity").value : originProperty.quantity ),
+                quantityUnit: (document.querySelector("#modalEditUnit").value ? document.querySelector("#modalEditUnit").value : originProperty.quantityUnit ),
+                bestbefore : (document.querySelector("#modalEditBestbefore").value ? document.querySelector("#modalEditBestbefore").value : originProperty.bestbefore),
+                shelfLocation: (document.querySelector("#modelEditLocation").value ? document.querySelector("#modelEditLocation").value : originProperty.shelfLocation)
+            }
+        })
+        if (result.acknowledged){
+            bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
+            loadStockInfoToTable()
+        } else {
+            document.querySelector("#editModal .modal-body p").textContent = "Error on Update"
+        }
+    })
+})
+
+let removeModal = document.querySelector("#removeModal")
 removeModal.addEventListener("show.bs.modal", function (ev) {
-    var button = ev.relatedTarget
-    var lableID = button.getAttribute("data-bs-labelid")
+    var lableID = ev.relatedTarget.getAttribute("data-bs-itemId")
     let hiddenInput = removeModal.querySelector("#modalInputLabelid")
     hiddenInput.value = lableID
+    document.querySelector("#removeModalYes").disabled = false
+    document.querySelector("#removeModalYes").textContent = "Confirm"
 })
 
 removeModal.querySelector("#removeModalYes").addEventListener("click", async function (ev) {
@@ -152,6 +206,9 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
             useUnifiedTopology: true
         }
     });
+
+    document.querySelector("#removeModalYes").disabled = true
+    document.querySelector("#removeModalYes").textContent = "Updating"
     try {
         await client.connect();
         const session = client.db(credentials.mongodb_db).collection("pollinglog");
@@ -188,6 +245,7 @@ function loadStockInfoToTable() {
     getAllStockItems().then(result => {
         if (result.acknowledged) {
             let results = result.resultSet
+            fullResultSet = result.resultSet
             table.column(2).order('asc');
             for (let index = 0; index < results.length; index++) {
                 const element = results[index];
@@ -205,9 +263,9 @@ function loadStockInfoToTable() {
                     element.productLabel,
                     (element.consumed < 1 ? `
                     <a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
-                        data-bs-labelid="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>
+                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
-                        data-bs-labelid="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>
+                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>
                     ` : "")
                 ]).draw(false);
             }
@@ -236,7 +294,6 @@ async function getAllStockItems() {
             result.acknowledged = true
             result.resultSet = await cursor.toArray()
         }
-        console.log(result.resultSet)
     } catch (err) {
         console.error(err)
         result['message'] = err
