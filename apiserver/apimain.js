@@ -38,11 +38,6 @@ let sessionClient = new MongoClient(uri, {
     },
 });
 
-//直接访问则引导到/api，/可以留作其他后续使用
-router.get("/", async (req, res) => {
-    res.json({ping: true, acknowledged: true, message: "For API documentation, visit '/api' "});
-});
-
 /*
 * Session
 * Session中至少包括,GET所有session，POST加入一个Session，get某个Session的stocklist，post添加一个log记录到xxx Session
@@ -52,7 +47,7 @@ router.get("/", async (req, res) => {
  * Getsession 获取所有当前可用的Session
  * 默认仅获取当前可用的Session，如果添加了?all=1则给出所有的Session List
  */
-router.get("/api/v1/sessions", async (req, res) => {
+router.get("/v1/sessions", async (req, res) => {
     let sessionResults = {acknowledged: false, data: [], message: ""};
     try {
         let dbclient = new MongoClient(uri, {
@@ -69,7 +64,7 @@ router.get("/api/v1/sessions", async (req, res) => {
         sessionResults.acknowledged = true
         sessionResults.data = resultArray
     } catch (e) {
-        console.error("Error on /api/v1/sessions:",e)
+        console.error("Error on /v1/sessions:",e)
         sessionResults.message = e.toString()
     } finally {
         await sessionClient.close()
@@ -97,7 +92,7 @@ router.get("/api/v1/sessions", async (req, res) => {
  * 验证当前Session是否有效
  * 用户需要以Post请求方式发起，GET请求回弹报错
  */
-router.post("/api/v1/sessions/join", async (req, res) => {
+router.post("/v1/sessions/join", async (req, res) => {
     let response =  {acknowledged: false, data: [], message: ""};
     let localMoment = moment(new Date()).tz("Australia/Sydney");
     let localTime = (new Date(localMoment.format("YYYY-MM-DD HH:mm:ss"))).getTime()
@@ -129,7 +124,7 @@ router.post("/api/v1/sessions/join", async (req, res) => {
                 response.message = `The session '${sessionCode}' has expired or session code is incorrect.`
             }
         }catch (e) {
-            console.error("Error on /api/v1/sessions/join:",e)
+            console.error("Error on /v1/sessions/join:",e)
             response.message = "Missing body parameter of SESSION Code"
         }
     } else {
@@ -143,7 +138,7 @@ router.post("/api/v1/sessions/join", async (req, res) => {
  * ADD POST方法
  * 允许用户通过客户端直接新建一个盘点会话，而无需通过服务端执行
  */
-router.post("/api/v1/sessions/add",async (req, res) => {
+router.post("/v1/sessions/add",async (req, res) => {
     let response = {acknowledged: false, data: [], message: ""};
     let localMoment = moment(new Date()).tz("Australia/Sydney");
     let localTime = localMoment.format("YYYY-MM-DD HH:mm:ss")
@@ -176,7 +171,7 @@ router.post("/api/v1/sessions/add",async (req, res) => {
             }
         }
     } catch (e) {
-        console.error("Error on /api/v1/sessions/join:", e)
+        console.error("Error on /v1/sessions/join:", e)
         response.message = "Missing Parameter of SESSION Code"
     } finally {
         await dbclient.close()
@@ -194,7 +189,7 @@ function randomHexGenerator(){
  * 替换了原有的sessionlog，用来查看某个盘点会话中已经扫描的产品，必须要传入SessionCode作为参数，可以查看所有历史的会话
  * 在MongoDB中每件产品可能被扫描多次，给出结果前在JS中去重
  */
-router.get("/api/v1/session/logs",async (req, res) =>{
+router.get("/v1/session/logs",async (req, res) =>{
     let response = {acknowledged: false, data: [], message: ""};
     let dbclient = new MongoClient(uri, {
         serverApi: {
@@ -216,8 +211,7 @@ router.get("/api/v1/session/logs",async (req, res) =>{
             response.data = result
             response.acknowledged = true
         } catch (e) {
-            console.error("Error on /api/v1/session/logs:", e)
-            response.message = `Error on /api/v1/session/logs: ${e}`
+            response.message = `Error on /v1/session/logs: ${e}`
         } finally {
             await dbclient.close()
         }
@@ -231,7 +225,7 @@ router.get("/api/v1/session/logs",async (req, res) =>{
  * SESSION
  * session/addlog POST方法 (旧)
  */
-router.post("/api/v1/sessionlog/add", async (req, res) => {
+router.post("/v1/sessionlog/add", async (req, res) => {
     const sessioncode = (req.body.session ? req.body.session : "");
     const iteminfo = req.body.item;
     let localTime = moment(new Date()).tz("Australia/Sydney");
@@ -258,7 +252,7 @@ router.post("/api/v1/sessionlog/add", async (req, res) => {
  * 1. 会话ID （如果不提供则默认使用STOCK）
  * 2. 产品对象信息，可以直接使用Base64解码后的结果，如果期望传入base64，可以使用老接口/sessionlogs/itemadd
  */
-router.post("/api/v1/session/addlog", async (req, res) => {
+router.post("/v1/session/addlog", async (req, res) => {
     const sessioncode = (req.body.session ? req.body.session : "STOCKS");
     let response = {acknowledged: false, data: [], message: ""};
     let localMoment = moment(new Date()).tz("Australia/Sydney");
@@ -291,7 +285,7 @@ router.post("/api/v1/session/addlog", async (req, res) => {
                     response.message = `Update on existing document.`
                 }
         } catch (e) {
-            response.message = `Error on /api/v1/session/addlog: ${e}`
+            response.message = `Error on /v1/session/addlog: ${e}`
         } finally {
           await dbclient.close()
         }
@@ -306,7 +300,7 @@ router.post("/api/v1/session/addlog", async (req, res) => {
 * products GET方法
 * 用来查看目前所有产品的信息
 */
-router.get("/api/v1/products", async (req, res) => {
+router.get("/v1/products", async (req, res) => {
     let response = {acknowledged: false, data: [], message: ""};
     let dbclient = new MongoClient(uri, {
         serverApi: {
@@ -338,7 +332,7 @@ router.get("/api/v1/products", async (req, res) => {
         }
         response.acknowledged = true
     } catch (e) {
-        response.message = `Error on /api/v1/products: ${e}`
+        response.message = `Error on /v1/products: ${e}`
     } finally {
         await dbclient.close()
     }
@@ -350,7 +344,7 @@ router.get("/api/v1/products", async (req, res) => {
 * product POST方法， 新
 * 允许用户通过客户端添加，更新产品信息
 */
-router.post("/api/v1/products", async (req, res) =>{
+router.post("/v1/products", async (req, res) =>{
     let response = {acknowledged: false, data: [], message: ""};
     let dbclient = new MongoClient(uri, {
         serverApi: {
@@ -391,7 +385,7 @@ router.post("/api/v1/products", async (req, res) =>{
             response.message = `Missing parameter(s)`
         }
     } catch (e) {
-        response.message = `Error on /api/v1/products: ${e}`
+        response.message = `Error on /v1/products: ${e}`
     } finally {
         await dbclient.close()
     }
@@ -406,7 +400,7 @@ router.post("/api/v1/products", async (req, res) =>{
  *  获取所有产品库存信息，使用productCode+labelID去重
  *  允许用户从label, productCode, location和session四个维度自行筛选过滤数据
  */
-router.get("/api/v1/stocks", async (req, res) => {
+router.get("/v1/stocks", async (req, res) => {
     let response = {acknowledged: false, data: [], message: ""};
     let dbclient = new MongoClient(uri, {
         serverApi: {
@@ -507,7 +501,7 @@ function filterDuplicate(fields, data) {
  * 可接受的操作依旧保持为库存信息的添加，更新和删除，均使用updateOne完成，仅添加使用upsert方法
  *
  */
-router.post("/api/v1/stocks", async (req, res)=>{
+router.post("/v1/stocks", async (req, res)=>{
     let localMoment = moment(new Date()).tz("Australia/Sydney");
     let localTime = localMoment.format("YYYY-MM-DD HH:mm:ss");
     let response = {acknowledged: false, data: [], message: ""};
@@ -662,7 +656,7 @@ function createLogObject(sessioncode, iteminfo) {
  * 需要传入参数：Location 或 label
  * 返回参数：Array[ProductInfo]
  */
-router.get("/api/v1/stocks/get", async (req, res) => {
+router.get("/v1/stocks/get", async (req, res) => {
     let productLocation = req.query.shelf
     let productLabel = req.query.label
     let response = {acknowledged: false, results: [], info: null}
@@ -695,7 +689,7 @@ router.get("/api/v1/stocks/get", async (req, res) => {
  * 需要传入参数：Location 或 label
  * 返回参数：Array[ProductInfo]
  */
-router.post("/api/v1/stocks/get", async (req, res) => {
+router.post("/v1/stocks/get", async (req, res) => {
     const contents = req.body
     let response = {acknowledged: false, results: [], info: null}
     await sessionClient.connect()
@@ -732,7 +726,7 @@ router.post("/api/v1/stocks/get", async (req, res) => {
 /*
  * Stock中的consume方法，当某个板位被使用后需要标注所有的该id信息为consumed
  */
-router.get("/api/v1/stocks/consume", async (req, res) => {
+router.get("/v1/stocks/consume", async (req, res) => {
     let localTime = moment(new Date()).tz("Australia/Sydney");
     let response = {acknowledged: false}
     const productLabel = req.query.label
@@ -803,9 +797,12 @@ async function findAndUpdateLogs(findCondition, updateQuery) {
     return returnResult
 }
 
-router.use("/api", swaggerUi.serve);
-router.get("/api", swaggerUi.setup(swaggerDocument));
-
+router.use("/", swaggerUi.serve);
+router.get("/", swaggerUi.setup(swaggerDocument));
+router.get("/v1", swaggerUi.setup(swaggerDocument));
+router.get('/test', (req, res) => {
+    res.json({message: 'Hello from server!'})
+})
 module.exports = router;
 
 async function insertOneToLog(insertData) {

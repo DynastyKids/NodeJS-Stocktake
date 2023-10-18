@@ -7,7 +7,7 @@ const moment = require('moment-timezone');
 const express = require('express')
 const expressApp = express()
 const cors=require("cors")
-const wechatGetRequests = require('./apiserver/apimain');
+const apiRequests = require('./apiserver/apimain');
 const {main} = require("@popperjs/core");
 const port = 3000
 require('electron-reload')(__dirname);
@@ -112,11 +112,12 @@ app.on("activate", function () {
 });
 
 expressApp.use(cors())
-expressApp.get('/api/test', (req, res) => {
-    res.json({message: 'Hello from server!'})
-})
 
-expressApp.use("/", wechatGetRequests)
+// expressApp.use("/", apiRequests)
+expressApp.use("/api", apiRequests)
+
+// expressApp.use(express.static(__dirname+'/public'));
+expressApp.use(express.static('public'));
 
 app.whenReady().then(() => {
     expressApp.listen(port, () => {
