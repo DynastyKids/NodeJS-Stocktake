@@ -21,7 +21,7 @@
       "<i class=\"fa fa-language\" aria-hidden=\"true\"></i> 语言",
       "<i class=\"fa fa-barcode\" aria-hidden=\"true\"></i> 扫码器模式"],
     "sessions_navitems": ["创建盘点会话", "展示会话列表"],
-    "products_navitems": ["列出所有产品", "添加产品", "展示库存总览", "列出货品移动记录", "添加货品移动记录"]
+    "products_navitems": ["列出所有产品", "添加产品", "展示当前库存", "显示所有库存记录"]
   },
   "index": {
     "pagetitle": "首页",

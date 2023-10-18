@@ -105,6 +105,12 @@ function i18n_bodyContents() {
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
+    const URLqueries = new URLSearchParams(window.location.search)
+    if (URLqueries.get('q')){ // 该query存在则拉取所有数据
+        document.querySelector(".container .container-fluid small").textContent = "*** Showing all stocks including history ***"
+    } else {
+        document.querySelector(".container .container-fluid small").textContent = "* Showing current stocks only."
+    }
     loadStockInfoToTable()
     let shouldRefresh = true
     const automaticRefresh = setInterval(() => {
@@ -242,7 +248,12 @@ document.querySelector("#filterdate").addEventListener("change", (ev)=>{
 
 function loadStockInfoToTable() {
     table.clear().draw()
-    getAllStockItems().then(result => {
+    const URLqueries = new URLSearchParams(window.location.search)
+    let requestAllData = false
+    if (URLqueries.get('q')){ // 该query存在则拉取所有数据
+        requestAllData = true
+    }
+    getAllStockItems(requestAllData).then(result => {
         if (result.acknowledged) {
             let results = result.resultSet
             fullResultSet = result.resultSet
@@ -251,16 +262,16 @@ function loadStockInfoToTable() {
                 const element = results[index];
                 if (document.querySelector("#filterdate").value !== "") {
                     console.log(document.querySelector("#filterdate").value)
-                    if (new Date(element.loggingTime) < new Date(document.querySelector("#filterdate").value)) {
+                    if (element.loggingTime && new Date(element.loggingTime) < new Date(document.querySelector("#filterdate").value)) {
                         continue;
                     }
                 }
                 table.row.add([
                     `${element.productCode} - ${element.productName}`,
                     `${element.quantity} ${element.quantityUnit}`,
-                    element.bestbefore,
-                    element.shelfLocation,
-                    element.productLabel,
+                    (element.bestbefore ? element.bestbefore : ""),
+                    (element.shelfLocation ? element.shelfLocation : ""),
+                    (element.productLabel ? element.productLabel : ""),
                     (element.consumed < 1 ? `
                     <a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>
@@ -273,7 +284,7 @@ function loadStockInfoToTable() {
     })
 }
 
-async function getAllStockItems() {
+async function getAllStockItems(getAll) {
     let client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
@@ -286,19 +297,21 @@ async function getAllStockItems() {
     let cursor;
     let result = {acknowledged: false, resultSet: [], message: ""}
     try {
-        const query = {consumed: 0}
         const options = {sort: {bestbefore: -1},}
         await client.connect();
-        cursor = await sessions.find(query, options)
-        if ((await sessions.countDocuments(query)) > 0) {
-            result.acknowledged = true
-            result.resultSet = await cursor.toArray()
+        if (getAll){
+            cursor = await sessions.find({}, options)
+        } else {
+            cursor = await sessions.find({consumed: 0}, options)
         }
+        result.acknowledged = true
+        result.resultSet = await cursor.toArray()
+        console.log(result)
     } catch (err) {
         console.error(err)
         result['message'] = err
     } finally {
-        client.close()
+        await client.close()
     }
 
     return result

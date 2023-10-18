@@ -9,7 +9,7 @@
       "<i class=\"fa fa-language\" aria-hidden=\"true\"></i> Language",
       "<i class=\"fa fa-barcode\" aria-hidden=\"true\"></i> Scanner Mode"],
     "sessions_navitems": ["New stock-take session", "Show All Sessions"],
-    "products_navitems": [ "Show All Products", "Add Product", "Show Stocks Overview", "Show Movement Logs", "Add Movement log"]
+    "products_navitems": [ "Show All Products", "Add Product", "Show Current Stocks", "Show All Stocks"]
   },
   "pageTitle": {
     "note": "Using file name as title identifier",
