@@ -7,7 +7,7 @@
       "<i class=\"fa fa-cubes\" aria-hidden=\"true\"></i> Products",
       "<i class=\"fa fa-cogs\" aria-hidden=\"true\"></i> Settings",
       "<i class=\"fa fa-language\" aria-hidden=\"true\"></i> Language",
-      "<i class=\"fa fa-barcode\" aria-hidden=\"true\"></i> Scanner Mode"],
+      "<i class=\"fa fa-barcode\" aria-hidden=S\"true\"></i> Scanner Mode"],
     "sessions_navitems": ["New stock-take session", "Show All Sessions"],
     "products_navitems": [ "Show All Products", "Add Product", "Show Current Stocks", "Show All Stocks"]
   },
@@ -105,7 +105,7 @@
   "listproducts": {
     "pagetitle": "Products",
     "h4title_action": "Actions",
-    "a_checkstockitems": "Check Stock Items",
+    "a_checkstockitems": ["Check Stock Items","Add a product", "Reload Table"],
     "table_head": ["Product Code", "Product Name", "Qty Per Box", "Qty Per Pallet", "Best Before", "Action"]
   },
   "addproducts": {
@@ -131,6 +131,7 @@
     "reloadTableLink": "Reload Table Now",
     "refreshText": ["Automatic Refresh in: ","s"],
     "apauseTimer": "Pause Timer",
+    "labelForFilterdate": "Filter records after Date: ",
     "table_head": ["Product","Quantity","Best Before","Location","Label ID","Action"],
     "table_actionRemove": "Remove",
     "flashtext_success": "Successfully updated the item.",

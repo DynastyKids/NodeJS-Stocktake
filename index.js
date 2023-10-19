@@ -5,12 +5,21 @@ const {ServerApiVersion} = require('mongodb');
 const path = require('path');
 const fs = require('fs');
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, 'config/localsettings.json')));
-const moment = require('moment-timezone')
+const moment = require('moment-timezone');
+
+const Storage = require('electron-store');
+const newStorage = new Storage();
+// let navbarLanguage = "en"
+// if (newStorage.get('language')){
+//     navbarLanguage = newStorage.get('language')
+// } else {
+//     newStorage.set("language","en")
+// }
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 i18next.use(Backend).init({
-    lng: 'en', backend: {loadPath: path.join(__dirname, '/i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '/i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar()
     i18n_bodyContents();
@@ -20,6 +29,7 @@ document.getElementById('languageSelector').addEventListener('change', (e) => {
     i18next.changeLanguage(e.target.value).then(() => {
         i18n_navbar()
         i18n_bodyContents();
+        newStorage.set("language",e.target.value)
     });
 });
 function i18n_navbar() {

@@ -24,17 +24,18 @@ const client = new MongoClient(uri, {
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
+const Storage = require("electron-store");
+const newStorage = new Storage();
 i18next.use(Backend).init({
-    lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
-    i18n_navbar()
     i18n_bodyContents();
 });
 
 document.getElementById('languageSelector').addEventListener('change', (e) => {
     i18next.changeLanguage(e.target.value).then(() => {
-        i18n_navbar()
         i18n_bodyContents();
+        newStorage.set("language",e.target.value)
     });
 });
 function i18n_navbar() {

@@ -33,36 +33,21 @@ let shouldRefresh = true;
 const countdownFrom = 60;
 let countdown = 60;
 
+const Storage = require("electron-store");
+const newStorage = new Storage();
+
 i18next.use(Backend).init({
-    lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
-    i18n_navbar();
     i18n_bodyContents();
 });
 
 document.getElementById('languageSelector').addEventListener('change', (e) => {
     i18next.changeLanguage(e.target.value).then(() => {
-        i18n_navbar();
         i18n_bodyContents();
+        newStorage.set("language",e.target.value)
     });
 });
-function i18n_navbar() {
-    // Navbar Section
-    var navlinks = document.querySelectorAll(".nav-topitem");
-    for (let i = 0; i < navlinks.length; i++) {
-        navlinks[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
-    }
-
-    var sessionDropdownLinks = document.querySelectorAll("#sessionDropdownList a");
-    for (let i = 0; i < sessionDropdownLinks.length; i++) {
-        sessionDropdownLinks[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
-    }
-
-    var productDropdownLinks = document.querySelectorAll("#productDropdownList a");
-    for (let i = 0; i < productDropdownLinks.length; i++) {
-        productDropdownLinks[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
-    }
-}
 function i18n_bodyContents() {
     document.title = `${i18next.t('listnext3.pagetitle')} - Warehouse Electron`
     // Content - Breadcrumbs
@@ -76,6 +61,8 @@ function i18n_bodyContents() {
     document.querySelectorAll(".toggleRefreshText")[0].textContent = i18next.t(`liststocks.refreshText.${0}`)
     document.querySelectorAll(".toggleRefreshText")[1].textContent = i18next.t(`liststocks.refreshText.${1}`)
     document.querySelector("#areloadTable").textContent = i18next.t("liststocks.reloadTableLink")
+    document.querySelector("#apauseTimer").textContent = i18next.t("liststocks.apauseTimer")
+    document.querySelector("#labelForFilterdate").textContent = i18next.t("liststocks.labelForFilterdate")
 
     // Datatables
     var tableheaders = document.querySelectorAll("#stockTable thead th")

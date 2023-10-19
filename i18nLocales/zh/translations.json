@@ -106,7 +106,7 @@
   "listproducts": {
     "pagetitle": "产品列表",
     "h4title_action": "相关操作",
-    "a_checkstockitems": "查看库存内容",
+    "a_checkstockitems": ["查看库存内容","添加产品","刷新表格"],
     "table_head": ["产品号", "产品名", "箱内数量", "板内数量", "有效期要求", "操作"]
   },
   "addproducts": {
@@ -121,6 +121,8 @@
   "liststocks": {
     "pagetitle": "当前库存信息",
     "reloadTableLink": "刷新数据",
+    "apauseTimer": "暂停倒计时",
+    "labelForFilterdate": "仅筛选在此日期之后的记录：",
     "refreshText": ["距下次刷新还有: ","秒"],
     "table_head": ["产品","数量","最佳日期","库位","标签ID","操作"],
     "table_actionRemove": "移除",

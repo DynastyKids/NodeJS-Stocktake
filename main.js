@@ -12,6 +12,9 @@ const {main} = require("@popperjs/core");
 const port = 3000
 require('electron-reload')(__dirname);
 
+const Store = require('electron-store');
+Store.initRenderer()
+
 const i18next = require('i18next');
 const Backend = require('i18next-electron-fs-backend');
 const i18nextOptions = {

@@ -46,18 +46,13 @@
     <span class="container-fluid">
         <h1 id="sessionTitle">Stocks List</h1>
         <small></small>
-        <table style="text-align: center; justify-items: center;">
-            <tr>
-                <td><span class="toggleRefreshText" style="float: left;">Auto Refresh in</span></td>
-                <td><span id="toggleTimes"></span><span class="toggleRefreshText"></span></td>
-                <td><a href="#" id="areloadTable">Reload Now</a></td>
-                <td><a href="#" id="apauseTimer">Pause</a></td>
-            </tr>
-            <tr>
-                <td><label for="filterdate">Filter records after Date:</label></td>
-                <td><input type="date" id="filterdate" name="filterdate"></td>
-            </tr>
-        </table>
+        <h4>Actions</h4>
+        <ul>
+            <li><span class="toggleRefreshText" style="float: left;">Auto Refresh in: </span><span id="toggleTimes"></span><span class="toggleRefreshText"></span></li>
+            <li><a href="#" id="areloadTable">Reload Now</a></li>
+            <li><a href="#" id="apauseTimer">Pause</a></li>
+            <li><label id="labelForFilterdate" for="filterdate">Filter records after Date:</label><input type="date" id="filterdate" name="filterdate"></li>
+        </ul>
         <hr>
         <table class="table table-striped" id="stockTable">
             <thead class="thead-light">
@@ -149,9 +144,11 @@
 
 <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../node_modules/flatpickr/dist/flatpickr.min.js"></script>
+
 <script> window.$ = window.jQuery = require('jquery');</script>
 <script src="../node_modules/jquery/dist/jquery.min.js"></script>
-<script src="listStocks.js" type="module"></script>
+<script src="listStocks.js"></script>
+<script src="../layouts/template_navbar.js"></script>
 <script> if (window.module) module = window.module</script>
 </body>
 </html>
