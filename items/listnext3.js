@@ -165,7 +165,17 @@ document.getElementById('languageSelector').addEventListener('change', (e) => {
         newStorage.set(e.target.value)
     });
 });
-
+function i18n_navbar() { // Navbar Section
+    for (let i = 0; i < document.querySelectorAll(".nav-topitem").length; i++) {
+        document.querySelectorAll(".nav-topitem")[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
+    }
+    for (let i = 0; i < document.querySelectorAll("#sessionDropdownList a").length; i++) {
+        document.querySelectorAll("#sessionDropdownList a")[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
+    }
+    for (let i = 0; i < document.querySelectorAll("#productDropdownList a").length; i++) {
+        document.querySelectorAll("#productDropdownList a")[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
+    }
+}
 function i18n_bodyContents() {
     document.title = `${i18next.t('listnext3.pagetitle')} - Warehouse Electron`
 

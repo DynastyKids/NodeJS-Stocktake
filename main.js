@@ -3,13 +3,14 @@ const path = require("path");
 const fs = require('fs');
 const os = require('os');
 
-const moment = require('moment-timezone');
+const net = require('net')
 const express = require('express')
 const expressApp = express()
 const cors=require("cors")
 const apiRequests = require('./apiserver/apimain');
 const {main} = require("@popperjs/core");
-const port = 3000
+const startPort = 3000;
+let currentPort = startPort;
 require('electron-reload')(__dirname);
 
 const Store = require('electron-store');
@@ -37,8 +38,8 @@ let mainWindow;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 1024,
-        height: 768,
+        width: 1280,
+        height: 800,
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
             nodeIntegration: true,
@@ -79,10 +80,10 @@ function createWindow() {
         if (address) break;
     }
 
-    // mainWindow.loadURL(`http://localhost:${port}`);
+    // mainWindow.loadURL(`http://localhost:${currentPort}`);
     mainWindow.webContents.on('did-finish-load', () => {
         const addressSet = getIPAddress() ? getIPAddress() : [];
-        mainWindow.webContents.send('server-info', {address, port, addressSet});
+        mainWindow.webContents.send('server-info', {address, currentPort, addressSet});
     });
 
     mainWindow.on('resize', () => {
@@ -123,13 +124,52 @@ expressApp.use("/api", apiRequests)
 expressApp.use(express.static('public'));
 
 app.whenReady().then(() => {
-    expressApp.listen(port, () => {
-        console.log(`Server running at http://localhost:${port}`)
-        createWindow()
-    })
+
+    function checkPort(port, callback) {
+        const server = net.createServer();
+        server.listen(port, () => {
+            server.once('close', () => {
+                callback(true);
+            });
+            server.close();
+        });
+        server.on('error', () => {
+            callback(false);
+        });
+    }
+
+    function findAvailablePort() {
+        checkPort(currentPort, (isAvailable) => {
+            if (isAvailable) {
+                expressApp.listen(currentPort, () => {
+                    console.log(`Server running at http://localhost:${currentPort}`)
+                    createWindow()
+                })
+            } else {
+                console.log(`Port ${currentPort} is in use, trying ${currentPort + 1}`);
+                currentPort++;
+                findAvailablePort();
+            }
+        });
+    }
+
+    findAvailablePort();
 })
 
 ipcMain.on('get-user-data-path', (event) => {
     event.returnValue = app.getPath('userData')
 })
 
+// 20231020新增，允许用户多开，通过推演端口号
+function checkPort(port, callback) {
+    const server = net.createServer();
+    server.listen(port, () => {
+        server.once('close', () => {
+            callback(true);
+        });
+        server.close();
+    });
+    server.on('error', () => {
+        callback(false);
+    });
+}

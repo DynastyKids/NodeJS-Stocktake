@@ -33,15 +33,28 @@ const newStorage = new Storage();
 i18next.use(Backend).init({
     lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
+    i18n_navbar();
     i18n_bodyContents();
 });
 
 document.getElementById('languageSelector').addEventListener('change', (e) => {
     i18next.changeLanguage(e.target.value).then(() => {
+        i18n_navbar();
         i18n_bodyContents();
         newStorage.set("language",e.target.value)
     });
 });
+function i18n_navbar() { // Navbar Section
+    for (let i = 0; i < document.querySelectorAll(".nav-topitem").length; i++) {
+        document.querySelectorAll(".nav-topitem")[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
+    }
+    for (let i = 0; i < document.querySelectorAll("#sessionDropdownList a").length; i++) {
+        document.querySelectorAll("#sessionDropdownList a")[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
+    }
+    for (let i = 0; i < document.querySelectorAll("#productDropdownList a").length; i++) {
+        document.querySelectorAll("#productDropdownList a")[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
+    }
+}
 function i18n_bodyContents() {
     document.title = `${i18next.t('listsessionstock.pagetitle')} - Warehouse Electron`
 
