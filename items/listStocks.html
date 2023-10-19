@@ -53,6 +53,10 @@
             <li><a href="#" id="apauseTimer">Pause</a></li>
             <li><label id="labelForFilterdate" for="filterdate">Filter records after Date:</label><input type="date" id="filterdate" name="filterdate"></li>
         </ul>
+        <div id="loadingStatus">
+            <span class="spinner-border" role="status" id="loadingSpinners"></span>
+            <span class="" id="loadingTableText">Loading data...</span>
+        </div>
         <hr>
         <table class="table table-striped" id="stockTable">
             <thead class="thead-light">

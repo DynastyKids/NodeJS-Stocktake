@@ -23,6 +23,9 @@
     "sessions_navitems": ["创建盘点会话", "展示会话列表"],
     "products_navitems": ["列出所有产品", "添加产品", "展示当前库存", "显示所有库存记录"]
   },
+  "general": {
+    "loadingTableText": "数据加载中..."
+  },
   "index": {
     "pagetitle": "首页",
     "label_hometitle": "首页",
@@ -90,7 +93,8 @@
   "viewsession": {
     "pagetitle": "库存盘点会话",
     "h1title": "库存盘点会话",
-    "autorefresh": "距下次自动刷新还有 "
+    "autorefresh": "距下次自动刷新还有 ",
+    "table_titles": [ "产品信息","产品批号", "存放位置", "数量/单位", "最佳赏味期", "已使用", "操作"]
   },
   "setting": {
     "pagetitle": "设置",

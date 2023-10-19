@@ -11,6 +11,9 @@
     "sessions_navitems": ["New stock-take session", "Show All Sessions"],
     "products_navitems": [ "Show All Products", "Add Product", "Show Current Stocks", "Show All Stocks"]
   },
+  "general": {
+    "loadingTableText": "Loading data..."
+  },
   "pageTitle": {
     "note": "Using file name as title identifier",
     "index": "Homepage",
@@ -78,7 +81,8 @@
   "viewsession": {
     "pagetitle": "Session Viewer",
     "h1title": "Session",
-    "autorefresh": "Auto refresh in "
+    "autorefresh": "Auto refresh in ",
+    "table_titles": [ "Product","Lot Code", "Location", "Quantity / Unit", "Expire Date", "Removed", "Action"]
   },
   "setting": {
     "pagetitle": "Settings",

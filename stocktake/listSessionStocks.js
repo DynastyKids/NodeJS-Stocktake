@@ -61,6 +61,7 @@ function i18n_bodyContents() {
         table_headtitles[i].textContent = i18next.t(`listsessionstock.table_titles.${i}`)
         table_foottitles[i].textContent = i18next.t(`listsessionstock.table_titles.${i}`)
     }
+    document.querySelector("#loadingTableText").textContent = i18next.t('general.loadingTableText')
 
     document.querySelectorAll(".tablebtn_consume").forEach(eachbutton => {
         eachbutton.textContent = i18next.t('tables.btn_consume');
@@ -119,6 +120,7 @@ document.querySelector("#sessionSelector").addEventListener("change", () => {
 })
 
 async function getAllItemsFromSession(sessionCode) {
+    document.querySelector("#loadingStatus").style.removeProperty("display")
     let nowTime = moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
     const tomorrow = (new Date('today')).setDate(new Date('today').getDate() + 1)
     const options = {sort: {startDate: -1},};
@@ -137,24 +139,27 @@ async function getAllItemsFromSession(sessionCode) {
     }
     try {
         await client.connect();
-        cursor = sessions.find({$or: [{session: ""}, {session: sessionCode}]});
-        if ((await sessions.countDocuments({})) === 0) {
-            console.log("[MongoDB] Nothing Found");
-            document.querySelector("#activeTBody").innerHTML = "<tr><td colspan=5>No item found in this session available</td></tr>"
-        }
-
-        for await (const x of cursor) {
+        cursor = await sessions.find({$or: [{session: ""}, {session: sessionCode}]}).toArray();
+        console.log(cursor)
+        cursor.forEach(x=>{
             htmlContent += `<tr>
-                <td><small>${x.productLabel}</small></td>
-                <td><small>${x.productCode} - ${x.productName}</small></td>
-                <td><small>${x.quantity} ${x.quantityUnit}</small></td>
-                <td>${x.bestbefore}</td>
-                <td>${x.shelfLocation}</td>
+                <td><small>${(x.productLabel ? x.productLabel : "")}</small></td>
+                <td><small>${x.productCode ? x.productCode : ""} - ${x.productName ? (x.productCode ? " - "+x.productName: x.productName) : ""}</small></td>
+                <td><small>${x.hasOwnProperty("quantity") ? x.quantity + (x.quantityUnit ? " "+x.quantityUnit : ""): ""}</small></td>
+                <td>${(x.bestbefore ? x.bestbefore : "")}</td>
+                <td>${(x.shelfLocation ? x.shelfLocation : "")}</td>
                 <td class="action">
                     <a href="#" data-bs-toggle="modal" data-bs-target="#stockEditModal" data-bs-stockid="${x.productLabel}" class="tablebtn_edit">Edit</a>
                     <a href="#" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-stockid="${x.productLabel}" class="tablebtn_consume">Remove</a>
                 </td></tr>`
+        })
+
+
+        if (cursor.length === 0) {
+            console.log("[MongoDB] Nothing Found");
+            document.querySelector("#activeTBody").innerHTML = "<tr><td colspan=5>No item found in this session available</td></tr>"
         }
+
 
         document.querySelector("#activeTBody").innerHTML = htmlContent
     } catch (err) {
@@ -164,6 +169,6 @@ async function getAllItemsFromSession(sessionCode) {
     } finally {
         await client.close()
     }
-
+    document.querySelector("#loadingStatus").style.display = "none"
     return htmlContent;
 }

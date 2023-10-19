@@ -63,6 +63,7 @@ function i18n_bodyContents() {
     document.querySelector("#areloadTable").textContent = i18next.t("liststocks.reloadTableLink")
     document.querySelector("#apauseTimer").textContent = i18next.t("liststocks.apauseTimer")
     document.querySelector("#labelForFilterdate").textContent = i18next.t("liststocks.labelForFilterdate")
+    document.querySelector("#loadingTableText").textContent = i18next.t('general.loadingTableText')
 
     // Datatables
     var tableheaders = document.querySelectorAll("#stockTable thead th")
@@ -272,6 +273,7 @@ function loadStockInfoToTable() {
 }
 
 async function getAllStockItems(getAll) {
+    document.querySelector("#loadingStatus").style.removeProperty("display")
     let client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
@@ -299,7 +301,7 @@ async function getAllStockItems(getAll) {
         result['message'] = err
     } finally {
         await client.close()
+        document.querySelector("#loadingStatus").style.display = "none"
     }
-
     return result
 }

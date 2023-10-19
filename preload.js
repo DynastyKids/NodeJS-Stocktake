@@ -11,11 +11,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
 const {contextBridge, ipcRenderer} = require('electron');
 
-contextBridge.exposeInMainWorld(
-    'electron',
-    {
-        onWindowResize: (callback) => {
-            ipcRenderer.on('window-resize', (event, size) => callback(size));
-        }
-    }
-);
+// contextBridge.exposeInMainWorld(
+//     'electron',
+//     {
+//         onWindowResize: (callback) => {
+//             ipcRenderer.on('window-resize', (event, size) => callback(size));
+//         }
+//     }
+// );

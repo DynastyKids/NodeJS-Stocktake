@@ -47,12 +47,15 @@ function i18n_bodyContents() {
     tableTitles[8].textContent = i18next.t('tables.stocktable_setupTime');
     tableTitles[9].textContent = i18next.t('tables.stocktable_action');
 
+    document.querySelector("#loadingTableText").textContent = i18next.t('general.loadingTableText')
+
     var tableRowActions = document.querySelectorAll(".tableaction_view")
     tableRowActions.forEach(eachRow =>{ eachRow.textContent = i18next.t('tables.btn_view'); })
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
-    console.log(getAllSession())
+    getAllSession()
+    // console.log()
 });
 
 async function getAllSession(){
@@ -78,9 +81,9 @@ async function getAllSession(){
             document.querySelector("#activeTBody").innerHTML = htmlContent
         }
     } finally {
-        client.close();
+        await client.close();
     }
-
+    document.querySelector("#loadingStatus").style.display = "none"
     return htmlContent;
 }
 

@@ -34,17 +34,14 @@
         <h1 id="sessionTitle">Loading Session</h1>
         <h4>Actions</h4>
         <ul id="actionList">
+            <li><p id="toggleRefreshText">Automatic refresh in: X s</p></li>
+            <li><a href="#" id="toggleRefresh" class="">Pause Timer</a></li>
             <li><a href="#">Add Item</a></li>
         </ul>
-        <table style="text-align: center;">
-            <tr>
-                <td><p id="toggleRefreshText" style="float: left;">Automatic refresh in: Xs</p></td>
-                <td>
-                    <button id="toggleRefresh" class="btn btn-outline-warning btn-sm" style="float: right;;">Pause
-                    </button>
-                </td>
-            </tr>
-        </table>
+        <div id="loadingStatus">
+            <span class="spinner-border" role="status" id="loadingSpinners"></span>
+            <span class="" id="loadingTableText">Loading data...</span>
+        </div>
         <hr>
         <table class="table" id="viewSessionTable">
             <thead class="thead-light">
