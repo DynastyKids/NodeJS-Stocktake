@@ -1,5 +1,5 @@
 const MongoClient = require('mongodb').MongoClient;
-const {ipcRenderer} = require('electron')
+
 const fs = require('fs')
 const path = require('path')
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));

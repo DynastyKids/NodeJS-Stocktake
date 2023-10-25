@@ -1,6 +1,5 @@
 // 使用pollingsession的结果，distinct掉相同的labelid，然后删除所有在listproduct中标注
 // 了已经使用的产品，再加入到productlist中展示出来，，页面每30s刷新一次
-const {ipcRenderer} = require("electron");
 // const {BrowserWindow} = require("electron").remote;
 
 const MongoClient = require('mongodb').MongoClient;

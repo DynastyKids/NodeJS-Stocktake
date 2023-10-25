@@ -1,4 +1,4 @@
-const {app, BrowserWindow, ipcRenderer, ipcMain} = require("electron");
+const {app, BrowserWindow, ipcMain} = require("electron");
 const path = require("path");
 const fs = require('fs');
 const os = require('os');
@@ -9,8 +9,9 @@ const expressApp = express()
 const cors=require("cors")
 const apiRequests = require('./apiserver/apimain');
 const {main} = require("@popperjs/core");
-const startPort = 3000;
-let currentPort = startPort;
+const portfinder = require('portfinder');
+portfinder.basePort = 3000;
+let currentPort = 3000;
 require('electron-reload')(__dirname);
 
 const Store = require('electron-store');
@@ -36,7 +37,7 @@ ipcMain.on('change-language', (event, language) => {
 
 let mainWindow;
 
-function createWindow() {
+function createWindow(portNumber) {
     mainWindow = new BrowserWindow({
         width: 1280,
         height: 800,
@@ -44,7 +45,7 @@ function createWindow() {
             preload: path.join(__dirname, "preload.js"),
             nodeIntegration: true,
             // Additional security options
-            contextIsolation: false, // Consider setting this to true in production
+            contextIsolation: false, // 需要使用IPC Renderer,保持为False
             enableRemoteModule: false, // Consider setting this to true in production
         },
     });
@@ -80,10 +81,9 @@ function createWindow() {
         if (address) break;
     }
 
-    // mainWindow.loadURL(`http://localhost:${currentPort}`);
     mainWindow.webContents.on('did-finish-load', () => {
         const addressSet = getIPAddress() ? getIPAddress() : [];
-        mainWindow.webContents.send('server-info', {address, currentPort, addressSet});
+        mainWindow.webContents.send('server-info', {address, portNumber, addressSet});
     });
 
     mainWindow.on('resize', () => {
@@ -111,49 +111,27 @@ app.on("window-all-closed", function () {
     if (process.platform !== "darwin") app.quit();
 });
 
-app.on("activate", function () {
-    if (mainWindow === null) createWindow();
-});
+// app.on("activate", function () {
+//     if (mainWindow === null) createWindow();
+// });
 
 expressApp.use(cors())
+expressApp.use("/api", apiRequests);
 
-// expressApp.use("/", apiRequests)
-expressApp.use("/api", apiRequests)
-
-// expressApp.use(express.static(__dirname+'/public'));
-expressApp.use(express.static('public'));
+expressApp.use(express.static(path.join(__dirname,'public')));
 
 app.whenReady().then(() => {
-
-    function checkPort(port, callback) {
-        const server = net.createServer();
-        server.listen(port, () => {
-            server.once('close', () => {
-                callback(true);
-            });
-            server.close();
-        });
-        server.on('error', () => {
-            callback(false);
-        });
-    }
-
-    function findAvailablePort() {
-        checkPort(currentPort, (isAvailable) => {
-            if (isAvailable) {
-                expressApp.listen(currentPort, () => {
-                    console.log(`Server running at http://localhost:${currentPort}`)
-                    createWindow()
-                })
-            } else {
-                console.log(`Port ${currentPort} is in use, trying ${currentPort + 1}`);
-                currentPort++;
-                findAvailablePort();
-            }
-        });
-    }
-
-    findAvailablePort();
+    // 使用portfinder插件查找可用端口，原有方法可能出现undefined
+    portfinder.getPort((err,port)=>{
+        if(err){
+            console.error("Error when get portNo with portfinder:",err)
+            return
+        }
+        expressApp.listen(port, ()=>{
+            console.log(`Server running at http://localhost:${port}`)
+            createWindow(port)
+        })
+    })
 })
 
 ipcMain.on('get-user-data-path', (event) => {
@@ -173,3 +151,4 @@ function checkPort(port, callback) {
         callback(false);
     });
 }
+

@@ -1,5 +1,5 @@
 const {Autocomplete} = require("@tarekraafat/autocomplete.js")
-const {ipcRenderer, ipcMain} = require("electron");
+const {ipcRenderer} = require("electron");
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const path = require('path');
@@ -98,7 +98,7 @@ ipcRenderer.on('server-info', (event, {address, port, addressSet}) => {
     } else {
         document.querySelector("#serverAddressText").innerHTML = address;
     }
-    document.querySelector("#serverPortText").innerText = port;
+    document.querySelector("#serverPortText").innerText = port ? port : "";
 });
 
 const uriCompents = [credentials.mongodb_protocol, "://"]
