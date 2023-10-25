@@ -9,33 +9,8 @@
 </head>
 <body>
 <div class="container">
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">Stock-take Electron</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" aria-current="page" href="index.html"><i class="fa-solid fa-house"></i>Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#"><i class="fa-solid fa-tags"></i>Generate Labels</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="fa-solid fa-qrcode"></i>Scan QR Code</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="fa-regular fa-keyboard"></i>Manual Input</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
     <div class="container-fluid">
         <h1>Label Generator</h1>
-
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/">Home</a></li>
@@ -50,14 +25,6 @@
             </div>
         </div>
         <div class="container-fluid">
-            <div class="row mb-3">
-                <div class="col-sm-3 col-10">
-                    <input type="text" class="form-control" placeholder="Purchase Order NO.">
-                </div>
-                <div class="col-sm-1 col-2">
-                    <button class="btn btn-info" id="table_addRow"><i class="fa-solid fa-plus"></i></button>
-                </div>
-            </div>
             <table class="table">
                 <thead><tr>
                     <th class="rowid d-none d-sm-table-cell">No.</th>
@@ -71,7 +38,35 @@
                 <tbody>
                 </tbody>
             </table>
-            <button class="btn btn-primary" id="table_submit">Submit</button>
+            <div style="justify-content: space-between; display: flex">
+                <span>
+                    <button class="btn btn-primary" id="table_submit">Submit</button>
+                    <button class="btn btn-danger" id="table_reset">Reset Table</button>
+                </span>
+                <span style="margin-right: 0;">
+                    <button class="btn btn-info" id="table_addRow" style="align-self: end"><i class="fa-solid fa-plus"></i></button>
+                </span>
+            </div>
+
+            <div id="optionalSection" class="container-fluid" style="display: none">
+                <hr>
+                <h5>Optional</h5>
+                <div class="row mb-3">
+                    <div  class="col-sm-3 col-6">
+                        <label for="fileinput_lotfile">LOT File</label>
+                        <input type="file" id="fileinput_lotfile" class="form-control" placeholder="LOT File">
+                    </div>
+                    <div  class="col-sm-3 col-6">
+                        <label for="fileinput_packaging">Packaging File</label>
+                        <input type="file" id="fileinput_packaging" class="form-control" placeholder="Packaging List">
+                    </div>
+                    <div class="col-sm-5 col-10">
+                        <label>Purchase Order No.</label>
+                        <input type="text" class="form-control" placeholder="">
+                    </div>
+                </div>
+                <button class="btn btn-secondary" id="file_load">Load File</button>
+            </div>
         </div>
         <datalist id="productSuggestions"></datalist>
         <datalist id="unitSuggestions">
@@ -90,6 +85,7 @@
 <script src="/library/jquery-3.7.1.min.js"></script>
 <script src="/library/bootstrap.bundle.min.js"></script>
 <script src="/library/axios.min.js"></script>
+<script src="navbar.js"></script>
 <script>
     let rowNumber = 1
     document.addEventListener("DOMContentLoaded",function (ev){
@@ -143,6 +139,15 @@
             currentRow += 1;
         })
     });
+
+    document.querySelector("#table_reset").addEventListener("click",function(ev){
+        rowNumber = 1
+        document.querySelector("table tbody").innerHTML = ""
+    })
+
+    document.querySelector("#file_load").addEventListener("click", function(ev){
+
+    })
 
     document.querySelector("#table_submit").addEventListener("click",function(ev){
     //     Submit部分需要引用Chrome插件项目中的JSPDF，生成PDF后在新窗口回弹给用户，以便用户打印label
