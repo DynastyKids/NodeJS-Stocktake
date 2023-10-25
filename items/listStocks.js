@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
 const moment = require('moment-timezone')
-const {ipcRenderer} = require('electron');
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
@@ -79,6 +78,12 @@ function i18n_bodyContents() {
     document.querySelector("#labelForFilterdate").textContent = i18next.t("liststocks.labelForFilterdate")
     document.querySelector("#loadingTableText").textContent = i18next.t('general.loadingTableText')
 
+    if (document.querySelector("#switchCheck").checked){
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
+    } else {
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
+    }
+
     // Datatables
     var tableheaders = document.querySelectorAll("#stockTable thead th")
     var tablefooters = document.querySelectorAll("#stockTable tfoot th")
@@ -104,20 +109,37 @@ function i18n_bodyContents() {
 
     document.querySelector("#stockTable_paginate .previous").textContent = i18next.t("dataTables.table_action.0")
     document.querySelector("#stockTable_paginate .next").textContent = i18next.t("dataTables.table_action.1")
+
+    document.querySelectorAll(".table_action_edit").forEach(eachItem=>{
+        eachItem.textContent = i18next.t("dataTables.action_edit")
+    })
+    document.querySelectorAll(".table_action_remove").forEach(eachItem=>{
+        eachItem.textContent = i18next.t("dataTables.action_remove")
+    })
+}
+
+document.querySelector("#switchCheck").addEventListener("change", function(ev){
+    refreshCheckSwitch()
+})
+
+function refreshCheckSwitch(){
+    if (document.querySelector("#switchCheck").checked){
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
+        loadStockInfoToTable(true)
+    } else {
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
+        loadStockInfoToTable(false)
+    }
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
     const URLqueries = new URLSearchParams(window.location.search)
-    if (URLqueries.get('q')){ // 该query存在则拉取所有数据
-        document.querySelector(".container .container-fluid small").textContent = "*** Showing all stocks including history ***"
-    } else {
-        document.querySelector(".container .container-fluid small").textContent = "* Showing current stocks only."
-    }
-    loadStockInfoToTable()
+    document.querySelector("#switchCheck").checked = ( URLqueries.get('q') ? true : false) // 该query存在则拉取所有数据
+    refreshCheckSwitch()
     let shouldRefresh = true
     const automaticRefresh = setInterval(() => {
         if (shouldRefresh) {
-            loadStockInfoToTable()
+            refreshCheckSwitch()
             countdown = countdownFrom;
         }
     }, countdownFrom * 1000)
@@ -240,21 +262,31 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
 })
 
 document.querySelector("#areloadTable").addEventListener("click",function (ev) {
-    loadStockInfoToTable()
+    if (document.querySelector("#switchCheck").checked){
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
+        loadStockInfoToTable(true)
+    } else {
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
+        loadStockInfoToTable(false)
+    }
 })
 
 document.querySelector("#filterdate").addEventListener("change", (ev)=>{
-    loadStockInfoToTable();
+    if (document.querySelector("#switchCheck").checked){
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
+        loadStockInfoToTable(true)
+    } else {
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
+        loadStockInfoToTable(false)
+    }
 });
 
 
-function loadStockInfoToTable() {
+function loadStockInfoToTable(fetchAll) {
     table.clear().draw()
+    let requestAllData = fetchAll ? fetchAll : false
     const URLqueries = new URLSearchParams(window.location.search)
-    let requestAllData = false
-    if (URLqueries.get('q')){ // 该query存在则拉取所有数据
-        requestAllData = true
-    }
+    requestAllData = (URLqueries.get('q') ? true : requestAllData) // 该query存在则拉取所有数据
     getAllStockItems(requestAllData).then(result => {
         if (result.acknowledged) {
             let results = result.resultSet
@@ -276,10 +308,10 @@ function loadStockInfoToTable() {
                     (element.productLabel ? element.productLabel : ""),
                     (element.consumed < 1 ? `
                     <a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
-                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>
+                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_edit")}</a>
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
-                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>
-                    ` : "")
+                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_remove")}</a>
+                    ` : `<small class="table_action_removed">${i18next.t("dataTables.action_historyitem")} ${(element.consumedTime ? i18next.t("dataTables.action_removed") + element.consumedTime.split(" ")[0]: "")}</small>`)
                 ]).draw(false);
             }
         }

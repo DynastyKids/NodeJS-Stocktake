@@ -35,7 +35,12 @@
     "table_search": "Search: ",
     "table_pagesize": ["Show "," entries per page"],
     "table_entrydesc": ["Showing "," to "," of "," entries"],
-    "table_action": ["Previous Page","Next Page"]
+    "table_action": ["Previous Page","Next Page"],
+    "action_edit": "Edit",
+    "action_remove": "Remove",
+    "action_historyitem": "Past Record",
+    "action_removed": "Removed on",
+    "action_addback": "Add Back"
   },
   "index": {
     "pagetitle": "Homepage",
@@ -136,6 +141,7 @@
     "refreshText": ["Automatic Refresh in: ","s"],
     "apauseTimer": "Pause Timer",
     "labelForFilterdate": "Filter records after Date: ",
+    "switchCheck": ["Showing all Stocks, including removed items.","Showing Current Stocks only"],
     "table_head": ["Product","Quantity","Best Before","Location","Label ID","Action"],
     "table_actionRemove": "Remove",
     "flashtext_success": "Successfully updated the item.",

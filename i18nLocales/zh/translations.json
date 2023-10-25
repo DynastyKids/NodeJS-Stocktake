@@ -65,7 +65,12 @@
     "table_search": "搜索：",
     "table_pagesize": ["每页显示 "," 条"],
     "table_entrydesc": ["展示第","条至第","条记录，共","条记录"],
-    "table_action": ["上一页","下一页"]
+    "table_action": ["上一页","下一页"],
+    "action_edit": "编辑",
+    "action_remove": "移除",
+    "action_historyitem": "历史条目",
+    "action_removed": "已移除",
+    "action_addback": "恢复"
   },
   "session": {
     "pagetitle": "会话管理"
@@ -127,6 +132,7 @@
     "reloadTableLink": "刷新数据",
     "apauseTimer": "暂停倒计时",
     "labelForFilterdate": "仅筛选在此日期之后的记录：",
+    "switchCheck": ["查看所有库存记录(包括历史库存).","查看当前库存"],
     "refreshText": ["距下次刷新还有: ","秒"],
     "table_head": ["产品","数量","最佳日期","库位","标签ID","操作"],
     "table_actionRemove": "移除",

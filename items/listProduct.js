@@ -279,10 +279,9 @@ async function fetchTablesData(){
             `${(eachItem.palletQty ? eachItem.palletQty + (eachItem.unit ? " " + eachItem.unit : "") : " - ")}` +
             `${((eachItem.cartonQty && eachItem.palletQty) ? "<br><small>" + eachItem.palletQty / eachItem.cartonQty + " ctns</small>" : "")}`,
             `${(eachItem.withBestbefore > 0 ? "√" : "")}`,
-            // <a href="addProduct.html?mode=edit&id=${eachItem._id.toHexString()}">Edit</a> +
             `
-                <a href="#" data-bs-toggle="modal" data-bs-target="#editRowModal" data-bs-itemid="${eachItem._id.toHexString()}">Edit</a>
-                <a href="#" data-bs-toggle="modal" data-bs-target="#deleteRowModal" data-bs-productname="${eachItem.labelname}" data-bs-itemid="${eachItem._id.toHexString()}" data-bs-state="${eachItem.inuse}">${(eachItem.inuse ? "Remove" : "Add Back")}</a>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#editRowModal" data-bs-itemid="${eachItem._id.toHexString()}">${i18next.t("dataTables.action_edit")}</a>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#deleteRowModal" data-bs-productname="${eachItem.labelname}" data-bs-itemid="${eachItem._id.toHexString()}" data-bs-state="${eachItem.inuse}">${(eachItem.inuse ? i18next.t("dataTables.action_remove") : i18next.t("dataTables.action_addback"))}</a>
             `
         ]);
     })
