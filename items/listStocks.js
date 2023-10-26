@@ -307,13 +307,14 @@ function loadStockInfoToTable(fetchAll) {
                     `${element.quantity} ${element.quantityUnit}`,
                     (element.bestbefore ? element.bestbefore : ""),
                     (element.shelfLocation ? element.shelfLocation : ""),
-                    (element.productLabel ? element.productLabel : ""),
+                    `<small>${(element.productLabel ? element.productLabel : "")}</small>`,
                     (element.consumed < 1 ? `
                     <a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_edit")}</a>
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_remove")}</a>
-                    ` : `<small class="table_action_removed">${i18next.t("dataTables.action_historyitem")} ${(element.consumedTime ? i18next.t("dataTables.action_removed") + element.consumedTime.split(" ")[0]: "")}</small>`)
+                    ` : `<small class="table_action_removed">${(element.consumedTime ? i18next.t("dataTables.action_removed") + element.consumedTime.split(" ")[0]: "")}</small>
+                    <a href="#" class="table_actions table_action_revert" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_addback")}</a>`)
                 ]).draw(false);
             }
         }

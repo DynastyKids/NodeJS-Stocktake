@@ -29,6 +29,7 @@ const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 
 const Storage = require("electron-store");
+const {ipcRenderer} = require("electron");
 const newStorage = new Storage();
 i18next.use(Backend).init({
     lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
@@ -63,6 +64,8 @@ function i18n_bodyContents() {
     breadcrumbs[0].querySelector("a").innerText = i18next.t('index.pagetitle');
     breadcrumbs[1].querySelector("a").innerText = i18next.t('session.pagetitle');
     breadcrumbs[2].innerText = i18next.t('listsessionstock.pagetitle');
+
+    document.querySelector("#printlink").textContent = i18next.t('general.print')
 
     document.querySelector("#datasource p").textContent = i18next.t('listsessionstock.selectlabeltext')
     document.querySelector(".container h1").textContent = i18next.t("listsessionstock.pagetitle");
@@ -185,3 +188,7 @@ async function getAllItemsFromSession(sessionCode) {
     document.querySelector("#loadingStatus").style.display = "none"
     return htmlContent;
 }
+
+document.querySelector("#printlink").addEventListener("click",(ev)=>{
+    ipcRenderer.send('print');
+});

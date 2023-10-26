@@ -45,18 +45,23 @@
     </nav>
     <span class="container-fluid">
         <h1 id="sessionTitle">Stocks List</h1>
-        <ul>
-            <li><span class="toggleRefreshText" style="float: left;">Auto Refresh in: </span><span id="toggleTimes"></span><span class="toggleRefreshText"></span></li>
-            <li><a href="#" id="areloadTable">Reload Now</a></li>
-            <li><a href="#" id="apauseTimer">Pause</a></li>
-            <li><label id="labelForFilterdate" for="filterdate">Filter records after Date:</label><input type="date" id="filterdate" name="filterdate"></li>
-            <li>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item"><span class="toggleRefreshText" style="float: left;">Auto Refresh in: </span><span id="toggleTimes"></span><span class="toggleRefreshText"></span></li>
+            <li class="list-group-item row">
+                <a href="#" class="col-3" id="areloadTable">Reload Now</a>
+                <a href="#" class="col-3" id="apauseTimer">Pause</a>
+                <a href="#" class="col-3" id="printlink">Print</a>
+            </li>
+            <li class="list-group-item">
+                <label id="labelForFilterdate" for="filterdate">Filter records after Date:</label>
+                <input type="date" id="filterdate" name="filterdate">
+            </li>
+            <li class="list-group-item">
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="switchCheck">
                     <label class="form-check-label" for="switchCheck" id="switchCheckLabel">Show all stocks</label>
                 </div>
             </li>
-            <li><a href="#" id="printlink">Print</a></li>
         </ul>
         <div id="loadingStatus">
             <span class="spinner-border" role="status" id="loadingSpinners"></span>
