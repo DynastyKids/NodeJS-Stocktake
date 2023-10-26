@@ -7,9 +7,13 @@
       "<i class=\"fa fa-cubes\" aria-hidden=\"true\"></i> Products",
       "<i class=\"fa fa-cogs\" aria-hidden=\"true\"></i> Settings",
       "<i class=\"fa fa-language\" aria-hidden=\"true\"></i> Language",
-      "<i class=\"fa fa-barcode\" aria-hidden=\"true\"></i> Scanner Mode"],
+      "<i class=\"fa fa-barcode\" aria-hidden=S\"true\"></i> Scanner Mode"],
     "sessions_navitems": ["New stock-take session", "Show All Sessions"],
-    "products_navitems": [ "Show All Products", "Add Product", "Show Stocks Overview", "Show Movement Logs", "Add Movement log"]
+    "products_navitems": [ "Show All Products", "Add Product", "Show Current Stocks", "Show All Stocks"]
+  },
+  "general": {
+    "loadingTableText": "Loading data...",
+    "print": "Print"
   },
   "pageTitle": {
     "note": "Using file name as title identifier",
@@ -32,7 +36,13 @@
     "table_search": "Search: ",
     "table_pagesize": ["Show "," entries per page"],
     "table_entrydesc": ["Showing "," to "," of "," entries"],
-    "table_action": ["Previous Page","Next Page"]
+    "table_action": ["Previous Page","Next Page"],
+    "action_edit": "Edit",
+    "action_remove": "Remove",
+    "action_historyitem": "Past Record",
+    "action_removed": "Removed on",
+    "action_addback": "Add Back",
+    "action_revert": "Revert"
   },
   "index": {
     "pagetitle": "Homepage",
@@ -50,7 +60,18 @@
     "showallproducts": "Show All Products",
     "addproduct": "Add Product",
     "h3label_currentactivestocktake": "Current Active Stock-taking sessions",
-    "h3label_environment": "System Environment Info:"
+    "h3label_environment": "System Environment Info:",
+    "addMovementLogModal": {
+      "title": "Add Movement Log",
+      "description": "Input a shelf or a product Label ID to select a product",
+      "labels": ["Shelf Location","Label ID","Action","New Location","Product Name", "Quantity", "Expire Date"],
+      "hinttext_shelf": "Input Item location on shelf",
+      "hinttext_labelid": "Input a product labelID to find specific LOT",
+      "selections": ["Remove","Moved to another shelf"],
+      "subtitle": "Fetched Data",
+      "btn_close": "Close",
+      "btn_submit": "Submit"
+    }
   },
   "session": {
     "pagetitle": "Sessions"
@@ -78,7 +99,8 @@
   "viewsession": {
     "pagetitle": "Session Viewer",
     "h1title": "Session",
-    "autorefresh": "Auto refresh in "
+    "autorefresh": "Auto refresh in ",
+    "table_titles": [ "Product","Lot Code", "Location", "Quantity / Unit", "Expire Date", "Removed", "Action"]
   },
   "setting": {
     "pagetitle": "Settings",
@@ -105,7 +127,7 @@
   "listproducts": {
     "pagetitle": "Products",
     "h4title_action": "Actions",
-    "a_checkstockitems": "Check Stock Items",
+    "a_checkstockitems": ["Check Stock Items","Add a product", "Reload Table"],
     "table_head": ["Product Code", "Product Name", "Qty Per Box", "Qty Per Pallet", "Best Before", "Action"]
   },
   "addproducts": {
@@ -131,6 +153,8 @@
     "reloadTableLink": "Reload Table Now",
     "refreshText": ["Automatic Refresh in: ","s"],
     "apauseTimer": "Pause Timer",
+    "labelForFilterdate": "Filter records after Date: ",
+    "switchCheck": ["Showing all Stocks, including removed items.","Showing Current Stocks only"],
     "table_head": ["Product","Quantity","Best Before","Location","Label ID","Action"],
     "table_actionRemove": "Remove",
     "flashtext_success": "Successfully updated the item.",

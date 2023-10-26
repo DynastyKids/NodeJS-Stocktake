@@ -16,35 +16,31 @@ const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, 
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
+const Storage = require("electron-store");
+const newStorage = new Storage();
 i18next.use(Backend).init({
-    lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
-    i18n_navbar()
+    i18n_navbar();
     i18n_bodyContents();
 });
 
 document.getElementById('languageSelector').addEventListener('change', (e) => {
     i18next.changeLanguage(e.target.value).then(() => {
-        i18n_navbar()
+        i18n_navbar();
         i18n_bodyContents();
+        newStorage.set("language",e.target.value)
     });
 });
-
-function i18n_navbar() {
-    // Navbar Section
-    var navlinks = document.querySelectorAll(".nav-topitem");
-    for (let i = 0; i < navlinks.length; i++) {
-        navlinks[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
+function i18n_navbar() { // Navbar Section
+    for (let i = 0; i < document.querySelectorAll(".nav-topitem").length; i++) {
+        document.querySelectorAll(".nav-topitem")[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
     }
-
-    var sessionDropdownLinks = document.querySelectorAll("#sessionDropdownList a");
-    for (let i = 0; i < sessionDropdownLinks.length; i++) {
-        sessionDropdownLinks[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
+    for (let i = 0; i < document.querySelectorAll("#sessionDropdownList a").length; i++) {
+        document.querySelectorAll("#sessionDropdownList a")[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
     }
-
-    var productDropdownLinks = document.querySelectorAll("#productDropdownList a");
-    for (let i = 0; i < productDropdownLinks.length; i++) {
-        productDropdownLinks[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
+    for (let i = 0; i < document.querySelectorAll("#productDropdownList a").length; i++) {
+        document.querySelectorAll("#productDropdownList a")[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
     }
 }
 function i18n_bodyContents() {
@@ -63,12 +59,15 @@ function i18n_bodyContents() {
     tableTitles[8].textContent = i18next.t('tables.stocktable_setupTime');
     tableTitles[9].textContent = i18next.t('tables.stocktable_action');
 
+    document.querySelector("#loadingTableText").textContent = i18next.t('general.loadingTableText')
+
     var tableRowActions = document.querySelectorAll(".tableaction_view")
     tableRowActions.forEach(eachRow =>{ eachRow.textContent = i18next.t('tables.btn_view'); })
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
-    console.log(getAllSession())
+    getAllSession()
+    // console.log()
 });
 
 async function getAllSession(){
@@ -94,9 +93,9 @@ async function getAllSession(){
             document.querySelector("#activeTBody").innerHTML = htmlContent
         }
     } finally {
-        client.close();
+        await client.close();
     }
-
+    document.querySelector("#loadingStatus").style.display = "none"
     return htmlContent;
 }
 

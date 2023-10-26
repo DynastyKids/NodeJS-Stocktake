@@ -44,19 +44,29 @@
         </ol>
     </nav>
     <span class="container-fluid">
-        <h1 id="sessionTitle">Current Stocks</h1>
-        <table style="text-align: center; justify-items: center;">
-            <tr>
-                <td><span class="toggleRefreshText" style="float: left;">Auto Refresh in</span></td>
-                <td><span id="toggleTimes"></span><span class="toggleRefreshText"></span></td>
-                <td><a href="#" id="areloadTable">Reload Now</a></td>
-                <td><a href="#" id="apauseTimer">Pause</a></td>
-            </tr>
-            <tr>
-                <td><label for="filterdate">Filter records after Date:</label></td>
-                <td><input type="date" id="filterdate" name="filterdate"></td>
-            </tr>
-        </table>
+        <h1 id="sessionTitle">Stocks List</h1>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item"><span class="toggleRefreshText" style="float: left;">Auto Refresh in: </span><span id="toggleTimes"></span><span class="toggleRefreshText"></span></li>
+            <li class="list-group-item row">
+                <a href="#" class="col-3" id="areloadTable">Reload Now</a>
+                <a href="#" class="col-3" id="apauseTimer">Pause</a>
+                <a href="#" class="col-3" id="printlink">Print</a>
+            </li>
+            <li class="list-group-item">
+                <label id="labelForFilterdate" for="filterdate">Filter records after Date:</label>
+                <input type="date" id="filterdate" name="filterdate">
+            </li>
+            <li class="list-group-item">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="switchCheck">
+                    <label class="form-check-label" for="switchCheck" id="switchCheckLabel">Show all stocks</label>
+                </div>
+            </li>
+        </ul>
+        <div id="loadingStatus">
+            <span class="spinner-border" role="status" id="loadingSpinners"></span>
+            <span class="" id="loadingTableText">Loading data...</span>
+        </div>
         <hr>
         <table class="table table-striped" id="stockTable">
             <thead class="thead-light">
@@ -148,9 +158,10 @@
 
 <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../node_modules/flatpickr/dist/flatpickr.min.js"></script>
+
 <script> window.$ = window.jQuery = require('jquery');</script>
 <script src="../node_modules/jquery/dist/jquery.min.js"></script>
-<script src="listStocks.js" type="module"></script>
+<script src="listStocks.js"></script>
 <script> if (window.module) module = window.module</script>
 </body>
 </html>

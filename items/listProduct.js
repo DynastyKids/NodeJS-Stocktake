@@ -1,6 +1,5 @@
 // 使用pollingsession的结果，distinct掉相同的labelid，然后删除所有在listproduct中标注
 // 了已经使用的产品，再加入到productlist中展示出来，，页面每30s刷新一次
-const {ipcRenderer} = require("electron");
 // const {BrowserWindow} = require("electron").remote;
 
 const MongoClient = require('mongodb').MongoClient;
@@ -42,7 +41,7 @@ document.querySelector("#deleteRowModal").addEventListener('show.bs.modal', (ev)
     let itemId = ev.relatedTarget.getAttribute("data-bs-itemid");
     let itemStatus = ev.relatedTarget.getAttribute("data-bs-state");
     let result;
-    console.log("Delete Model: Delete Clicked", itemId, itemStatus)
+    // console.log("Delete Model: Delete Clicked", itemId, itemStatus)
 
     if (itemStatus === "true"){
         document.querySelector("#deleteRowModal .modal-title span").textContent = `delete?`
@@ -62,7 +61,7 @@ document.querySelector("#deleteRowModal").addEventListener('show.bs.modal', (ev)
         document.querySelector("#deleteModalConfirmBtn").disabled = true
         document.querySelector("#deleteModalConfirmBtn").textContent = "Updating"
         result = (itemStatus === "true" ? await updateRecordById(itemId, {"inuse": false}) : await updateRecordById(itemId, {"inuse": true}))
-        console.log("Delete Model result", result)
+        // console.log("Delete Model result", result)
         if (result.acknowledged) {
             location.reload()
         } else {
@@ -170,11 +169,11 @@ async function updateRecordById(recordId, updateData) {
     });
     let sessions = client.db(credentials.mongodb_db).collection("products");
     let results;
-    console.log("Running updateRecordById:", recordId, updateData)
+    // console.log("Running updateRecordById:", recordId, updateData)
     try {
         await client.connect();
         results = await sessions.updateOne({'_id': (new ObjectID(recordId))}, {$set: updateData});
-        console.log("Running updateRecordById:", results)
+        // console.log("Running updateRecordById:", results)
     } catch (e) {
         console.error("Fetching error:", e)
     } finally {
@@ -206,16 +205,20 @@ async function findOneRecordById(recordId){
     return results
 }
 
+const Storage = require('electron-store');
+const newStorage = new Storage();
+
 i18next.use(Backend).init({
-    lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();
 });
 document.getElementById('languageSelector').addEventListener('change', (e) => {
     i18next.changeLanguage(e.target.value).then(() => {
-        i18n_navbar();
         i18n_bodyContents();
+        i18n_navbar();
+        newStorage.set(e.target.value)
     });
 });
 
@@ -227,46 +230,17 @@ document.querySelector("#areloadTable").addEventListener("click", async (ev) => 
         table.rows.add(results).draw()
     }
 })
-
-async function fetchTablesData(){
-    let results = await getProducts();
-    dataset = []
-    results.forEach(eachItem =>{
-        dataset.push([
-            eachItem.productCode,
-            eachItem.labelname,
-            `${(eachItem.cartonQty ? eachItem.cartonQty + (eachItem.unit ? " " + eachItem.unit : "") : " - ")}`,
-            `${(eachItem.palletQty ? eachItem.palletQty + (eachItem.unit ? " " + eachItem.unit : "") : " - ")}` +
-            `${((eachItem.cartonQty && eachItem.palletQty) ? "<br><small>" + eachItem.palletQty / eachItem.cartonQty + " ctns</small>" : "")}`,
-            `${(eachItem.withBestbefore > 0 ? "√" : "")}`,
-            // <a href="addProduct.html?mode=edit&id=${eachItem._id.toHexString()}">Edit</a> +
-            `
-                <a href="#" data-bs-toggle="modal" data-bs-target="#editRowModal" data-bs-itemid="${eachItem._id.toHexString()}">Edit</a>
-                <a href="#" data-bs-toggle="modal" data-bs-target="#deleteRowModal" data-bs-productname="${eachItem.labelname}" data-bs-itemid="${eachItem._id.toHexString()}" data-bs-state="${eachItem.inuse}">${(eachItem.inuse ? "Remove" : "Add Back")}</a>
-            `
-        ]);
-    })
-    return dataset;
-}
-
-function i18n_navbar() {
-    // Navbar Section
-    var navlinks = document.querySelectorAll(".nav-topitem");
-    for (let i = 0; i < navlinks.length; i++) {
-        navlinks[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
+function i18n_navbar() { // Navbar Section
+    for (let i = 0; i < document.querySelectorAll(".nav-topitem").length; i++) {
+        document.querySelectorAll(".nav-topitem")[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
     }
-
-    var sessionDropdownLinks = document.querySelectorAll("#sessionDropdownList a");
-    for (let i = 0; i < sessionDropdownLinks.length; i++) {
-        sessionDropdownLinks[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
+    for (let i = 0; i < document.querySelectorAll("#sessionDropdownList a").length; i++) {
+        document.querySelectorAll("#sessionDropdownList a")[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
     }
-
-    var productDropdownLinks = document.querySelectorAll("#productDropdownList a");
-    for (let i = 0; i < productDropdownLinks.length; i++) {
-        productDropdownLinks[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
+    for (let i = 0; i < document.querySelectorAll("#productDropdownList a").length; i++) {
+        document.querySelectorAll("#productDropdownList a")[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
     }
 }
-
 function i18n_bodyContents() {
     document.title = `${i18next.t('listproducts.pagetitle')} - Warehouse Electron`
     // Body section
@@ -276,7 +250,12 @@ function i18n_bodyContents() {
 
     document.querySelector('.container-fluid h1').textContent = i18next.t("listproducts.pagetitle");
     document.querySelector('.container-fluid h4').textContent = i18next.t("listproducts.h4title_action");
-    document.querySelector('.container-fluid ul li a').textContent = i18next.t("listproducts.a_checkstockitems")
+    document.querySelector("#loadingTableText").textContent = i18next.t('general.loadingTableText')
+
+    let pageactions = document.querySelectorAll('.container-fluid .container-fluid ul li')
+    for (let i = 0; i < pageactions.length; i++) {
+        pageactions[i].querySelector("a").textContent = i18next.t(`listproducts.a_checkstockitems.${i}`)
+    }
 
     //Table Head & foot
     var tableHeads = document.querySelectorAll("#productTable thead th")
@@ -289,8 +268,28 @@ function i18n_bodyContents() {
     }
 }
 
+async function fetchTablesData(){
+    let results = await getProducts();
+    dataset = []
+    results.forEach(eachItem =>{
+        dataset.push([
+            eachItem.productCode,
+            eachItem.labelname,
+            `${(eachItem.cartonQty ? eachItem.cartonQty + (eachItem.unit ? " " + eachItem.unit : "") : " - ")}`,
+            `${(eachItem.palletQty ? eachItem.palletQty + (eachItem.unit ? " " + eachItem.unit : "") : " - ")}` +
+            `${((eachItem.cartonQty && eachItem.palletQty) ? "<br><small>" + eachItem.palletQty / eachItem.cartonQty + " ctns</small>" : "")}`,
+            `${(eachItem.withBestbefore > 0 ? "√" : "")}`,
+            `
+                <a href="#" data-bs-toggle="modal" data-bs-target="#editRowModal" data-bs-itemid="${eachItem._id.toHexString()}">${i18next.t("dataTables.action_edit")}</a>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#deleteRowModal" data-bs-productname="${eachItem.labelname}" data-bs-itemid="${eachItem._id.toHexString()}" data-bs-state="${eachItem.inuse}">${(eachItem.inuse ? i18next.t("dataTables.action_remove") : i18next.t("dataTables.action_addback"))}</a>
+            `
+        ]);
+    })
+    return dataset;
+}
+
 async function getProducts(conditionObject) {
-    console.log("Running getProducts, param:", conditionObject)
+    document.querySelector("#loadingStatus").style.removeProperty("display")
     let results = []
     let client = new MongoClient(uri, {
         serverApi: {
@@ -314,7 +313,7 @@ async function getProducts(conditionObject) {
         console.error("Fetching error:", e)
     } finally {
         await client.close();
+        document.querySelector("#loadingStatus").style.display = "none"
     }
-    console.log("Running getProducts, results:", results)
     return results
 }

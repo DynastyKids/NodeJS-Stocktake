@@ -1,10 +1,10 @@
+const { ipcRenderer } = require('electron');
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const fs = require('fs');
 const path = require('path');
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
 const moment = require('moment-timezone')
-const {ipcRenderer} = require('electron');
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
@@ -33,8 +33,11 @@ let shouldRefresh = true;
 const countdownFrom = 60;
 let countdown = 60;
 
+const Storage = require("electron-store");
+const newStorage = new Storage();
+
 i18next.use(Backend).init({
-    lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();
@@ -44,23 +47,19 @@ document.getElementById('languageSelector').addEventListener('change', (e) => {
     i18next.changeLanguage(e.target.value).then(() => {
         i18n_navbar();
         i18n_bodyContents();
+        newStorage.set("language",e.target.value)
     });
 });
 function i18n_navbar() {
     // Navbar Section
-    var navlinks = document.querySelectorAll(".nav-topitem");
-    for (let i = 0; i < navlinks.length; i++) {
-        navlinks[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
+    for (let i = 0; i < document.querySelectorAll(".nav-topitem").length; i++) {
+        document.querySelectorAll(".nav-topitem")[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
     }
-
-    var sessionDropdownLinks = document.querySelectorAll("#sessionDropdownList a");
-    for (let i = 0; i < sessionDropdownLinks.length; i++) {
-        sessionDropdownLinks[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
+    for (let i = 0; i < document.querySelectorAll("#sessionDropdownList a").length; i++) {
+        document.querySelectorAll("#sessionDropdownList a")[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
     }
-
-    var productDropdownLinks = document.querySelectorAll("#productDropdownList a");
-    for (let i = 0; i < productDropdownLinks.length; i++) {
-        productDropdownLinks[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
+    for (let i = 0; i < document.querySelectorAll("#productDropdownList a").length; i++) {
+        document.querySelectorAll("#productDropdownList a")[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
     }
 }
 function i18n_bodyContents() {
@@ -76,6 +75,16 @@ function i18n_bodyContents() {
     document.querySelectorAll(".toggleRefreshText")[0].textContent = i18next.t(`liststocks.refreshText.${0}`)
     document.querySelectorAll(".toggleRefreshText")[1].textContent = i18next.t(`liststocks.refreshText.${1}`)
     document.querySelector("#areloadTable").textContent = i18next.t("liststocks.reloadTableLink")
+    document.querySelector("#apauseTimer").textContent = i18next.t("liststocks.apauseTimer")
+    document.querySelector("#labelForFilterdate").textContent = i18next.t("liststocks.labelForFilterdate")
+    document.querySelector("#loadingTableText").textContent = i18next.t('general.loadingTableText')
+
+    if (document.querySelector("#switchCheck").checked){
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
+    } else {
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
+    }
+    document.querySelector("#printlink").textContent = i18next.t('general.print')
 
     // Datatables
     var tableheaders = document.querySelectorAll("#stockTable thead th")
@@ -102,14 +111,37 @@ function i18n_bodyContents() {
 
     document.querySelector("#stockTable_paginate .previous").textContent = i18next.t("dataTables.table_action.0")
     document.querySelector("#stockTable_paginate .next").textContent = i18next.t("dataTables.table_action.1")
+
+    document.querySelectorAll(".table_action_edit").forEach(eachItem=>{
+        eachItem.textContent = i18next.t("dataTables.action_edit")
+    })
+    document.querySelectorAll(".table_action_remove").forEach(eachItem=>{
+        eachItem.textContent = i18next.t("dataTables.action_remove")
+    })
+}
+
+document.querySelector("#switchCheck").addEventListener("change", function(ev){
+    refreshCheckSwitch()
+})
+
+function refreshCheckSwitch(){
+    if (document.querySelector("#switchCheck").checked){
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
+        loadStockInfoToTable(true)
+    } else {
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
+        loadStockInfoToTable(false)
+    }
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
-    loadStockInfoToTable()
+    const URLqueries = new URLSearchParams(window.location.search)
+    document.querySelector("#switchCheck").checked = ( URLqueries.get('q') ? true : false) // 该query存在则拉取所有数据
+    refreshCheckSwitch()
     let shouldRefresh = true
     const automaticRefresh = setInterval(() => {
         if (shouldRefresh) {
-            loadStockInfoToTable()
+            refreshCheckSwitch()
             countdown = countdownFrom;
         }
     }, countdownFrom * 1000)
@@ -232,17 +264,32 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
 })
 
 document.querySelector("#areloadTable").addEventListener("click",function (ev) {
-    loadStockInfoToTable()
+    if (document.querySelector("#switchCheck").checked){
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
+        loadStockInfoToTable(true)
+    } else {
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
+        loadStockInfoToTable(false)
+    }
 })
 
 document.querySelector("#filterdate").addEventListener("change", (ev)=>{
-    loadStockInfoToTable();
+    if (document.querySelector("#switchCheck").checked){
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
+        loadStockInfoToTable(true)
+    } else {
+        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
+        loadStockInfoToTable(false)
+    }
 });
 
 
-function loadStockInfoToTable() {
+function loadStockInfoToTable(fetchAll) {
     table.clear().draw()
-    getAllStockItems().then(result => {
+    let requestAllData = fetchAll ? fetchAll : false
+    const URLqueries = new URLSearchParams(window.location.search)
+    requestAllData = (URLqueries.get('q') ? true : requestAllData) // 该query存在则拉取所有数据
+    getAllStockItems(requestAllData).then(result => {
         if (result.acknowledged) {
             let results = result.resultSet
             fullResultSet = result.resultSet
@@ -251,29 +298,31 @@ function loadStockInfoToTable() {
                 const element = results[index];
                 if (document.querySelector("#filterdate").value !== "") {
                     console.log(document.querySelector("#filterdate").value)
-                    if (new Date(element.loggingTime) < new Date(document.querySelector("#filterdate").value)) {
+                    if (element.loggingTime && new Date(element.loggingTime) < new Date(document.querySelector("#filterdate").value)) {
                         continue;
                     }
                 }
                 table.row.add([
                     `${element.productCode} - ${element.productName}`,
                     `${element.quantity} ${element.quantityUnit}`,
-                    element.bestbefore,
-                    element.shelfLocation,
-                    element.productLabel,
+                    (element.bestbefore ? element.bestbefore : ""),
+                    (element.shelfLocation ? element.shelfLocation : ""),
+                    `<small>${(element.productLabel ? element.productLabel : "")}</small>`,
                     (element.consumed < 1 ? `
                     <a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
-                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>
+                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_edit")}</a>
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
-                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>
-                    ` : "")
+                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_remove")}</a>
+                    ` : `<small class="table_action_removed">${(element.consumedTime ? i18next.t("dataTables.action_removed") + element.consumedTime.split(" ")[0]: "")}</small>
+                    <a href="#" class="table_actions table_action_revert" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_addback")}</a>`)
                 ]).draw(false);
             }
         }
     })
 }
 
-async function getAllStockItems() {
+async function getAllStockItems(getAll) {
+    document.querySelector("#loadingStatus").style.removeProperty("display")
     let client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
@@ -286,20 +335,26 @@ async function getAllStockItems() {
     let cursor;
     let result = {acknowledged: false, resultSet: [], message: ""}
     try {
-        const query = {consumed: 0}
         const options = {sort: {bestbefore: -1},}
         await client.connect();
-        cursor = await sessions.find(query, options)
-        if ((await sessions.countDocuments(query)) > 0) {
-            result.acknowledged = true
-            result.resultSet = await cursor.toArray()
+        if (getAll){
+            cursor = await sessions.find({}, options)
+        } else {
+            cursor = await sessions.find({consumed: 0}, options)
         }
+        result.acknowledged = true
+        result.resultSet = await cursor.toArray()
+        console.log(result)
     } catch (err) {
         console.error(err)
         result['message'] = err
     } finally {
-        client.close()
+        await client.close()
+        document.querySelector("#loadingStatus").style.display = "none"
     }
-
     return result
 }
+
+document.querySelector("#printlink").addEventListener("click",(ev)=>{
+    ipcRenderer.send('print');
+});

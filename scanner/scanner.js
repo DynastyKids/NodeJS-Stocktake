@@ -1,5 +1,5 @@
 const MongoClient = require('mongodb').MongoClient;
-const {ipcRenderer} = require('electron')
+
 const fs = require('fs')
 const path = require('path')
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
@@ -11,8 +11,10 @@ const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 // const Keyboard = require('simple-keyboard').SimpleKeyboard;
 const Keyboard = require('simple-keyboard').default;
+const Storage = require("electron-store");
+const newStorage = new Storage();
 i18next.use(Backend).init({
-    lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();
@@ -22,8 +24,37 @@ document.getElementById('languageSelector').addEventListener('change', (e) => {
     i18next.changeLanguage(e.target.value).then(() => {
         i18n_navbar();
         i18n_bodyContents();
+        newStorage.set("language",e.target.value)
     });
 });
+
+function i18n_navbar() {
+    // Navbar Section
+    for (let i = 0; i < document.querySelectorAll(".nav-topitem").length; i++) {
+        document.querySelectorAll(".nav-topitem")[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
+    }
+    for (let i = 0; i < document.querySelectorAll("#sessionDropdownList a").length; i++) {
+        document.querySelectorAll("#sessionDropdownList a")[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
+    }
+    for (let i = 0; i < document.querySelectorAll("#productDropdownList a").length; i++) {
+        document.querySelectorAll("#productDropdownList a")[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
+    }
+}
+
+function i18n_bodyContents() {
+    document.title = `${i18next.t('scanner.pagetitle')} - Warehouse Electron`
+
+    // Body Section
+    var breadcrumbs = document.querySelectorAll(".breadcrumb-item");
+    breadcrumbs[0].querySelector("a").textContent = i18next.t('index.pagetitle')
+    breadcrumbs[1].textContent = i18next.t('scanner.pagetitle')
+
+    document.querySelector("h1").textContent = i18next.t('scanner.pagetitle');
+    var titleCols = document.querySelectorAll(".col-title");
+    for (let i = 0; i < titleCols.length; i++) {
+        titleCols[i].textContent = i18next.t(`scanner.resultTableTitle.${i}`)
+    }
+}
 
 let timer = null
 document.querySelector("#scannerinput").addEventListener("input", (ev) => {
@@ -138,36 +169,4 @@ function onChange(input) {
 }
 function onKeyPress(button) {
     console.log(`Screen Keyboard Pressed: ${button}`);
-}
-
-function i18n_navbar() {
-    // Navbar Section
-    var navlinks = document.querySelectorAll(".nav-topitem");
-    for (let i = 0; i < navlinks.length; i++) {
-        navlinks[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
-    }
-
-    var sessionDropdownLinks = document.querySelectorAll("#sessionDropdownList a");
-    for (let i = 0; i < sessionDropdownLinks.length; i++) {
-        sessionDropdownLinks[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
-    }
-
-    var productDropdownLinks = document.querySelectorAll("#productDropdownList a");
-    for (let i = 0; i < productDropdownLinks.length; i++) {
-        productDropdownLinks[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
-    }
-}
-function i18n_bodyContents() {
-    document.title = `${i18next.t('scanner.pagetitle')} - Warehouse Electron`
-
-    // Body Section
-    var breadcrumbs = document.querySelectorAll(".breadcrumb-item");
-    breadcrumbs[0].querySelector("a").textContent = i18next.t('index.pagetitle')
-    breadcrumbs[1].textContent = i18next.t('scanner.pagetitle')
-
-    document.querySelector("h1").textContent = i18next.t('scanner.pagetitle');
-    var titleCols = document.querySelectorAll(".col-title");
-    for (let i = 0; i < titleCols.length; i++) {
-        titleCols[i].textContent = i18next.t(`scanner.resultTableTitle.${i}`)
-    }
 }

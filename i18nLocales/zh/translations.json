@@ -21,7 +21,11 @@
       "<i class=\"fa fa-language\" aria-hidden=\"true\"></i> 语言",
       "<i class=\"fa fa-barcode\" aria-hidden=\"true\"></i> 扫码器模式"],
     "sessions_navitems": ["创建盘点会话", "展示会话列表"],
-    "products_navitems": ["列出所有产品", "添加产品", "展示库存总览", "列出货品移动记录", "添加货品移动记录"]
+    "products_navitems": ["列出所有产品", "添加产品", "展示当前库存", "显示所有库存记录"]
+  },
+  "general": {
+    "loadingTableText": "数据加载中...",
+    "print": "打印"
   },
   "index": {
     "pagetitle": "首页",
@@ -39,7 +43,18 @@
     "showallproducts": "展示产品列表",
     "addproduct": "添加产品",
     "h3label_currentactivestocktake": "当前可用的盘点会话",
-    "h3label_environment": "当前系统环境"
+    "h3label_environment": "当前系统环境",
+    "addMovementLogModal": {
+      "title": "添加记录",
+      "description": "输入一个库位号或者标签号来查找产品",
+      "labels": ["库位号","标签号","操作","新库位号","产品名","数量","有效期至"],
+      "hinttext_shelf": "请输入库位号",
+      "hinttext_labelid": "输入一个标签号以查找产品信息",
+      "selections": ["移除","移动到另一个货架"],
+      "subtitle": "获取到的产品信息",
+      "btn_close": "关闭",
+      "btn_submit": "确认"
+    }
   },
   "pageTitle": {
     "note": "使用文件名作为关键字标记符",
@@ -62,7 +77,13 @@
     "table_search": "搜索：",
     "table_pagesize": ["每页显示 "," 条"],
     "table_entrydesc": ["展示第","条至第","条记录，共","条记录"],
-    "table_action": ["上一页","下一页"]
+    "table_action": ["上一页","下一页"],
+    "action_edit": "编辑",
+    "action_remove": "移除",
+    "action_historyitem": "历史条目",
+    "action_removed": "已移除",
+    "action_addback": "恢复",
+    "action_revert": "撤销操作"
   },
   "session": {
     "pagetitle": "会话管理"
@@ -90,7 +111,8 @@
   "viewsession": {
     "pagetitle": "库存盘点会话",
     "h1title": "库存盘点会话",
-    "autorefresh": "距下次自动刷新还有 "
+    "autorefresh": "距下次自动刷新还有 ",
+    "table_titles": [ "产品信息","产品批号", "存放位置", "数量/单位", "最佳赏味期", "已使用", "操作"]
   },
   "setting": {
     "pagetitle": "设置",
@@ -106,7 +128,7 @@
   "listproducts": {
     "pagetitle": "产品列表",
     "h4title_action": "相关操作",
-    "a_checkstockitems": "查看库存内容",
+    "a_checkstockitems": ["查看库存内容","添加产品","刷新表格"],
     "table_head": ["产品号", "产品名", "箱内数量", "板内数量", "有效期要求", "操作"]
   },
   "addproducts": {
@@ -121,6 +143,9 @@
   "liststocks": {
     "pagetitle": "当前库存信息",
     "reloadTableLink": "刷新数据",
+    "apauseTimer": "暂停倒计时",
+    "labelForFilterdate": "仅筛选在此日期之后的记录：",
+    "switchCheck": ["查看所有库存记录(包括历史库存).","查看当前库存"],
     "refreshText": ["距下次刷新还有: ","秒"],
     "table_head": ["产品","数量","最佳日期","库位","标签ID","操作"],
     "table_actionRemove": "移除",

@@ -31,13 +31,19 @@
     </nav>
     <div class="container-fluid">
         <h1 id="sessionTitle">Current Stocks</h1>
-        <div id="datasource">
-            <p>Using datasource from</p>
-            <select class="form-select" aria-label="Latest" id="sessionSelector">
-                <option value="latest" selected>latest</option>
-            </select>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item"><a href="#" id="printlink">Print</a></li>
+            <li class="list-group-item" id="datasource" style="display: flex">
+                <p>Using datasource from</p>
+                <select class="form-select form-select-sm" aria-label=".form-select-sm Latest" id="sessionSelector" style="display: inline; width: 300px">
+                    <option value="latest" selected>latest</option>
+                </select>
+            </li>
+        </ul>
+        <div id="loadingStatus">
+            <span class="spinner-border" role="status" id="loadingSpinners"></span>
+            <span class="" id="loadingTableText">Loading data...</span>
         </div>
-
         <hr>
         <table class="table">
             <thead class="thead-light">

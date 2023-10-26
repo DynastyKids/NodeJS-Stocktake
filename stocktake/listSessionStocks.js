@@ -27,34 +27,33 @@ document.addEventListener("DOMContentLoaded", (ev) => {
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
+
+const Storage = require("electron-store");
+const {ipcRenderer} = require("electron");
+const newStorage = new Storage();
 i18next.use(Backend).init({
-    lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
-    i18n_navbar()
+    i18n_navbar();
     i18n_bodyContents();
 });
 
 document.getElementById('languageSelector').addEventListener('change', (e) => {
     i18next.changeLanguage(e.target.value).then(() => {
-        i18n_navbar()
+        i18n_navbar();
         i18n_bodyContents();
+        newStorage.set("language",e.target.value)
     });
 });
-function i18n_navbar() {
-    // Navbar Section
-    var navlinks = document.querySelectorAll(".nav-topitem");
-    for (let i = 0; i < navlinks.length; i++) {
-        navlinks[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
+function i18n_navbar() { // Navbar Section
+    for (let i = 0; i < document.querySelectorAll(".nav-topitem").length; i++) {
+        document.querySelectorAll(".nav-topitem")[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
     }
-
-    var sessionDropdownLinks = document.querySelectorAll("#sessionDropdownList a");
-    for (let i = 0; i < sessionDropdownLinks.length; i++) {
-        sessionDropdownLinks[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
+    for (let i = 0; i < document.querySelectorAll("#sessionDropdownList a").length; i++) {
+        document.querySelectorAll("#sessionDropdownList a")[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
     }
-
-    var productDropdownLinks = document.querySelectorAll("#productDropdownList a");
-    for (let i = 0; i < productDropdownLinks.length; i++) {
-        productDropdownLinks[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
+    for (let i = 0; i < document.querySelectorAll("#productDropdownList a").length; i++) {
+        document.querySelectorAll("#productDropdownList a")[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
     }
 }
 function i18n_bodyContents() {
@@ -66,6 +65,8 @@ function i18n_bodyContents() {
     breadcrumbs[1].querySelector("a").innerText = i18next.t('session.pagetitle');
     breadcrumbs[2].innerText = i18next.t('listsessionstock.pagetitle');
 
+    document.querySelector("#printlink").textContent = i18next.t('general.print')
+
     document.querySelector("#datasource p").textContent = i18next.t('listsessionstock.selectlabeltext')
     document.querySelector(".container h1").textContent = i18next.t("listsessionstock.pagetitle");
     var tableTitles = document.querySelectorAll(".container table th");
@@ -76,6 +77,7 @@ function i18n_bodyContents() {
         table_headtitles[i].textContent = i18next.t(`listsessionstock.table_titles.${i}`)
         table_foottitles[i].textContent = i18next.t(`listsessionstock.table_titles.${i}`)
     }
+    document.querySelector("#loadingTableText").textContent = i18next.t('general.loadingTableText')
 
     document.querySelectorAll(".tablebtn_consume").forEach(eachbutton => {
         eachbutton.textContent = i18next.t('tables.btn_consume');
@@ -134,6 +136,7 @@ document.querySelector("#sessionSelector").addEventListener("change", () => {
 })
 
 async function getAllItemsFromSession(sessionCode) {
+    document.querySelector("#loadingStatus").style.removeProperty("display")
     let nowTime = moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
     const tomorrow = (new Date('today')).setDate(new Date('today').getDate() + 1)
     const options = {sort: {startDate: -1},};
@@ -152,24 +155,27 @@ async function getAllItemsFromSession(sessionCode) {
     }
     try {
         await client.connect();
-        cursor = sessions.find({$or: [{session: ""}, {session: sessionCode}]});
-        if ((await sessions.countDocuments({})) === 0) {
-            console.log("[MongoDB] Nothing Found");
-            document.querySelector("#activeTBody").innerHTML = "<tr><td colspan=5>No item found in this session available</td></tr>"
-        }
-
-        for await (const x of cursor) {
+        cursor = await sessions.find({$or: [{session: ""}, {session: sessionCode}]}).toArray();
+        console.log(cursor)
+        cursor.forEach(x=>{
             htmlContent += `<tr>
-                <td><small>${x.productLabel}</small></td>
-                <td><small>${x.productCode} - ${x.productName}</small></td>
-                <td><small>${x.quantity} ${x.quantityUnit}</small></td>
-                <td>${x.bestbefore}</td>
-                <td>${x.shelfLocation}</td>
+                <td><small>${(x.productLabel ? x.productLabel : "")}</small></td>
+                <td><small>${x.productCode ? x.productCode : ""} - ${x.productName ? (x.productCode ? " - "+x.productName: x.productName) : ""}</small></td>
+                <td><small>${x.hasOwnProperty("quantity") ? x.quantity + (x.quantityUnit ? " "+x.quantityUnit : ""): ""}</small></td>
+                <td>${(x.bestbefore ? x.bestbefore : "")}</td>
+                <td>${(x.shelfLocation ? x.shelfLocation : "")}</td>
                 <td class="action">
                     <a href="#" data-bs-toggle="modal" data-bs-target="#stockEditModal" data-bs-stockid="${x.productLabel}" class="tablebtn_edit">Edit</a>
                     <a href="#" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-stockid="${x.productLabel}" class="tablebtn_consume">Remove</a>
                 </td></tr>`
+        })
+
+
+        if (cursor.length === 0) {
+            console.log("[MongoDB] Nothing Found");
+            document.querySelector("#activeTBody").innerHTML = "<tr><td colspan=5>No item found in this session available</td></tr>"
         }
+
 
         document.querySelector("#activeTBody").innerHTML = htmlContent
     } catch (err) {
@@ -179,6 +185,10 @@ async function getAllItemsFromSession(sessionCode) {
     } finally {
         await client.close()
     }
-
+    document.querySelector("#loadingStatus").style.display = "none"
     return htmlContent;
 }
+
+document.querySelector("#printlink").addEventListener("click",(ev)=>{
+    ipcRenderer.send('print');
+});

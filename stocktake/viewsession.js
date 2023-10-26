@@ -18,25 +18,20 @@ if (credentials.mongodb_username && credentials.mongodb_password) {
 }
 uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
 const uri = encodeURI(uriCompents.join(""))
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    }
-});
 let table = new DataTable('#viewSessionTable', {responsive: true, pageLength: 25});
 
 let shouldRefresh = true;
-const countdownFrom = 30;
+const countdownFrom = 60;
 let countdown = countdownFrom;
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
+const Storage = require("electron-store");
+const newStorage = new Storage();
 i18next.use(Backend).init({
-    lng: 'en', backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
-    i18n_navbar()
+    i18n_navbar();
     i18n_bodyContents();
 });
 
@@ -44,56 +39,42 @@ document.getElementById('languageSelector').addEventListener('change', (e) => {
     i18next.changeLanguage(e.target.value).then(() => {
         i18n_navbar()
         i18n_bodyContents();
+        newStorage.set("language",e.target.value)
     });
 });
-function i18n_navbar() {
-    // Navbar Section
-    var navlinks = document.querySelectorAll(".nav-topitem");
-    for (let i = 0; i < navlinks.length; i++) {
-        navlinks[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
+function i18n_navbar() { // Navbar Section
+    for (let i = 0; i < document.querySelectorAll(".nav-topitem").length; i++) {
+        document.querySelectorAll(".nav-topitem")[i].innerHTML = i18next.t(`navbar.navitems.${i}`)
     }
-
-    var sessionDropdownLinks = document.querySelectorAll("#sessionDropdownList a");
-    for (let i = 0; i < sessionDropdownLinks.length; i++) {
-        sessionDropdownLinks[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
+    for (let i = 0; i < document.querySelectorAll("#sessionDropdownList a").length; i++) {
+        document.querySelectorAll("#sessionDropdownList a")[i].innerHTML = i18next.t(`navbar.sessions_navitems.${i}`)
     }
-
-    var productDropdownLinks = document.querySelectorAll("#productDropdownList a");
-    for (let i = 0; i < productDropdownLinks.length; i++) {
-        productDropdownLinks[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
+    for (let i = 0; i < document.querySelectorAll("#productDropdownList a").length; i++) {
+        document.querySelectorAll("#productDropdownList a")[i].innerHTML = i18next.t(`navbar.products_navitems.${i}`)
     }
 }
 function i18n_bodyContents() {
     document.title = `${i18next.t('viewsessions.pagetitle')} - Warehouse Electron`
-    // Navbar Section
-    document.querySelector("#navHome").textContent = i18next.t('navbar.home');
-    document.querySelector("#sessionDropdown").textContent = i18next.t('navbar.sessions');
-    var sessionDropdownLinks = document.querySelectorAll("#sessionDropdownList a");
-    sessionDropdownLinks[0].textContent = i18next.t('navbar.newsession');
-    sessionDropdownLinks[1].textContent = i18next.t('navbar.allsession');
 
-    document.querySelector("#productDropdown").textContent = i18next.t('navbar.products');
-    var productDropdownLinks = document.querySelectorAll("#productDropdownList a");
-    productDropdownLinks[0].textContent = i18next.t('navbar.showallproducts');
-    productDropdownLinks[1].textContent = i18next.t('navbar.addproduct');
-    productDropdownLinks[2].textContent = i18next.t('navbar.showstocksoverview');
-    productDropdownLinks[3].textContent = i18next.t('navbar.showmovementlog');
-    productDropdownLinks[4].textContent = i18next.t('navbar.addmovementlog');
-
-    document.querySelector("#navSettings").textContent = i18next.t('navbar.settings');
-    document.querySelector("#LanguageDropdown").textContent = i18next.t('navbar.language');
-
-    // Content Section
     var breadcrumbs = document.querySelectorAll(".breadcrumb-item");
     breadcrumbs[0].querySelector("a").innerText = i18next.t('index.pagetitle');
     breadcrumbs[1].querySelector("a").innerText = i18next.t('session.pagetitle');
     breadcrumbs[2].innerText = i18next.t('viewsession.pagetitle');
 
+    var tableHeads = document.querySelectorAll(".container-fluid table thead tr th");
+    var tableFoots = document.querySelectorAll(".container-fluid table tfoot tr th");
+    for (let i = 0; i < tableHeads.length; i++) {
+        tableHeads[i].textContent = i18next.t(`viewsession.table_titles.${i}`)
+        tableFoots[i].textContent = i18next.t(`viewsession.table_titles.${i}`)
+    }
+    document.querySelector("#loadingTableText").textContent = i18next.t('general.loadingTableText')
     document.querySelector('#sessionTitle').textContent = `${i18next.t("viewsession.h1title")} ${document.querySelector('#sessionTitle').textContent.split(" ")[1]}`
 }
 
-
 async function getSessionInfo(sessionCode) {
+    let client = new MongoClient(uri, {
+        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
     const options = {sort: {loggingTime: -1}};
     const sessions = client.db(credentials.mongodb_db).collection("pollingsession");
     let cursor;
@@ -115,39 +96,47 @@ async function getSessionInfo(sessionCode) {
     } catch (err) {
         console.error(err)
     } finally {
-        client.close()
+        await client.close()
     }
     return htmlContent;
 }
 
 async function getSessionItems(sessionCode) {
+    document.querySelector("#loadingStatus").style.removeProperty("display")
+    let client = new MongoClient(uri, {
+        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
     const options = {sort: {startDate: -1},};
     const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
     let cursor;
     let htmlContent = ""
     let alreadyInserted = []
-    var tableData = []
     try {
+        table.clear().draw()
         await client.connect();
-        cursor = sessions.find({session: sessionCode});
-        if ((await sessions.countDocuments({})) === 0) {
+        cursor = await sessions.find({session: sessionCode}).toArray();
+        if (cursor.length === 0 ){
             console.log("[MongoDB] Nothing Found");
         }
-
-        table.clear().draw()
-        for await (const x of cursor) {
-            console.log(x)
+        console.log(cursor)
+        cursor.forEach(x=>{
             if (!alreadyInserted.includes(`${x.productCode}:${x.productLabel}`)) {
-                table.row.add([`${x.productCode} - ${x.productName}`, `<small>${x.productLabel}</small>`, x.shelfLocation,
-                    `${x.quantity} ${x.quantityUnit}`, x.bestbefore, (x.consumed === 1 ? "√" : ""),
+                table.row.add([
+                    `${x.productCode ? x.productCode : ""}${x.productName ? (x.productCode ? " - " : "")+ x.productName : ""}`,
+                    `<small>${x.productLabel ? x.productLabel : ""}</small>`,
+                    `${x.shelfLocation ? x.shelfLocation : ""}`,
+                    `${x.quantity ? x.quantity + (x.quantityUnit ? " "+x.quantityUnit: ""): ""}`,
+                    `${x.bestbefore ? x.bestbefore : ""}`,
+                    (x.consumed === 1 ? "√" : ""),
                     "<a href='#'>Edit</a>"
                 ]).draw(false);
             }
-        }
+        })
     } catch (err) {
         console.log(err)
     } finally {
-        client.close()
+        await client.close()
+        document.querySelector("#loadingStatus").style.display="none"
     }
     return htmlContent;
 }

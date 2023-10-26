@@ -1,6 +1,6 @@
 {
   "name": "warehouse_electron",
-  "version": "0.1.4",
+  "version": "0.1.7",
   "description": "Warehouse Stocktaking independent server",
   "main": "main.js",
   "scripts": {
@@ -36,12 +36,14 @@
     "datatables.net-responsive-bs5": "^2.5.0",
     "electron-reload": "^2.0.0-alpha.1",
     "electron-squirrel-startup": "^1.0.0",
+    "electron-store": "^8.1.0",
     "express": "^4.18.2",
     "flatpickr": "^4.6.13",
     "font-awesome": "^4.7.0",
     "i18next": "^23.5.1",
     "i18next-electron-fs-backend": "^3.0.0",
     "i18next-fs-backend": "^2.1.5",
+    "instascan": "^1.0.0",
     "jquery": "^3.7.0",
     "js-datepicker": "^5.18.2",
     "lodash": "^4.17.21",
@@ -49,7 +51,9 @@
     "moment-timezone": "^0.5.43",
     "mongodb": "^5.7.0",
     "popper.js": "^1.16.1",
+    "portfinder": "^1.0.32",
     "qrcode": "^1.5.3",
+    "qrcode-reader": "^1.0.4",
     "realm": "^11.10.1",
     "simple-keyboard": "^3.7.14",
     "swagger-ui-express": "^5.0.0"

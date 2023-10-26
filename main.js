@@ -1,16 +1,21 @@
-const {app, BrowserWindow, ipcRenderer, ipcMain} = require("electron");
+const {app, BrowserWindow, ipcMain} = require("electron");
 const path = require("path");
 const fs = require('fs');
 const os = require('os');
 
-const moment = require('moment-timezone');
+const net = require('net')
 const express = require('express')
 const expressApp = express()
 const cors=require("cors")
-const wechatGetRequests = require('./apiserver/apimain');
+const apiRequests = require('./apiserver/apimain');
 const {main} = require("@popperjs/core");
-const port = 3000
+const portfinder = require('portfinder');
+portfinder.basePort = 3000;
+let currentPort = 3000;
 require('electron-reload')(__dirname);
+
+const Store = require('electron-store');
+Store.initRenderer()
 
 const i18next = require('i18next');
 const Backend = require('i18next-electron-fs-backend');
@@ -32,15 +37,15 @@ ipcMain.on('change-language', (event, language) => {
 
 let mainWindow;
 
-function createWindow() {
+function createWindow(portNumber) {
     mainWindow = new BrowserWindow({
-        width: 1024,
-        height: 768,
+        width: 1280,
+        height: 800,
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
             nodeIntegration: true,
             // Additional security options
-            contextIsolation: false, // Consider setting this to true in production
+            contextIsolation: false, // 需要使用IPC Renderer,保持为False
             enableRemoteModule: false, // Consider setting this to true in production
         },
     });
@@ -76,15 +81,22 @@ function createWindow() {
         if (address) break;
     }
 
-    // mainWindow.loadURL(`http://localhost:${port}`);
     mainWindow.webContents.on('did-finish-load', () => {
         const addressSet = getIPAddress() ? getIPAddress() : [];
-        mainWindow.webContents.send('server-info', {address, port, addressSet});
+        mainWindow.webContents.send('server-info', {address, portNumber, addressSet});
     });
 
     mainWindow.on('resize', () => {
         let [width, height] = mainWindow.getSize();
         mainWindow.webContents.send('window-resize', {width, height});
+    });
+
+    ipcMain.on('print', (event) => {
+        mainWindow.webContents.print({},(success, failureReason)=>{
+            if (failureReason){
+                console.error(failureReason);
+            }
+        });
     });
 }
 
@@ -107,25 +119,44 @@ app.on("window-all-closed", function () {
     if (process.platform !== "darwin") app.quit();
 });
 
-app.on("activate", function () {
-    if (mainWindow === null) createWindow();
-});
+// app.on("activate", function () {
+//     if (mainWindow === null) createWindow();
+// });
 
 expressApp.use(cors())
-expressApp.get('/api/test', (req, res) => {
-    res.json({message: 'Hello from server!'})
-})
+expressApp.use("/api", apiRequests);
 
-expressApp.use("/", wechatGetRequests)
+expressApp.use(express.static(path.join(__dirname,'public')));
 
 app.whenReady().then(() => {
-    expressApp.listen(port, () => {
-        console.log(`Server running at http://localhost:${port}`)
-        createWindow()
+    // 使用portfinder插件查找可用端口，原有方法可能出现undefined
+    portfinder.getPort((err,port)=>{
+        if(err){
+            console.error("Error when get portNo with portfinder:",err)
+            return
+        }
+        expressApp.listen(port, ()=>{
+            console.log(`Server running at http://localhost:${port}`)
+            createWindow(port)
+        })
     })
 })
 
 ipcMain.on('get-user-data-path', (event) => {
     event.returnValue = app.getPath('userData')
 })
+
+// 20231020新增，允许用户多开，通过推演端口号
+function checkPort(port, callback) {
+    const server = net.createServer();
+    server.listen(port, () => {
+        server.once('close', () => {
+            callback(true);
+        });
+        server.close();
+    });
+    server.on('error', () => {
+        callback(false);
+    });
+}
 
