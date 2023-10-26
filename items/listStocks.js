@@ -1,3 +1,4 @@
+const { ipcRenderer } = require('electron');
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const fs = require('fs');
@@ -83,6 +84,7 @@ function i18n_bodyContents() {
     } else {
         document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
     }
+    document.querySelector("#printlink").textContent = i18next.t('general.print')
 
     // Datatables
     var tableheaders = document.querySelectorAll("#stockTable thead th")
@@ -351,3 +353,7 @@ async function getAllStockItems(getAll) {
     }
     return result
 }
+
+document.querySelector("#printlink").addEventListener("click",(ev)=>{
+    ipcRenderer.send('print');
+});

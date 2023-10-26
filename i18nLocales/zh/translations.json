@@ -24,7 +24,8 @@
     "products_navitems": ["列出所有产品", "添加产品", "展示当前库存", "显示所有库存记录"]
   },
   "general": {
-    "loadingTableText": "数据加载中..."
+    "loadingTableText": "数据加载中...",
+    "print": "打印"
   },
   "index": {
     "pagetitle": "首页",

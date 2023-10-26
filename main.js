@@ -90,6 +90,14 @@ function createWindow(portNumber) {
         let [width, height] = mainWindow.getSize();
         mainWindow.webContents.send('window-resize', {width, height});
     });
+
+    ipcMain.on('print', (event) => {
+        mainWindow.webContents.print({},(success, failureReason)=>{
+            if (failureReason){
+                console.error(failureReason);
+            }
+        });
+    });
 }
 
 function getIPAddress() {
