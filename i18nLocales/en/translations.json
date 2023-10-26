@@ -41,7 +41,8 @@
     "action_remove": "Remove",
     "action_historyitem": "Past Record",
     "action_removed": "Removed on",
-    "action_addback": "Add Back"
+    "action_addback": "Add Back",
+    "action_revert": "Revert"
   },
   "index": {
     "pagetitle": "Homepage",
@@ -59,7 +60,18 @@
     "showallproducts": "Show All Products",
     "addproduct": "Add Product",
     "h3label_currentactivestocktake": "Current Active Stock-taking sessions",
-    "h3label_environment": "System Environment Info:"
+    "h3label_environment": "System Environment Info:",
+    "addMovementLogModal": {
+      "title": "Add Movement Log",
+      "description": "Input a shelf or a product Label ID to select a product",
+      "labels": ["Shelf Location","Label ID","Action","New Location","Product Name", "Quantity", "Expire Date"],
+      "hinttext_shelf": "Input Item location on shelf",
+      "hinttext_labelid": "Input a product labelID to find specific LOT",
+      "selections": ["Remove","Moved to another shelf"],
+      "subtitle": "Fetched Data",
+      "btn_close": "Close",
+      "btn_submit": "Submit"
+    }
   },
   "session": {
     "pagetitle": "Sessions"

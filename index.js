@@ -86,6 +86,24 @@ function i18n_bodyContents() {
     tableRowActions.forEach(eachRow => {
         eachRow.textContent = i18next.t('tables.btn_view');
     })
+
+    var addMovementLogModal = document.querySelector("#addMovementLogModal")
+    addMovementLogModal.querySelector(".modal-header .modal-title").textContent = i18next.t("index.addMovementLogModal.title")
+    addMovementLogModal.querySelector(".modal-body p").textContent = i18next.t("index.addMovementLogModal.description")
+    var labelId=0
+    addMovementLogModal.querySelectorAll(".modal-body label").forEach(eachLabelItem => {
+        eachLabelItem.textContent = i18next.t(`index.addMovementLogModal.labels.${labelId}`);
+        labelId+=1;
+    })
+    addMovementLogModal.querySelector("#shelfHelp").textContent = i18next.t("index.addMovementLogModal.hinttext_shelf")
+    addMovementLogModal.querySelector("#labelHelp").textContent = i18next.t("index.addMovementLogModal.hinttext_labelid")
+
+    let optionId = 0;
+    addMovementLogModal.querySelectorAll("#formSelectAction option").forEach(eachOption =>{
+        eachOption.innerText = i18next.t(`index.addMovementLogModal.selections.${optionId}`);
+        optionId += 1;
+    });
+
 }
 
 ipcRenderer.on('server-info', (event, {address, port, addressSet}) => {
@@ -185,14 +203,40 @@ document.querySelector("#formSelectAction").addEventListener("change", function 
 })
 
 document.querySelector("#inputShelfLocation").addEventListener("input", async function (e) {
+    document.querySelector("#addMovementForm .modal-footer .btn-primary").disabled = true
+    document.querySelector("#inputProductLabel").value=""
+    document.querySelectorAll("#modalFetchedInput input").forEach(eachInput=>{
+        eachInput.value = ""
+    })
     if (this.value.length >= 3) {
         // 当用户输入库位信息后,转换为大写,然后开始搜索是否有符合的信息,如果没有则无反应
         const regex = /[A-Za-z]{2}[0-9]/
         if (regex.test(String(this.value))) {
             let resultOne = await inputSearchShelf(String(this.value).toUpperCase());
             if (resultOne !== null) {
+                document.querySelector("#addMovementForm .modal-footer .btn-primary").disabled = false
                 document.querySelector("#inputProductLabel").value = (resultOne.productLabel ? resultOne.productLabel : "")
-                //disabled section text
+                document.querySelector("#inputProductName").value = (resultOne.productName ? resultOne.productName : "")
+                document.querySelector("#inputQuantity").value = `${(resultOne.quantity ? resultOne.quantity : "")} ${(resultOne.quantityUnit ? resultOne.quantityUnit : "")}`
+                document.querySelector("#inputBestBefore").value = (resultOne.bestbefore ? resultOne.bestbefore : "")
+            }
+        }
+    }
+});
+document.querySelector("#inputProductLabel").addEventListener("input", async function (e) {
+    document.querySelector("#addMovementForm .modal-footer .btn-primary").disabled = true
+    document.querySelector("#inputShelfLocation").value = ""
+    document.querySelectorAll("#modalFetchedInput input").forEach(eachInput=>{
+        eachInput.value = ""
+    })
+    if (this.value.length > 8) {
+        // 当用户输入产品标签信息后,转换为大写,然后开始搜索是否有符合的信息,如果没有则无反应，标签需要至少输入9位，信息会动态更新
+        const regex = /[A-Za-z]{2}[0-9]/
+        if (regex.test(String(this.value))) {
+            let resultOne = await inputSearchLabel(String(this.value).toLowerCase());
+            if (resultOne !== null) {
+                document.querySelector("#addMovementForm .modal-footer .btn-primary").disabled = false
+                document.querySelector("#inputShelfLocation").value = (resultOne.shelfLocation ? resultOne.shelfLocation : "")
                 document.querySelector("#inputProductName").value = (resultOne.productName ? resultOne.productName : "")
                 document.querySelector("#inputQuantity").value = `${(resultOne.quantity ? resultOne.quantity : "")} ${(resultOne.quantityUnit ? resultOne.quantityUnit : "")}`
                 document.querySelector("#inputBestBefore").value = (resultOne.bestbefore ? resultOne.bestbefore : "")

@@ -171,7 +171,7 @@
                         </div>
                         <hr>  <!--以下部分由脚本填充用户核对，提交时候忽略-->
                         <h5>Automatic fetched Data</h5>
-                        <div class="mb-2 row">
+                        <div class="mb-2 row" id="modalFetchedInput">
                             <div class="col-md-6 mb-2">
                                 <label for="inputProductName" class="form-label">Product Name</label>
                                 <input type="text" class="form-control" id="inputProductName" disabled>
@@ -188,7 +188,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button type="submit" class="btn btn-primary" disabled>Submit</button>
                     </div>
                 </form>
             </div>

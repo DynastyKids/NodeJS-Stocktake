@@ -43,7 +43,18 @@
     "showallproducts": "展示产品列表",
     "addproduct": "添加产品",
     "h3label_currentactivestocktake": "当前可用的盘点会话",
-    "h3label_environment": "当前系统环境"
+    "h3label_environment": "当前系统环境",
+    "addMovementLogModal": {
+      "title": "添加记录",
+      "description": "输入一个库位号或者标签号来查找产品",
+      "labels": ["库位号","标签号","操作","新库位号","产品名","数量","有效期至"],
+      "hinttext_shelf": "请输入库位号",
+      "hinttext_labelid": "输入一个标签号以查找产品信息",
+      "selections": ["移除","移动到另一个货架"],
+      "subtitle": "获取到的产品信息",
+      "btn_close": "关闭",
+      "btn_submit": "确认"
+    }
   },
   "pageTitle": {
     "note": "使用文件名作为关键字标记符",
@@ -71,7 +82,8 @@
     "action_remove": "移除",
     "action_historyitem": "历史条目",
     "action_removed": "已移除",
-    "action_addback": "恢复"
+    "action_addback": "恢复",
+    "action_revert": "撤销操作"
   },
   "session": {
     "pagetitle": "会话管理"
