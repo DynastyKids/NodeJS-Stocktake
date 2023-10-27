@@ -3,7 +3,7 @@ const {ServerApiVersion} = require('mongodb');
 const flatpickr = require("flatpickr");
 const fs = require('fs');
 const path = require('path');
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
+const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
 const moment = require('moment-timezone')
 let lastSession = ""
 
@@ -32,7 +32,7 @@ const Storage = require("electron-store");
 const {ipcRenderer} = require("electron");
 const newStorage = new Storage();
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();

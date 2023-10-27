@@ -53,9 +53,9 @@ function createWindow(portNumber) {
     try {
         let fileStatus = fs.statSync(path.join(__dirname, "config/localsettings.json"))
         if (fileStatus.isFile() && fileStatus.size > 10) {
-            mainWindow.loadFile('index.html')
+            mainWindow.loadFile('Bootstrap5/pages/index.html')
         } else {
-            mainWindow.loadFile("settings/settings.html")
+            mainWindow.loadFile("Bootstrap5/settings/settings.html")
         }
     } catch (err) {
         mainWindow.loadFile('index.html')

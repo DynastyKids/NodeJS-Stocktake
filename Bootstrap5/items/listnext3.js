@@ -6,7 +6,7 @@ const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const fs = require("fs");
 const path = require("path");
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
+const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
 const uriCompents = [credentials.mongodb_protocol, "://"]
 if (credentials.mongodb_username && credentials.mongodb_password) {
     uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
@@ -154,7 +154,7 @@ const Backend = require('i18next-fs-backend');
 const Storage = require('electron-store');
 const newStorage = new Storage();
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_bodyContents();
 });

@@ -4,74 +4,21 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src 'self' w3.org data:;">
-    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="node_modules/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../node_modules/font-awesome/css/font-awesome.min.css">
     <title>Home - Warehouse Electron</title>
 </head>
 
 <body>
 <nav class="navbar navbar-expand-lg navbar-light bg-light" id="navbar_top">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="#">Stock-take Electron</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
-                aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link active nav-topitem" aria-current="page" href="#" id="navHome">Home</a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle nav-topitem" href="#" id="sessionDropdown" role="button"
-                       data-bs-toggle="dropdown" aria-expanded="false">
-                        Sessions
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="sessionDropdown" id="sessionDropdownList">
-                        <li><a class="dropdown-item" href="stocktake/newsession.html">New Stocktake Session</a></li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li><a class="dropdown-item" href="stocktake/listsession.html">Show all Sessions</a></li>
-                    </ul>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle nav-topitem" href="#" id="productDropdown" role="button"
-                       data-bs-toggle="dropdown" aria-expanded="false">
-                        Products
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="productDropdown" id="productDropdownList">
-                        <li><a class="dropdown-item" href="items/listProduct.html">Show all products</a></li>
-                        <li><a class="dropdown-item" href="items/addProduct.html">Add product</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="../items/listStocks.html">Show Current Stocks</a></li>
-                        <li><a class="dropdown-item" href="../items/listStocks.html?q=all">Show All Stocks</a></li>
-                    </ul>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link nav-topitem" aria-current="page" href="config/settings.html" id="navSettings">Settings</a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle nav-topitem" href="#" id="LanguageDropdown" role="button"
-                       data-bs-toggle="dropdown" aria-expanded="false">
-                        Language
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="productDropdown">
-                        <li>
-                            <select id="languageSelector" onchange="i18n_navbar(this.value);i18n_bodyContents(this.value)">
-                                <option value="en">English</option>
-                                <option value="zh">简体中文</option>
-                            </select>
-                        </li>
-                    </ul>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link nav-topitem" aria-current="page" href="scanner/scanner.html" id="scannermode">Scanner Mode</a>
-                </li>
-            </ul>
-        </div>
-    </div>
+    <script>
+        const navbarContent = document.querySelector("#navbar_top")
+        fetch('../layouts/template_navbar.html')
+            .then(response => response.text())
+            .then(data => {
+                navbarContent.innerHTML = data
+            })
+    </script>
 </nav>
 <div class="container">
     <nav class="m-2" aria-label="breadcrumb">
@@ -87,13 +34,13 @@
                     <h4>Stocktake Action</h4>
                     <ul class="list-group">
                         <li class="list-group-item list-group-item-action">
-                            <a href="stocktake/listsession.html">Show All Sessions</a>
+                            <a href="../stocktake/listsession.html">Show All Sessions</a>
                         </li>
                         <li class="list-group-item list-group-item-action">
-                            <a href="stocktake/listSessionStocks.html">Show Session Stocks</a>
+                            <a href="../stocktake/listSessionStocks.html">Show Session Stocks</a>
                         </li>
                         <li class="list-group-item list-group-item-action">
-                            <a href="stocktake/newsession.html">New Stocktake Session</a>
+                            <a href="../stocktake/newsession.html">New Stocktake Session</a>
                         </li>
                     </ul>
                 </td>
@@ -101,14 +48,14 @@
                     <h4>Stocks Action</h4>
                     <ul class="list-group">
                         <li class="list-group-item list-group-item-action">
-                            <a href="items/listStocks.html">Show Stocks Overview</a>
+                            <a href="../items/listStocks.html">Show Stocks Overview</a>
                         </li>
                         <li class="list-group-item list-group-item-action">
-                            <a href="items/addlog.html" data-bs-toggle="modal" data-bs-target="#addMovementLogModal">Add
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#addMovementLogModal">Add
                                 movement log</a>
                         </li>
                         <li class="list-group-item list-group-item-action">
-                            <a href="items/listnext3.html">Next pallet to unwrap</a>
+                            <a href="../items/listnext3.html">Next pallet to unwrap</a>
                         </li>
                     </ul>
                 </td>
@@ -116,10 +63,10 @@
                     <h4>Product Action</h4>
                     <ul class="list-group">
                         <li class="list-group-item list-group-item-action">
-                            <a href="items/listProduct.html">Show all products</a>
+                            <a href="../items/listProduct.html">Show all products</a>
                         </li>
                         <li class="list-group-item list-group-item-action">
-                            <a href="items/addProduct.html">Add a product</a>
+                            <a href="../items/addProduct.html">Add a product</a>
                         </li>
                     </ul>
                 </td>
@@ -228,7 +175,7 @@
     </div>
 </div>
 
-<script src="node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="index.js"></script>
 </body>
 

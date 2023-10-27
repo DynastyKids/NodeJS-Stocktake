@@ -4,7 +4,7 @@ const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const path = require('path');
 const fs = require('fs');
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, 'config/localsettings.json')));
+const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
 const moment = require('moment-timezone');
 
 const Storage = require('electron-store');
@@ -19,7 +19,7 @@ const newStorage = new Storage();
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '/i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar()
     i18n_bodyContents();
@@ -150,7 +150,7 @@ async function getCurrentSession() {
         }
 
         for await (const x of cursor) {
-            htmlContent += `<tr><td>${x.session}</td><td>${x.startDate}</td><td>${x.endDate}</td><td><a href="stocktake/viewsession.html?id=${x.session}" class="tableaction_view">View</a></td></tr>`
+            htmlContent += `<tr><td>${x.session}</td><td>${x.startDate}</td><td>${x.endDate}</td><td><a href="../stocktake/viewsession.html?id=${x.session}" class="tableaction_view">View</a></td></tr>`
         }
 
         if (htmlContent.length > 0) {
@@ -182,10 +182,10 @@ async function qrv2patch() {
 
     var logLists = logsessions.find({})
     for await (const x of logLists) {
-        if (String(x.productCode).includes("TP") || String(x.productCode).includes("SP") || String(x.productCode) == "IG001") {
-            if (x.quantityUnit == "" && x.quantity < 50) {
+        if (String(x.productCode).includes("TP") || String(x.productCode).includes("SP") || String(x.productCode) === "IG001") {
+            if (x.quantityUnit === "" && x.quantity < 50) {
                 logsessions.updateOne({_id: x._id}, {$set: {quantityUnit: "carton"}})
-            } else if (x.quantityUnit == "" && x.quantity >= 50) {
+            } else if (x.quantityUnit === "" && x.quantity >= 50) {
                 logsessions.updateOne({_id: x._id}, {$set: {quantityUnit: "bottles"}})
             }
         }

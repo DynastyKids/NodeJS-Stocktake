@@ -8,7 +8,7 @@ const ObjectID = require("mongodb").ObjectId
 
 const fs = require('fs');
 const path = require('path');
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
+const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
 
 var $ = require("jquery");
 const DataTable = require('datatables.net-responsive-bs5')(window, $);
@@ -209,7 +209,7 @@ const Storage = require('electron-store');
 const newStorage = new Storage();
 
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();

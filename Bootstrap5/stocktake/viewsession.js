@@ -2,7 +2,7 @@ const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const path = require('path');
 const fs = require('fs');
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
+const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
 const moment = require('moment-timezone')
 
 const {ipcRenderer} = require('electron');
@@ -29,7 +29,7 @@ const Backend = require('i18next-fs-backend');
 const Storage = require("electron-store");
 const newStorage = new Storage();
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();
