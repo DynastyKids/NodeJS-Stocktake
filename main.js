@@ -1,6 +1,5 @@
 const {app, BrowserWindow, ipcMain} = require("electron");
 const path = require("path");
-const fs = require('fs');
 const os = require('os');
 
 const net = require('net')
@@ -17,8 +16,24 @@ require('electron-reload')(__dirname);
 const Store = require('electron-store');
 Store.initRenderer()
 
+let navbarLanguage = "en"
+if (!(new Store).get('language')){
+    (new Store).set("language","en")
+}
+
+// The MongoDB URI should look as following (SRV for mongoAtlas)
+// mongodb://myDatabaseUser:D1fficultP%40ssw0rd@mongodb0.example.com:27017/?authSource=admin&replicaSet=myRepl
+// mongodb+srv://myDatabaseUser:D1fficultP%40ssw0rd@mongodb0.example.com/?authSource=admin&replicaSet=myRepl
+if (!(new Store).get('mongoURI')){
+    (new Store).set("mongoURI","mongodb://127.0.0.1:27017")
+}
+if(!(new Store).get("mongoDB")){
+    (new Store).set("mongoDB","prod")
+}
+
 const i18next = require('i18next');
 const Backend = require('i18next-electron-fs-backend');
+const {MongoClient, ServerApiVersion} = require("mongodb");
 const i18nextOptions = {
     debug: true,
     lng: 'en', // 默认语言
@@ -35,8 +50,14 @@ ipcMain.on('change-language', (event, language) => {
     mainWindow.webContents.send('set-language', language);
 });
 
-let mainWindow;
+ipcMain.on('get-user-data-path', (event) => {
+    event.returnValue = app.getPath('userData')
+})
+ipcMain.on('open-external', (event, url) => {
+    shell.openExternal(url);
+});
 
+let mainWindow;
 function createWindow(portNumber) {
     mainWindow = new BrowserWindow({
         width: 1280,
@@ -51,8 +72,10 @@ function createWindow(portNumber) {
     });
 
     try {
-        let fileStatus = fs.statSync(path.join(__dirname, "config/localsettings.json"))
-        if (fileStatus.isFile() && fileStatus.size > 10) {
+        if (!(new Store).get('mongoURI') || !(new Store).get("mongoDB")){
+
+        } else if (pingMongoDB((new Store).get('mongoURI'),(new Store).get("mongoDB"))){
+            //尝试链接数据库，ping，如果无响应则跳转设置页面
             mainWindow.loadFile('Bootstrap5/pages/index.html')
         } else {
             mainWindow.loadFile("Bootstrap5/settings/settings.html")
@@ -100,6 +123,33 @@ function createWindow(portNumber) {
     });
 }
 
+async function pingMongoDB(dburi,dbname){
+    let client = new MongoClient(dburi, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            strict: true,
+            deprecationErrors: true,
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        }
+    });
+    let results = false
+    try {
+        await client.connect();
+        // Send a ping to confirm a successful connection
+        let response = await client.db(dbname).command({ping: 1})
+        console.log(response)
+        if (response.ok === 1){
+            results = true
+        }
+    } catch (e) {
+        console.error(e)
+    } finally {
+        await client.close();
+    }
+    return results
+}
+
 function getIPAddress() {
     const networkInterfaces = os.networkInterfaces();
     let addressSet = [];
@@ -119,10 +169,6 @@ app.on("window-all-closed", function () {
     if (process.platform !== "darwin") app.quit();
 });
 
-// app.on("activate", function () {
-//     if (mainWindow === null) createWindow();
-// });
-
 expressApp.use(cors())
 expressApp.use("/api", apiRequests);
 
@@ -140,10 +186,6 @@ app.whenReady().then(() => {
             createWindow(port)
         })
     })
-})
-
-ipcMain.on('get-user-data-path', (event) => {
-    event.returnValue = app.getPath('userData')
 })
 
 // 20231020新增，允许用户多开，通过推演端口号

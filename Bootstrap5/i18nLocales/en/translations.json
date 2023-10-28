@@ -2,12 +2,13 @@
   "navbar": {
     "home": "Home",
     "navitems": [
-      "<i class=\"fa fa-home\" aria-hidden=\"true\"></i> Home",
-      "<i class=\"fa fa-users\" aria-hidden=\"true\"></i> Sessions",
-      "<i class=\"fa fa-cubes\" aria-hidden=\"true\"></i> Products",
-      "<i class=\"fa fa-cogs\" aria-hidden=\"true\"></i> Settings",
-      "<i class=\"fa fa-language\" aria-hidden=\"true\"></i> Language",
-      "<i class=\"fa fa-barcode\" aria-hidden=S\"true\"></i> Scanner Mode"],
+      "<i class=\"ti ti-home\"></i> Home",
+      "<i class=\"ti ti-users-group\"></i> Sessions",
+      "<i class=\"ti ti-archive\"></i> Products",
+      "<i class=\"ti ti-settings\"></i> Settings",
+      "<i class=\"ti ti-language\"></i> Language",
+      "<i class=\"ti ti-scan\"></i> Scanner Mode",
+      "<i class=\"ti ti-cardboards\"></i> New View"],
     "sessions_navitems": ["New stock-take session", "Show All Sessions"],
     "products_navitems": [ "Show All Products", "Add Product", "Show Current Stocks", "Show All Stocks"]
   },
@@ -104,19 +105,7 @@
   },
   "setting": {
     "pagetitle": "Settings",
-    "dbform_labels": [
-      "Database Protocol",
-      "Database Address",
-      "Database Username",
-      "Database password",
-      "Database name"
-    ],
-    "dbform_placeholders": [
-      "Server address for database connection",
-      "Database Username",
-      "Database password",
-      "Database name"
-    ],
+    "dbform_labels": ["URI: ", "Database Name: "],
     "placeholderprotocol": "Please select a connection protocol",
     "titleaboutdb": "About Database",
     "titlescheme": "About Connection Scheme",

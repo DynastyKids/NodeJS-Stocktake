@@ -6,22 +6,18 @@ const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const ObjectID = require("mongodb").ObjectId
 
-const fs = require('fs');
-const path = require('path');
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
-
 var $ = require("jquery");
 const DataTable = require('datatables.net-responsive-bs5')(window, $);
 
 let table;
 let dataset = [];
-const uriCompents = [credentials.mongodb_protocol, "://"]
-if (credentials.mongodb_username && credentials.mongodb_password) {
-    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
-}
-uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
-const uri = encodeURI(uriCompents.join(""))
 
+const Storage = require("electron-store");
+const newStorage = new Storage();
+const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
+const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
+
+const path = require('path');
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 
@@ -167,7 +163,7 @@ async function updateRecordById(recordId, updateData) {
             useUnifiedTopology: true
         }
     });
-    let sessions = client.db(credentials.mongodb_db).collection("products");
+    let sessions = client.db(targetDB).collection("products");
     let results;
     // console.log("Running updateRecordById:", recordId, updateData)
     try {
@@ -192,7 +188,7 @@ async function findOneRecordById(recordId){
             useUnifiedTopology: true
         }
     });
-    let sessions = client.db(credentials.mongodb_db).collection("products");
+    let sessions = client.db(targetDB).collection("products");
     let results;
     try {
         await client.connect();
@@ -205,11 +201,8 @@ async function findOneRecordById(recordId){
     return results
 }
 
-const Storage = require('electron-store');
-const newStorage = new Storage();
-
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();
@@ -300,7 +293,7 @@ async function getProducts(conditionObject) {
             useUnifiedTopology: true
         }
     });
-    let sessions = client.db(credentials.mongodb_db).collection("products");
+    let sessions = client.db(targetDB).collection("products");
     let options = {sort: {productCode: 1}};
     try {
         await client.connect();

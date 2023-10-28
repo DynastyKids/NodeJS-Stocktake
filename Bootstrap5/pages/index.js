@@ -1,25 +1,27 @@
-const {Autocomplete} = require("@tarekraafat/autocomplete.js")
 const {ipcRenderer} = require("electron");
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const path = require('path');
-const fs = require('fs');
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
 const moment = require('moment-timezone');
 
-const Storage = require('electron-store');
+const Storage = require("electron-store");
 const newStorage = new Storage();
-// let navbarLanguage = "en"
-// if (newStorage.get('language')){
-//     navbarLanguage = newStorage.get('language')
-// } else {
-//     newStorage.set("language","en")
-// }
+const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
+const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
+
+const client = new MongoClient(uri, {
+    serverApi: {
+        version: ServerApiVersion.v1,
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    }
+});
+
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar()
     i18n_bodyContents();
@@ -119,26 +121,10 @@ ipcRenderer.on('server-info', (event, {address, port, addressSet}) => {
     document.querySelector("#serverPortText").innerText = port ? port : "";
 });
 
-const uriCompents = [credentials.mongodb_protocol, "://"]
-if (credentials.mongodb_username && credentials.mongodb_password) {
-    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
-}
-uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
-const uri = encodeURI(uriCompents.join(""))
-
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    }
-});
-
-
 async function getCurrentSession() {
     let localTime = moment(new Date()).tz("Australia/Sydney")
     const options = {sort: {startDate: 1},};
-    const sessions = client.db(credentials.mongodb_db).collection("pollingsession");
+    const sessions = client.db(targetDB).collection("pollingsession");
     let findingQuery = {endDate: {$gte: localTime.format('YYYY-MM-DD HH:mm:ss')}}
     let cursor;
     let htmlContent = ""
@@ -169,8 +155,8 @@ window.onload = () => {
 }
 
 async function qrv2patch() {
-    const logsessions = client.db(credentials.mongodb_db).collection("pollinglog");
-    const productsessions = client.db(credentials.mongodb_db).collection("products");
+    const logsessions = client.db(targetDB).collection("pollinglog");
+    const productsessions = client.db(targetDB).collection("products");
     var productList = productsessions.find({})
     for await (const x of productList) {
         var whereCondition = {productCode: x.labelname}
@@ -253,7 +239,7 @@ document.querySelector("#addMovementForm").addEventListener("submit", async func
     if (regexLabel.test(document.querySelector("#inputProductLabel").value)) {
         //用户提交表单,修改loggingTime,如果是move则更新shelfLocation,如果是consumed则修改consumed为1
         var productInfo = {productLabel: document.querySelector("#inputProductLabel").value}
-        const session = client.db(credentials.mongodb_db).collection("pollinglog");
+        const session = client.db(targetDB).collection("pollinglog");
         if (formAction === "consume") {
             result = await session.updateMany(productInfo, {
                 consumed: 1,
@@ -278,7 +264,7 @@ async function inputSearchLabel(labelid) {
     // 通过label搜索在库物品，需要确认：物品未被使用，使用findOne，按照loggingTime -1排序
     let result = {}
     try {
-        const logsessions = client.db(credentials.mongodb_db).collection("pollinglog");
+        const logsessions = client.db(targetDB).collection("pollinglog");
         const query = {productLabel: labelid, consumed: 0}
         const options = {
             sort: {loggingTime: -1},
@@ -307,7 +293,7 @@ async function inputSearchShelf(shelfString) {
     // 通过库位在库物品，需要确认：物品未被使用，使用loggingTime -1，只取一个findOne
     let result = {}
     try {
-        const logsessions = client.db(credentials.mongodb_db).collection("pollinglog");
+        const logsessions = client.db(targetDB).collection("pollinglog");
         const query = {shelfLocation: shelfString, consumed: 0}
         const options = {
             sort: {loggingTime: -1},

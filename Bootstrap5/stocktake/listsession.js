@@ -1,25 +1,18 @@
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
-const flatpickr = require("flatpickr");
-const fs=require('fs');
 const path = require('path');
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
-const moment = require('moment-timezone')
-
-const uriCompents = [credentials.mongodb_protocol,"://"]
-if (credentials.mongodb_username && credentials.mongodb_password) {
-    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
-}
-uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
-const uri = encodeURI(uriCompents.join(""))
-const client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true,useNewUrlParser: true, useUnifiedTopology: true}});
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
+
 const Storage = require("electron-store");
 const newStorage = new Storage();
+
+const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
+const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
+
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();
@@ -67,14 +60,18 @@ function i18n_bodyContents() {
 
 document.addEventListener("DOMContentLoaded", (event) => {
     getAllSession()
-    // console.log()
 });
 
 async function getAllSession(){
-    let nowTime= moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
-    const tomorrow = (new Date('today')).setDate(new Date('today').getDate()+1)
+    let client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        }
+    });
     const options = {sort: { startDate: -1 },};
-    const sessions = client.db(credentials.mongodb_db).collection("pollingsession");
+    const sessions = client.db(targetDB).collection("pollingsession");
     let cursor;
     let htmlContent=""
     try {

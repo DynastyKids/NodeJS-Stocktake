@@ -1,9 +1,6 @@
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const path = require('path');
-const fs = require('fs');
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
-const moment = require('moment-timezone')
 
 const {ipcRenderer} = require('electron');
 
@@ -12,12 +9,12 @@ const {setInterval} = require('timers');
 var DataTable = require('datatables.net')(window, $);
 require('datatables.net-responsive');
 
-const uriCompents = [credentials.mongodb_protocol, "://"]
-if (credentials.mongodb_username && credentials.mongodb_password) {
-    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
-}
-uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
-const uri = encodeURI(uriCompents.join(""))
+const Storage = require("electron-store");
+const newStorage = new Storage();
+
+const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
+const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
+
 let table = new DataTable('#viewSessionTable', {responsive: true, pageLength: 25});
 
 let shouldRefresh = true;
@@ -26,10 +23,9 @@ let countdown = countdownFrom;
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
-const Storage = require("electron-store");
-const newStorage = new Storage();
+
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();
@@ -76,7 +72,7 @@ async function getSessionInfo(sessionCode) {
         serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
     });
     const options = {sort: {loggingTime: -1}};
-    const sessions = client.db(credentials.mongodb_db).collection("pollingsession");
+    const sessions = client.db(targetDB).collection("pollingsession");
     let cursor;
     let htmlContent = ""
     try {
@@ -107,7 +103,7 @@ async function getSessionItems(sessionCode) {
         serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
     });
     const options = {sort: {startDate: -1},};
-    const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
+    const sessions = client.db(targetDB).collection("pollinglog");
     let cursor;
     let htmlContent = ""
     let alreadyInserted = []

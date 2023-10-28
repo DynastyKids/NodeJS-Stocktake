@@ -7,7 +7,7 @@ const newStorageNav = new StorageNav();
 // console.log(newStorageNav.get('language'))
 
 i18nextNav.use(Backend2).init({
-    lng: (newStorageNav.get('language') ? newStorageNav.get('language') : 'en'), backend: {loadPath: path2.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorageNav.get('language') ? newStorageNav.get('language') : 'en'), backend: {loadPath: path2.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
 });

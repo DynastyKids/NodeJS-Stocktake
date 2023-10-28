@@ -1,24 +1,17 @@
 const MongoClient = require('mongodb').MongoClient;
 const {ipcRenderer} = require('electron')
-const fs = require('fs')
 const path = require('path')
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/localsettings.json')));
 const {ServerApiVersion} = require('mongodb');
-const uri = encodeURI(credentials.mongodb_protocol + "://" + credentials.mongodb_username + ":" + credentials.mongodb_password + "@" + credentials.mongodb_server + "/?retryWrites=true&w=majority");
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    }
-});
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
+
 const Storage = require("electron-store");
 const newStorage = new Storage();
+
+const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
+const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
+
 i18next.use(Backend).init({
     lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
@@ -59,11 +52,7 @@ function i18n_bodyContents()  {
     for (let i = 0; i < labels.length; i++) {
         labels[i].textContent = i18next.t(`setting.dbform_labels.${i}`)
     }
-    document.querySelector("#settings-form select option").textContent = i18next.t("setting.placeholderprotocol")
-    var inputPlaceholders = document.querySelectorAll("#settings-form input")
-    for (let i = 0; i < inputPlaceholders.length; i++) {
-        inputPlaceholders[i].placeholder = i18next.t(`setting.dbform_placeholders.${i}`)
-    }
+
     document.querySelectorAll(".infotext h5")[0].textContent = i18next.t("setting.titleaboutdb")
     document.querySelectorAll(".infotext p")[0].textContent = i18next.t("setting.textaboutdb")
     document.querySelectorAll(".infotext h5")[1].textContent = i18next.t("setting.titlescheme")
@@ -75,40 +64,60 @@ document.getElementById('settings-form').addEventListener('submit', (event) => {
     event.preventDefault()
 
     // 获取用户的输入
-    const dbScheme = document.querySelector('#db-scheme').value
-    const dbAddress = document.querySelector('#db-address').value
-    const dbUsername = document.querySelector('#db-username').value
-    const dbPassword = document.querySelector('#db-password').value
     const dbName = document.querySelector('#db-name').value
-
-    const settings = {
-        mongodb_protocol: dbScheme,
-        mongodb_server: dbAddress,
-        mongodb_username: dbUsername,
-        mongodb_password: dbPassword,
-        mongodb_db: dbName
+    const dbUri = document.querySelector("#db-uri").value
+    const regex = /^(mongodb(?:\+srv)?:\/\/[^\s]*$)/;
+    if(regex.test(uri)){
+        connectionVerify(dbUri, dbName)
+        newStorage.set("mongoURI",dbUri)
+        newStorage.set("mongoDB",dbName)
+        alert('Settings has been saved')
     }
 
-    // 获取Electron应用的userData路径
-    const userDataPath = ipcRenderer.sendSync('get-user-data-path')
-
-    // 将设置保存到JSON文件中
-    fs.writeFileSync(path.join(__dirname, 'config/localsettings.json'), JSON.stringify(settings))
-
-    connectionVerify();
-    alert('Settings has been saved')
+    // JSON设置文件已经不再使用，默认存入本地的Electron Storage
 })
 
+document.addEventListener("DOMContentLoaded", (event) => {
+    if(newStorage.get('mongoURI')){
+        document.querySelector("#db-uri").placeholder = "Current URI: "+hidePasswordFromMongoURI(newStorage.get('mongoURI'))
+    }
+    if(newStorage.get('mongoDB')){
+        document.querySelector("#db-name").placeholder = "Current DB: "+targetDB
+    }
+});
 
-async function connectionVerify() {
+function hidePasswordFromMongoURI(uri) {
+    const regex = /^(mongodb(?:\+srv)?:\/\/)([^:@]+):([^@]+)@/;
+    return uri.replace(regex, '$1$2:****@');
+}
+document.querySelectorAll('a.external-link').forEach(eachExtLink =>{
+    eachExtLink.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        let url = eachExtLink.getAttribute('href');
+        window.openExternal(url);
+        ipcRenderer.invoke('open-external', url);
+    });
+})
+
+async function connectionVerify(dburi, dbname) {
+    const client = new MongoClient(dburi, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            strict: true,
+            deprecationErrors: true,
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        }
+    });
     try {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         // Send a ping to confirm a successful connection
-        var resultSession = await client.db(credentials.mongodb_db).createCollection("pollingsession");
-        var resultLog = await client.db(credentials.mongodb_db).createCollection("pollinglog");
-        var resultProducts = await client.db(credentials.mongodb_db).createCollection("products");
+        const results = await client.db(targetDB).command({ping: 1});
+        // var resultSession = await client.db(credentials.mongodb_db).createCollection("pollingsession");
+        // var resultLog = await client.db(credentials.mongodb_db).createCollection("pollinglog");
+        // var resultProducts = await client.db(credentials.mongodb_db).createCollection("products");
     } finally {
-        client.close();
+        await client.close();
     }
 }

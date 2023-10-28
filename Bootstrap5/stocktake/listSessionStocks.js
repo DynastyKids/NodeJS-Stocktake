@@ -1,38 +1,25 @@
+const {ipcRenderer} = require("electron");
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
-const flatpickr = require("flatpickr");
-const fs = require('fs');
 const path = require('path');
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
 const moment = require('moment-timezone')
 let lastSession = ""
-
-const uriCompents = [credentials.mongodb_protocol, "://"]
-if (credentials.mongodb_username && credentials.mongodb_password) {
-    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
-}
-uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
-const uri = encodeURI(uriCompents.join(""))
-let client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    }
-});
-
-document.addEventListener("DOMContentLoaded", (ev) => {
-    getSessions()
-});
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 
 const Storage = require("electron-store");
-const {ipcRenderer} = require("electron");
 const newStorage = new Storage();
+
+const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
+const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
+
+document.addEventListener("DOMContentLoaded", (ev) => {
+    getSessions()
+});
+
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();
@@ -89,14 +76,14 @@ function i18n_bodyContents() {
 
 async function getSessions() {
     const options = {sort: {startDate: -1},};
-    client = new MongoClient(uri, {
+    let client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
             useNewUrlParser: true,
             useUnifiedTopology: true
         }
     });
-    const sessions = client.db(credentials.mongodb_db).collection("pollingsession");
+    const sessions = client.db(targetDB).collection("pollingsession");
     let cursor;
     let htmlContent = ""
     try {
@@ -140,19 +127,18 @@ async function getAllItemsFromSession(sessionCode) {
     let nowTime = moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
     const tomorrow = (new Date('today')).setDate(new Date('today').getDate() + 1)
     const options = {sort: {startDate: -1},};
-    client = new MongoClient(uri, {
+    let client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
             useNewUrlParser: true,
             useUnifiedTopology: true
         }
     });
-    const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
+    const sessions = client.db(targetDB).collection("pollinglog");
     let cursor;
     let htmlContent = ""
-    if (sessionCode == "") {
-        sessionCode = lastSession
-    }
+    sessionCode = (sessionCode === "" ? lastSession: sessionCode)
+
     try {
         await client.connect();
         cursor = await sessions.find({$or: [{session: ""}, {session: sessionCode}]}).toArray();
@@ -170,12 +156,10 @@ async function getAllItemsFromSession(sessionCode) {
                 </td></tr>`
         })
 
-
         if (cursor.length === 0) {
             console.log("[MongoDB] Nothing Found");
             document.querySelector("#activeTBody").innerHTML = "<tr><td colspan=5>No item found in this session available</td></tr>"
         }
-
 
         document.querySelector("#activeTBody").innerHTML = htmlContent
     } catch (err) {

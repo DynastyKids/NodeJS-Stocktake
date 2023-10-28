@@ -1,23 +1,20 @@
 const { ipcRenderer } = require('electron');
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
-const fs = require('fs');
-const path = require('path');
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
 const moment = require('moment-timezone')
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 
+const Storage = require("electron-store");
+const newStorage = new Storage();
+const path = require('path');
+
 var $ = require('jquery');
 var DataTable = require('datatables.net-responsive-bs5')(window, $);
 
-const uriCompents = [credentials.mongodb_protocol, "://"]
-if (credentials.mongodb_username && credentials.mongodb_password) {
-    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
-}
-uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
-const uri = encodeURI(uriCompents.join(""))
+const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
+const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
 const {setInterval} = require('timers');
 
@@ -33,11 +30,8 @@ let shouldRefresh = true;
 const countdownFrom = 60;
 let countdown = 60;
 
-const Storage = require("electron-store");
-const newStorage = new Storage();
-
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();
@@ -197,7 +191,7 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
                 useUnifiedTopology: true
             }
         });
-        const session = client.db(credentials.mongodb_db).collection("pollinglog");
+        const session = client.db(targetDB).collection("pollinglog");
         document.querySelector("#editModalSubmitBtn").disabled = true
         document.querySelector("#editModalSubmitBtn").textContent = "Updating"
         let result = await session.updateOne({"productLabel": requestLabelId}, {
@@ -243,7 +237,7 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
     document.querySelector("#removeModalYes").textContent = "Updating"
     try {
         await client.connect();
-        const session = client.db(credentials.mongodb_db).collection("pollinglog");
+        const session = client.db(targetDB).collection("pollinglog");
         let result = await session.updateMany({productLabel: labelId, consumed: 0} , {$set: {consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")}},{upsert: false})
         if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
             //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
@@ -331,7 +325,7 @@ async function getAllStockItems(getAll) {
         }
     });
     let nowTime = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
-    const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
+    const sessions = client.db(targetDB).collection("pollinglog");
     let cursor;
     let result = {acknowledged: false, resultSet: [], message: ""}
     try {

@@ -1,32 +1,18 @@
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion, ObjectId} = require('mongodb');
-const flatpickr = require("flatpickr");
 const path = require('path');
-const fs = require('fs');
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
 const moment = require('moment-timezone')
 
-const uriCompents = [credentials.mongodb_protocol, "://"]
-if (credentials.mongodb_username && credentials.mongodb_password) {
-    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
-}
-uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
-const uri = encodeURI(uriCompents.join(""))
-
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    }
-});
+const Storage = require("electron-store");
+const newStorage = new Storage();
+const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
+const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
-const Storage = require("electron-store");
-const newStorage = new Storage();
+
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();
@@ -159,14 +145,14 @@ async function updateOneData(filter,data, upsertOption){
         await client.connect();
         // Send a ping to confirm a successful connection
         let updateObject = {$set:data}
-        let session = await client.db(credentials.mongodb_db).collection("products")
+        let session = await client.db(targetDB).collection("products")
         results = await session.updateOne(filter, updateObject,{upsert: upsertOption});
     } catch (e) {
         console.error("Data upsert:",e)
     }finally {
         await client.close();
-        return results
     }
+    return results
 }
 
 async function retrieveOneData(id){
@@ -184,7 +170,7 @@ async function retrieveOneData(id){
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         // Send a ping to confirm a successful connection
-        result = await client.db(credentials.mongodb_db).collection("products").find(query, options).toArray()
+        result = await client.db(targetDB).collection("products").find(query, options).toArray()
         console.log(result)
     } catch (e) {
         console.error("MongoDB find error:", e)

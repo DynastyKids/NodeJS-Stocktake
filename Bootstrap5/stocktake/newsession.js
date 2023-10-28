@@ -2,32 +2,18 @@ const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const flatpickr = require("flatpickr");
 const path = require('path');
-const fs = require('fs');
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
 const moment = require('moment-timezone')
 
-const uriCompents = [credentials.mongodb_protocol, "://"]
-if (credentials.mongodb_username && credentials.mongodb_password) {
-    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
-}
-uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
-const uri = encodeURI(uriCompents.join(""))
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    }
-});
+const Storage = require("electron-store");
+const newStorage = new Storage();
+
+const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
+const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
-const Storage = require("electron-store");
-const newStorage = new Storage();
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();
@@ -109,11 +95,14 @@ window.onload = () => {
 }
 
 async function insertOneData(data) {
+    let client = new MongoClient(uri, {
+        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
     try {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         // Send a ping to confirm a successful connection
-        await client.db(credentials.mongodb_db).collection("pollingsession")
+        await client.db(targetDB).collection("pollingsession")
             .insertOne(data, (err, res) => {
                 if (err) {
                     console.error('Failed to insert document', err);
@@ -122,33 +111,47 @@ async function insertOneData(data) {
                 return res
             });
     } finally {
-        client.close();
+        await client.close();
     }
 }
 
-function generateSessionHex() {
+async function generateSessionHex() {
     let sessioncode = Math.floor(Math.random() * 0x10000000).toString(16)
         .padStart(7, '0').toLocaleUpperCase()
     var findQuery = {session: sessioncode};
+    let client = new MongoClient(uri, {
+        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
 
-    client.db(credentials.mongodb_db).collection("pollingsession")
-        .findOne(findQuery, (err, res) => {
-            if (err) {
-                console.error('Failed to insert document', err);
-                return;
-            }
-            console.log('Document inserted', res);
-            client.db(credentials.mongodb_db).close();
-        });
+    try {
+        await client.connect()
+        await client.db(targetDB).collection("pollingsession")
+            .findOne(findQuery, (err, res) => {
+                if (err) {
+                    console.error('Failed to insert document', err);
+                    return;
+                }
+                console.log('Document inserted', res);
+                client.db(targetDB).close();
+            });
+    } catch (e) {
+        console.error("Error when connecting to database: ", e)
+    } finally {
+        await client.close()
+    }
+
     return sessioncode
 }
 
 async function run() {
+    let client = new MongoClient(uri, {
+        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
     try {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         // Send a ping to confirm a successful connection
-        await client.db(credentials.mongodb_db).command({ping: 1});
+        await client.db(targetDB).command({ping: 1});
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error

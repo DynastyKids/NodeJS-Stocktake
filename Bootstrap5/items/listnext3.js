@@ -4,25 +4,17 @@ var $ = require('jquery');
 
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
-const fs = require("fs");
-const path = require("path");
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
-const uriCompents = [credentials.mongodb_protocol, "://"]
-if (credentials.mongodb_username && credentials.mongodb_password) {
-    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
-}
-uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
-const uri = encodeURI(uriCompents.join(""))
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    }
-});
 
+const path = require("path");
+
+//多语言支持
+const i18next = require('i18next');
+const Backend = require('i18next-fs-backend');
+
+const Storage = require("electron-store");
+const newStorage = new Storage();
+const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
+const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
 let shouldRefresh = true;
 const countdownFrom = 90;
@@ -49,9 +41,14 @@ document.addEventListener("DOMContentLoaded", (event) => {
 });
 
 async function fetchProducts() {
+    let client = new MongoClient(uri, {
+        serverApi: {version: ServerApiVersion.v1, strict: true, deprecationErrors: true,
+            useNewUrlParser: true, useUnifiedTopology: true}
+    });
+
     try {
         await client.connect();
-        const sessions = client.db(credentials.mongodb_db).collection("pollinglog");
+        const sessions = client.db(targetDB).collection("pollinglog");
         const query = {consumed: 0};
         const options = {'productCode': 1, 'bestbefore': 1, 'productLabel': 1};
         const cursor = sessions.find(query).sort(options);
@@ -69,7 +66,7 @@ async function fetchProducts() {
     } catch (e) {
         console.error(e)
     } finally {
-        client.close()
+        await client.close()
         let htmlContent = '';
         productsDisplay.forEach(item => {
             if (item.bestbeforeArray.length > 0 && item.LocationArray.length > 0 && item.bestbeforeArray[0]) {
@@ -147,14 +144,8 @@ window.onload = function () {
     }, 2500); // 2.5s滚动冷却时间
 };
 
-//添加多语言支持
-const i18next = require('i18next');
-const Backend = require('i18next-fs-backend');
-
-const Storage = require('electron-store');
-const newStorage = new Storage();
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_bodyContents();
 });

@@ -1,20 +1,19 @@
 const MongoClient = require('mongodb').MongoClient;
-
-const fs = require('fs')
-const path = require('path')
-const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/localsettings.json')));
 const {ServerApiVersion} = require('mongodb');
-const uri = encodeURI(credentials.mongodb_protocol + "://" + credentials.mongodb_username + ":" + credentials.mongodb_password + "@" + credentials.mongodb_server + "/?retryWrites=true&w=majority");
 
-const axios = require('axios')
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
-// const Keyboard = require('simple-keyboard').SimpleKeyboard;
+
 const Keyboard = require('simple-keyboard').default;
+const path = require('path')
+
 const Storage = require("electron-store");
 const newStorage = new Storage();
+
+const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
+const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 i18next.use(Backend).init({
-    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
+    lng: (newStorage.get('language') ? newStorage.get('language') : 'en'), backend: {loadPath: path.join(__dirname, '../i18nLocales/{{lng}}/translations.json')}
 }).then(() => {
     i18n_navbar();
     i18n_bodyContents();
@@ -116,7 +115,7 @@ async function fetchProduct(object) {
     } else {
         try {
             await sessionClient.connect();
-            const sessions = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
+            const sessions = sessionClient.db(targetDB).collection("pollinglog");
             var findingQuery = {productLabel: object['LabelId']}
             var optionQuery = {projection: {"_id": 0}}
             results.status = true;
