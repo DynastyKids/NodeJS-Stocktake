@@ -112,6 +112,9 @@ function i18n_bodyContents() {
     document.querySelectorAll(".table_action_remove").forEach(eachItem=>{
         eachItem.textContent = i18next.t("dataTables.action_remove")
     })
+    document.querySelectorAll(".table_action_revert").forEach(eachItem=>{
+        eachItem.textContent = i18next.t("dataTables.action_revert")
+    })
 }
 
 document.querySelector("#switchCheck").addEventListener("change", function(ev){
@@ -257,6 +260,49 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
     }
 })
 
+let revertModal = document.querySelector("#revertModal")
+revertModal.addEventListener("show.bs.modal", function (ev) {
+    var lableID = ev.relatedTarget.getAttribute("data-bs-itemId")
+    let hiddenInput = revertModal.querySelector("#revertLabelid")
+    hiddenInput.value = lableID
+
+    document.querySelector("#revertLocation").value = ev.relatedTarget.getAttribute("data-bs-shelf")
+    document.querySelector("#revertModalYes").disabled = false
+    document.querySelector("#revertModalYes").textContent = "Confirm"
+})
+revertModal.querySelector("#revertModalYes").addEventListener("click", async function (ev) {
+    ev.preventDefault()
+    let labelId = revertModal.querySelector("#revertLabelid").value
+    let model = bootstrap.Modal.getInstance(document.querySelector("#revertModal"));
+    let client = new MongoClient(uri, {
+        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
+
+    document.querySelector("#revertModalYes").disabled = true
+    document.querySelector("#revertModalYes").textContent = "Updating"
+    try {
+        await client.connect();
+        const session = client.db(targetDB).collection("pollinglog");
+        let result = await session.updateMany({productLabel: labelId, consumed: 1} ,
+            {$set: {consumed: 0}, $unset: {"consumedTime":""}},{upsert: false})
+        if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
+            //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
+            console.log("Successfully reverted status for: ",labelId)
+            document.querySelector("#alert_success").style.display = 'flex'
+        } else if (result.matchedCount === 0) { //未找到符合条件的数据但成功执行了
+            console.log(`Label ID: ${labelId} Not Found`)
+            document.querySelector("#alert_warning").style.display = 'flex'
+        }
+    } catch (e) {
+        document.querySelector("#alert_error").style.display = 'flex'
+        console.error(`Revert Stock Error when process: ${labelId};`,e)
+    } finally {
+        loadStockInfoToTable()
+        await client.close()
+        model.hide()
+    }
+})
+
 document.querySelector("#areloadTable").addEventListener("click",function (ev) {
     if (document.querySelector("#switchCheck").checked){
         document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
@@ -308,7 +354,8 @@ function loadStockInfoToTable(fetchAll) {
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_remove")}</a>
                     ` : `<small class="table_action_removed">${(element.consumedTime ? i18next.t("dataTables.action_removed") + element.consumedTime.split(" ")[0]: "")}</small>
-                    <a href="#" class="table_actions table_action_revert" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_addback")}</a>`)
+                    <a href="#" class="table_actions table_action_revert" data-bs-toggle="modal" data-bs-target="#revertModal" 
+                        data-bs-itemId="${element.productLabel}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_addback")}</a>`)
                 ]).draw(false);
             }
         }
