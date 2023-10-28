@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <link rel="stylesheet" href="../../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../node_modules/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="../../node_modules/simple-keyboard/build/css/index.css">
+    <title>Scanner Mode - Warehouse Electron</title>
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light" id="navbar_top">
+    <script>
+        const navbarContent = document.querySelector("#navbar_top")
+        fetch('../layouts/template_navbar.html')
+            .then(response => response.text())/**/
+            .then(data => {
+                navbarContent.innerHTML = data
+            })
+    </script>
+</nav>
+<div class="container">
+    <nav class="m-2" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../pages/index.html">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Scanner Mode</li>
+        </ol>
+    </nav>
+    <h1>Scanner Mode</h1>
+
+    <div class="container-fluid">
+        <div class="" style="display: flex; align-items: center">
+            <input type="text" id="scannerinput" class="form-control" palceholder="Scan Barcode or Type Label ID" style="padding: 5px; margin-right: 10px" autofocus>
+            <button id="submit" class="btn btn-primary" style="padding: 5px 10px; margin: 5px">Submit</button>
+        </div>
+
+        <div class="container-fluid" id="inputRespond">
+            <table class="table table-bordered table-striped" style="margin-top: 5px">
+                <tbody>
+                <tr><td class="col-title">Product</td><td><input class="form-control" value="" readonly></td></tr>
+                <tr><td class="col-title">Quantity</td><td><input class="form-control" value="" readonly></td></tr>
+                <tr><td class="col-title">Best Before</td><td><input class="form-control" value="" readonly></td></tr>
+                <tr><td class="col-title">Label ID</td><td><input class="form-control" value="" readonly></td></tr>
+                <tr><td class="col-title">Shelf Location</td><td><input id="shelflocationInput" class="form-control" value=""></td></tr>
+                <tr><td class="col-title">Actions</td><td id="actionstd"></td></tr>
+                </tbody>
+            </table>
+<!--继续开发：当用户输入一个产品编号后，开始搜索数据库，如果找到相关条目则自动填充(V5 Label起将会预填充入库，使用prefill集合，若180天内没有扫描记录则滚动清理，删除后允许按照v3常规标签扫描添加)-->
+            <div class="simple-keyboard" id="screenKeyboard" style="display: none"></div>
+        </div>
+    </div>
+    <div class="container-fluid infotext" style="position: fixed;bottom: 0">
+        <h5>Current Environment:</h5>
+        <div class="row" >
+            <div class="col-4">Node.js:<div id="node-version"></div></div>
+            <div class="col-4">Chromium:<div id="chrome-version"></div></div>
+            <div class="col-4">Electron:<div id="electron-version"></div></div>
+        </div>
+    </div>
+</div>
+<script src="../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="scanner.js"></script>
+<style>
+    button{
+        margin-left: 2px;
+        margin-right: 2px;
+    }
+</style>
+</body>
+
+</html>

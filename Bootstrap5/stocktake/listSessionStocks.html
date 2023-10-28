@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline';img-src * data:">
+    <link rel="stylesheet" href="../../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../node_modules/flatpickr/dist/flatpickr.min.css">
+    <title>Stocks by Session - Warehouse Electron</title>
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light" id="navbar_top">
+    <script>
+        const navbarContent = document.querySelector("#navbar_top")
+        fetch('../layouts/template_navbar.html')
+            .then(response => response.text())
+            .then(data => {
+                navbarContent.innerHTML = data
+            })
+    </script>
+</nav>
+<div class="container">
+    <nav class="m-2" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../pages/index.html">Home</a></li>
+            <li class="breadcrumb-item"><a href="listsession.html">Sessions</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Stocks</li>
+        </ol>
+    </nav>
+    <div class="container-fluid">
+        <h1 id="sessionTitle">Current Stocks</h1>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item"><a href="#" id="printlink">Print</a></li>
+            <li class="list-group-item" id="datasource" style="display: flex">
+                <p>Using datasource from</p>
+                <select class="form-select form-select-sm" aria-label=".form-select-sm Latest" id="sessionSelector" style="display: inline; width: 300px">
+                    <option value="latest" selected>latest</option>
+                </select>
+            </li>
+        </ul>
+        <div id="loadingStatus">
+            <span class="spinner-border" role="status" id="loadingSpinners"></span>
+            <span class="" id="loadingTableText">Loading data...</span>
+        </div>
+        <hr>
+        <table class="table">
+            <thead class="thead-light">
+            <tr>
+                <th scope="col">Lot Code</th>
+                <th scope="col">Product</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Best Before</th>
+                <th scope="col">Shelf Location</th>
+                <th scope="col">Action</th>
+            </tr>
+            </thead>
+            <tfoot>
+            <tr>
+                <th scope="col">Lot Code</th>
+                <th scope="col">Product</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Best Before</th>
+                <th scope="col">Shelf Location</th>
+                <th scope="col">Action</th>
+            </tr>
+            </tfoot>
+            <tbody id="activeTBody">
+            <tr>
+                <td colspan="5">Select a session to view available stock</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<!--Consume Modal-->
+<div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeModalLabel">Remove Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure to Remove Item:
+                <p id="iteminfo"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--  Edit Modal  -->
+<div class="modal fade" id="stockEditModal" tabindex="-1" aria-labelledby="stockEditModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stockEditModalLabel">Edit Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="col-form-label">Lot Code:</label>
+                    <p id="edit-lotcode"></p>
+                    <label class="col-form-label">Product Info:</label>
+                    <p id="edit-product"></p>
+                </div>
+                <form>
+                    <div class="mb-3">
+                        <label for="message-text" class="col-form-label">Message:</label>
+                        <textarea class="form-control" id="message-text"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Send message</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../node_modules/flatpickr/dist/flatpickr.min.js"></script>
+<script src="listSessionStocks.js"></script>
+</body>
+</html>

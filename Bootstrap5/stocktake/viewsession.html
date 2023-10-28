@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline';">
+    <link rel="stylesheet" href="../../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../node_modules/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css">
+    <title>Session Viewer - Warehouse Electron</title>
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light" id="navbar_top">
+    <script>
+        const navbarContent = document.querySelector("#navbar_top")
+        fetch('../layouts/template_navbar.html')
+            .then(response => response.text())
+            .then(data => {
+                navbarContent.innerHTML = data
+            })
+    </script>
+</nav>
+<div class="container">
+    <nav class="m-2" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../pages/index.html">Home</a></li>
+            <li class="breadcrumb-item"><a href="listsession.html">Sessions</a></li>
+            <li class="breadcrumb-item active" aria-current="page">View Session</li>
+        </ol>
+    </nav>
+    <div class="container-fluid">
+        <h1 id="sessionTitle">Loading Session</h1>
+        <h4>Actions</h4>
+        <ul id="actionList">
+            <li><p id="toggleRefreshText">Automatic refresh in: X s</p></li>
+            <li><a href="#" id="toggleRefresh" class="">Pause Timer</a></li>
+            <li><a href="#">Add Item</a></li>
+        </ul>
+        <div id="loadingStatus">
+            <span class="spinner-border" role="status" id="loadingSpinners"></span>
+            <span class="" id="loadingTableText">Loading data...</span>
+        </div>
+        <hr>
+        <table class="table" id="viewSessionTable">
+            <thead class="thead-light">
+            <tr>
+                <th>Product</th>
+                <th>Lot Code</th>
+                <th>Location</th>
+                <th>Quantity / Unit</th>
+                <th>Expire Date</th>
+                <th>Used</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tfoot>
+            <tr>
+                <th>Product</th>
+                <th>Lot Code</th>
+                <th>Location</th>
+                <th>Quantity / Unit</th>
+                <th>Expire Date</th>
+                <th>Used</th>
+                <th>Action</th>
+            </tr>
+            </tfoot>
+            <tbody id="activeTBody">
+            </tbody>
+        </table>
+    </div>
+    <hr>
+    <h4>Server Info</h4>
+    <table class="table bor" style="font-size: small">
+        <tr>
+            <th>Server Address</th>
+            <th>Server Port</th>
+            <th colspan="2">Session Time</th>
+        </tr>
+        <tr>
+            <td id="sessionConfigAddress"></td>
+            <td id="sessionConfigPort"></td>
+            <td colspan="2" id="sessionTimeText"></td>
+        </tr>
+    </table>
+</div>
+
+<script src="../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../node_modules/flatpickr/dist/flatpickr.min.js"></script>
+<script> window.$ = window.jQuery = require('jquery');</script>
+<script src="../../node_modules/jquery/dist/jquery.min.js"></script>
+<script src="viewsession.js"></script>
+<script> if (window.module) module = window.module</script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src * data:">
+    <link rel="stylesheet" href="../../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../node_modules/flatpickr/dist/flatpickr.min.css">
+    <title>New Product - Warehouse Electron</title>
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light" id="navbar_top">
+    <script>
+        const navbarContent = document.querySelector("#navbar_top")
+        fetch('../layouts/template_navbar.html')
+            .then(response => response.text())
+            .then(data => {
+                navbarContent.innerHTML = data
+            })
+    </script>
+</nav>
+<div class="container">
+    <nav class="m-2" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="../pages/index.html">Home</a></li>
+            <li class="breadcrumb-item"><a href="listProduct.html">Products</a></li>
+            <li class="breadcrumb-item active" aria-current="page">New product</li>
+        </ol>
+    </nav>
+    <div class="container-fluid">
+        <h1 class="m-2" id="sessionTitle">Add a Product</h1>
+        <div class="mt-2 mb-5">
+            <form id="newProductForm">
+                <div class="form-group row mb-2">
+                    <div class="col-6 mb-2">
+                        <label for="inputCode" class="col-form-label">Product Code</label>
+                        <input type="text" class="form-control plaintext" id="inputCode" value="">
+                    </div>
+                    <div class="col-6 mb-2">
+                        <label for="inputLabelName" class="col-form-label">Product Label Name</label>
+                        <input type="text" class="form-control" id="inputLabelName" value="">
+                    </div>
+                    <div class="col-12 mb-2">
+                        <label for="inputDescription" class="col-form-label">Product Description</label>
+                        <input type="text" class="form-control" id="inputDescription">
+                    </div>
+                    <div class="col-4 mb-2">
+                        <label for="inputQtyPallet" class="col-form-label">Quantity per pallet</label>
+                        <input type="number" value="" class="form-control" id="inputQtyPallet">
+                    </div>
+                    <div class="col-4 mb-2">
+                        <label for="inputQtyCarton" class="col-form-label">Quantity per carton</label>
+                        <input type="number" value="" class="form-control" id="inputQtyCarton">
+                    </div>
+                    <div class="col-4 mb-2">
+                        <label for="inputUnit" class="col-form-label">Product Unit</label>
+                        <select class="form-select" id="inputUnit" aria-label="Default select example">
+                            <option value=""></option>
+                            <option value=""></option>
+                            <option value=""></option>
+                            <option value=""></option>
+                            <option value=""></option>
+                            <option value=""></option>
+                            <option value=""></option>
+                            <option value=""></option><option value=""></option>
+                        </select>
+                    </div>
+                    <div class="col-3 mb-2">
+                        <label for="inputWeight" class="col-form-label">Product weight</label>
+                        <input type="number" value="" class="form-control" id="inputWeight">
+                    </div>
+                    <div class="col-3 mb-2">
+                        <label for="inputWeight" class="col-form-label">Length</label>
+                        <input type="number" value="" min=0 class="form-control" id="inputLength">
+                    </div>
+                    <div class="col-3 mb-2">
+                        <label for="inputWidth" class="col-form-label">Width</label>
+                        <input type="number" value="" class="form-control" id="inputWidth">
+                    </div>
+                    <div class="col-3 mb-2">
+                        <label for="inputHeight" class="col-form-label">Height</label>
+                        <input type="number" value="" class="form-control" id="inputHeight">
+                    </div>
+                    <div class="col-4 mb-2">
+                        <label for="inputVendorCode" class="col-form-label">Vendor Code</label>
+                        <input type="text" value="" class="form-control" id="inputVendorCode">
+                    </div>
+                    <div class="col-3 mb-2">
+                        <label for="inputExpire" class="form-check-label">Product has expire date?</label>
+                        <select class="form-select" id="inputExpire" aria-label="Default select example">
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+                </div>
+                <input type="submit" id="btnSubmit" value="Submit" class="btn btn-primary">
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../node_modules/flatpickr/dist/flatpickr.min.js"></script>
+<script src="addProduct.js"></script>
+</body>
+</html>

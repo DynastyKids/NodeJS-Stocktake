@@ -32,12 +32,13 @@
                     <th class="d-inline-block d-sm-table-cell">Quantity</th>
                     <th class="d-inline-block d-sm-table-cell">Unit</th>
                     <th class="d-inline-block d-sm-table-cell">Expire date</th>
-                    <th class="d-none d-sm-table-cell">Copies</th>
+                    <th class="d-inline-block d-sm-table-cell">Copies</th>
                     <th class="d-inline-block d-sm-table-cell"></th>
                 </tr></thead>
                 <tbody>
                 </tbody>
             </table>
+            <hr>
             <div style="justify-content: space-between; display: flex">
                 <span>
                     <button class="btn btn-primary" id="table_submit">Submit</button>
@@ -69,15 +70,15 @@
         </div>
         <datalist id="productSuggestions"></datalist>
         <datalist id="unitSuggestions">
-            <option value="bag"></option>
-            <option value="bottle"></option>
-            <option value="box"></option>
-            <option value="carton"></option>
-            <option value="piece"></option>
-            <option value="roll"></option>
-            <option value="unit"></option>
-            <option value="pallet"></option>
-            <option value="skid"></option>
+            <option value="bag">Bag</option>
+            <option value="btl">Bottle</option>
+            <option value="box">Box</option>
+            <option value="ctn">Carton</option>
+            <option value="pc">Piece</option>
+            <option value="roll">Roll</option>
+            <option value="unit">Unit</option>
+            <option value="plt">Pallet</option>
+            <option value="skid">Skid</option>
         </datalist>
     </div>
 </div>
@@ -102,7 +103,7 @@
                 if(Array.isArray(response.data.data)){
                     productsData = response.data.data
                     response.data.data.forEach(eachItem =>{
-                        $("#productSuggestions").append(`<option value="${eachItem.productCode}">${eachItem.description}</option>`);
+                        $("#productSuggestions").append(`<option value="${eachItem.productCode}" label="${eachItem.description}"></option>`);
                     });
                     (new bootstrap.Toast(toast)).show();
                 }
@@ -132,7 +133,7 @@
                 <td class="d-inline-block d-sm-table-cell">
                     <input type="date" class="form-control">
                 </td>
-                <td class="d-none d-sm-table-cell">
+                <td class="d-inline-block d-sm-table-cell">
                     <input type="number" class="form-control" min="1" step="1" value="1">
                 </td>
                 <td class="d-inline-block d-sm-table-cell">
@@ -178,74 +179,73 @@
 
         for (let i = 0; i < productLists.length; i++) {
             let rowInput = productLists[i].querySelectorAll("input")
-            for (let j = 0; j < rowInput.length; j++) {
-                console.log(rowInput[j].value)
-            }
-
-            var qrCodeInfos={
-                purchaseNo:"",
-                productCode:"",
-                productName:"",
-                copies:1,
-                quantity:1,
-                unit:"",
-                bestbefore:"",
-                labelId:(new Date()).toISOString().replaceAll("-","").split("T")[0]+getRandomXHexdigits(7)
-            }
-            // 验证输入的productName是否在库中
-            qrCodeInfos.productName = rowInput[0].value
-            console.log(productsData)
-            for (let j = 0; j < productsData.length; j++) {
-                if(productsData[j].productCode == rowInput[0].value){
-                    console.log(productsData[j])
-                    qrCodeInfos.productCode = productsData[j].productCode
-                    qrCodeInfos.productName = productsData[j].labelname
-                    break;
+            for (let copy = 0; copy < rowInput[4]; copy++) { // Looping when require multiple copies
+                var qrCodeInfos = {
+                    purchaseNo: "",
+                    productCode: "",
+                    productName: "",
+                    copies: 1,
+                    quantity: 1,
+                    unit: "",
+                    bestbefore: "",
+                    labelId: (new Date()).toISOString().replaceAll("-", "").split("T")[0] + getRandomXHexdigits(7)
                 }
-            }
+                // 验证输入的productName是否在库中
+                qrCodeInfos.productName = rowInput[0].value
+                console.log(productsData)
+                for (let j = 0; j < productsData.length; j++) {
+                    if (productsData[j].productCode === rowInput[0].value) {
+                        console.log(productsData[j])
+                        qrCodeInfos.productCode = productsData[j].productCode
+                        qrCodeInfos.productName = productsData[j].labelname
+                        break;
+                    }
+                }
 
-            qrCodeInfos.quantity = rowInput[1].value // Quantity
-            qrCodeInfos.unit = rowInput[2].value // Unit
-            qrCodeInfos.bestbefore = rowInput[3].value
-            qrCodeInfos.copies = rowInput[4].value
+                qrCodeInfos.quantity = rowInput[1].value // Quantity
+                qrCodeInfos.unit = rowInput[2].value // Unit
+                qrCodeInfos.bestbefore = rowInput[3].value
+                qrCodeInfos.purchaseNo = document.querySelector("#input_purchaseorder").value ? document.querySelector("#input_purchaseorder").value : ""
 
-            qrCodeInfos.purchaseNo = document.querySelector("#input_purchaseorder").value ? document.querySelector("#input_purchaseorder").value : ""
+                var initTextSize = 125
+                var vMargin = 50
+                var margin = 10
+                var lineHeight = doc.internal.pageSize.height / 4;
 
-            var initTextSize = 125
-            var vMargin = 50
-            var margin = 10
-            var lineHeight = doc.internal.pageSize.height / 4;
-
-            doc.setFontSize(initTextSize).setFont(undefined, 'normal')
-            while (doc.getTextDimensions(qrCodeInfos.productName).w > doc.internal.pageSize.getWidth() - 25) {
-                initTextSize -= 5;
                 doc.setFontSize(initTextSize).setFont(undefined, 'normal')
+                while (doc.getTextDimensions(qrCodeInfos.productName).w > doc.internal.pageSize.getWidth() - 25) {
+                    initTextSize -= 5;
+                    doc.setFontSize(initTextSize).setFont(undefined, 'normal')
+                }
+                doc.text(qrCodeInfos.productName, doc.internal.pageSize.getWidth() / 2, vMargin, {
+                    lineHeightFactor: 0.8,
+                    align: 'center'
+                });
+                vMargin = vMargin + lineHeight
+
+                doc.setFontSize(105).setFont(undefined, 'normal');
+                doc.text(qrCodeInfos.quantity + "  " + qrCodeInfos.unit, 12, vMargin, {lineHeightFactor: 0.8});
+                vMargin = vMargin + lineHeight;
+
+                doc.setFontSize(95).setFont(undefined, 'normal')
+                doc.text(qrCodeInfos.bestbefore, margin, vMargin + 25, {lineHeightFactor: 0.8});
+                vMargin = vMargin + lineHeight;
+
+                doc.addImage(qrCodeGenerateV3(qrCodeInfos.purchaseNo, qrCodeInfos.productCode, qrCodeInfos.productName, 1,
+                        qrCodeInfos.quantity, qrCodeInfos.unit, qrCodeInfos.bestbefore, qrCodeInfos.labelId)
+                    , "PNG", doc.internal.pageSize.getWidth() - 110, doc.internal.pageSize.getHeight() - 110, 140, 140)
+
+                doc.setFontSize(10).setFont(undefined, 'normal')
+                let bottomVerfiyText = ["V3", qrCodeInfos.labelId, qrCodeInfos.purchaseNo, qrCodeInfos.productCode,
+                    qrCodeInfos.quantity + qrCodeInfos.unit, (qrCodeInfos.bestbefore ? "Exp:" + qrCodeInfos.bestbefore : "*")]
+                doc.text(bottomVerfiyText.toString(), margin, doc.internal.pageSize.getHeight() - 10, {lineHeightFactor: 0.6});
+                doc.addPage();
             }
-            doc.text(qrCodeInfos.productName, doc.internal.pageSize.getWidth() / 2, vMargin, { lineHeightFactor: 0.8, align: 'center' });
-            vMargin = vMargin + lineHeight
-
-            doc.setFontSize(105).setFont(undefined, 'normal');
-            doc.text(qrCodeInfos.quantity + "  " + qrCodeInfos.unit, 12, vMargin, { lineHeightFactor: 0.8 });
-            vMargin = vMargin + lineHeight;
-
-            doc.setFontSize(95).setFont(undefined, 'normal')
-            doc.text(qrCodeInfos.bestbefore, margin, vMargin+25, { lineHeightFactor: 0.8 });
-            vMargin = vMargin + lineHeight;
-
-            doc.addImage(qrCodeGenerateV3(qrCodeInfos.purchaseNo, qrCodeInfos.productCode, qrCodeInfos.productName,
-                qrCodeInfos.copies, qrCodeInfos.quantity, qrCodeInfos.unit, qrCodeInfos.bestbefore, qrCodeInfos.labelId)
-                , "PNG", doc.internal.pageSize.getWidth() - 110, doc.internal.pageSize.getHeight() - 110, 140, 140)
-
-            doc.setFontSize(10).setFont(undefined, 'normal')
-            let bottomVerfiyText = ["V3",qrCodeInfos.labelId,qrCodeInfos.purchaseNo, qrCodeInfos.productCode,
-                qrCodeInfos.quantity+qrCodeInfos.unit, (qrCodeInfos.bestbefore ? "Exp:"+qrCodeInfos.bestbefore : "*")]
-            doc.text(bottomVerfiyText.toString(), margin, doc.internal.pageSize.getHeight() - 10, { lineHeightFactor: 0.6 });
-            doc.addPage();
         }
 
         doc.deletePage(doc.internal.getNumberOfPages()); // Delete last empty page
         doc.setProperties({ title: `PrintoutLabel${new Date().toJSON().slice(0,19).replaceAll("-","").replaceAll(":","").replaceAll("T","")}` });
-        doc.save(`PrintoutLabel${new Date().toJSON().slice(0,19).replaceAll("-","").replaceAll(":","").replaceAll("T","")}.pdf`);
+        doc.output('dataurlnewwindow'); // Using non-HTTPs link, only available to pop in new window
     })
 
     function getRandomXHexdigits(bit){

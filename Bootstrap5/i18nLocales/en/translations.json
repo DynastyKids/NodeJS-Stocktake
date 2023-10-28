@@ -1,0 +1,165 @@
+{
+  "navbar": {
+    "home": "Home",
+    "navitems": [
+      "<i class=\"ti ti-home\"></i> Home",
+      "<i class=\"ti ti-users-group\"></i> Sessions",
+      "<i class=\"ti ti-archive\"></i> Products",
+      "<i class=\"ti ti-settings\"></i> Settings",
+      "<i class=\"ti ti-language\"></i> Language",
+      "<i class=\"ti ti-scan\"></i> Scanner Mode",
+      "<i class=\"ti ti-cardboards\"></i> New View"],
+    "sessions_navitems": ["New stock-take session", "Show All Sessions"],
+    "products_navitems": [ "Show All Products", "Add Product", "Show Current Stocks", "Show All Stocks"]
+  },
+  "general": {
+    "loadingTableText": "Loading data...",
+    "print": "Print"
+  },
+  "pageTitle": {
+    "note": "Using file name as title identifier",
+    "index": "Homepage",
+    "settings": "Settings"
+  },
+  "tables": {
+    "stocktable_sessionid": "Session ID",
+    "stocktable_startTime": "Start Time",
+    "stocktable_endTime": "End Time",
+    "stocktable_action": "Actions",
+    "stocktable_setupTime": "Setup Time",
+    "btn_view": "View",
+    "btn_edit": "Edit",
+    "btn_delete": "Delete",
+    "btn_consume": "Consume"
+  },
+  "dataTables": {
+    "note": "This section is for DataTables.js only, table head/foot needs to be separate within page section",
+    "table_search": "Search: ",
+    "table_pagesize": ["Show "," entries per page"],
+    "table_entrydesc": ["Showing "," to "," of "," entries"],
+    "table_action": ["Previous Page","Next Page"],
+    "action_edit": "Edit",
+    "action_remove": "Remove",
+    "action_historyitem": "Past Record",
+    "action_removed": "Removed on",
+    "action_addback": "Add Back",
+    "action_revert": "Revert"
+  },
+  "index": {
+    "pagetitle": "Homepage",
+    "label_hometitle": "Homepage",
+    "h4label_stocktakeaction": "Stock-take Actions",
+    "link_allsessions": "Show All Sessions",
+    "session_stocks": "Session Stocks",
+    "new_stocktake": "New Stock-take Session",
+    "h4label_stocksaction": "Stock Actions",
+    "showstocksoverview": "Show Stocks Overview",
+    "showmovementlog": "Show Movement Logs",
+    "addmovementlog": "Add Movement log",
+    "nextpallet2unwrap": "Next Dispatch Pallet",
+    "h4label_productaction": "Product Actions",
+    "showallproducts": "Show All Products",
+    "addproduct": "Add Product",
+    "h3label_currentactivestocktake": "Current Active Stock-taking sessions",
+    "h3label_environment": "System Environment Info:",
+    "addMovementLogModal": {
+      "title": "Add Movement Log",
+      "description": "Input a shelf or a product Label ID to select a product",
+      "labels": ["Shelf Location","Label ID","Action","New Location","Product Name", "Quantity", "Expire Date"],
+      "hinttext_shelf": "Input Item location on shelf",
+      "hinttext_labelid": "Input a product labelID to find specific LOT",
+      "selections": ["Remove","Moved to another shelf"],
+      "subtitle": "Fetched Data",
+      "btn_close": "Close",
+      "btn_submit": "Submit"
+    }
+  },
+  "session": {
+    "pagetitle": "Sessions"
+  },
+  "newsession": {
+    "pagetitle": "New Session",
+    "sessioncode": "Session Code",
+    "starttime": "Start Time",
+    "endtime": "End Time",
+    "submitbtn": "Submit",
+    "infotext": "* Session Code are available in numbers from 0-9 and characters A-F"
+  },
+  "listsession": {
+    "pagetitle": "Session List",
+    "tablehead_sessionid": "Session ID",
+    "tablehead_starttime": "Start Time",
+    "tablehead_endtime": "End Time",
+    "tablehead_setuptime": "Setup Time"
+  },
+  "listsessionstock": {
+    "pagetitle": "Session Stocks",
+    "selectlabeltext": "Using datasource from",
+    "table_titles": [ "Lot Code","Product", "Quantity", "Best Before", "Shelf Location", "Action"]
+  },
+  "viewsession": {
+    "pagetitle": "Session Viewer",
+    "h1title": "Session",
+    "autorefresh": "Auto refresh in ",
+    "table_titles": [ "Product","Lot Code", "Location", "Quantity / Unit", "Expire Date", "Removed", "Action"]
+  },
+  "setting": {
+    "pagetitle": "Settings",
+    "dbform_labels": ["URI: ", "Database Name: "],
+    "placeholderprotocol": "Please select a connection protocol",
+    "titleaboutdb": "About Database",
+    "titlescheme": "About Connection Scheme",
+    "titleenvironment": "Current Environment",
+    "textaboutdb": "MongoDB is a cross-platform document-oritented database System. Require to be deployed on Local computer (Installer available from MongoDB) or using Cloud service (e.g. Mongo Atlas)",
+    "textscheme": "mongodb: Standard Connection String Format. The standard format of the MongoDB connection URI is used to connect to a MongoDB deployment: standalone, replica set, or a sharded cluster.\n\nmongodb+srv: DNS Seed List Connection Format. The +srv indicates to the client that the hostname that follows corresponds to a DNS SRV record.\n\n"
+  },
+  "listproducts": {
+    "pagetitle": "Products",
+    "h4title_action": "Actions",
+    "a_checkstockitems": ["Check Stock Items","Add a product", "Reload Table"],
+    "table_head": ["Product Code", "Product Name", "Qty Per Box", "Qty Per Pallet", "Best Before", "Action"]
+  },
+  "addproducts": {
+    "pagetitle": "Add a product",
+    "inputlabel": ["Product Code","Product Label Name","Product Description","Quantity per pallet", "Quantity per carton","Unit","Unit Weight (g)","Length (cm)","Width (cm)","Height (cm)","Vendor Code","With Expire date"],
+    "inputplaceholder": [
+      "* Product code must be unique in database",
+      "* Label name to be used when printout labels.",
+      "Optional: description text for product",
+      "Optional: quantity number per pallet",
+      "Optional: quantity number per box",
+      "Optional",
+      "Optional",
+      "Optional",
+      "Optional",
+      "Optional"],
+    "submitbtn": "Submit",
+    "unitSelections": [["bottle","Bottle"],["bag", "Bag"],["box", "Box"],["carton","Carton"], ["crate", "Crate"], ["each", "Each"], ["piece", "Piece"],["unit", "Unit"]],
+    "expireSelection": [["0", "No"],["1", "Yes"]]
+  },
+  "liststocks": {
+    "pagetitle": "Current Stocks",
+    "reloadTableLink": "Reload Table Now",
+    "refreshText": ["Automatic Refresh in: ","s"],
+    "apauseTimer": "Pause Timer",
+    "labelForFilterdate": "Filter records after Date: ",
+    "switchCheck": ["Showing all Stocks, including removed items.","Showing Current Stocks only"],
+    "table_head": ["Product","Quantity","Best Before","Location","Label ID","Action"],
+    "table_actionRemove": "Remove",
+    "flashtext_success": "Successfully updated the item.",
+    "flashtext_notfound": "Cannot find the item.",
+    "flashtext_failed": "Failed to update the item."
+  },
+  "listnext3": {
+    "pagetitle": "Current Stocks",
+    "refreshText": ["Automatic Refresh in: ","s"],
+    "table_head": ["Product","1st","2nd","3rd","Location / Date"]
+  },
+  "scanner": {
+    "pagetitle": "Scanner Mode",
+    "inputplaceholder": "Use scanner or manual input",
+    "submitbtn": "Submit",
+    "resultTableTitle": ["Product","Quantity","Best Before","Label ID","Shelf Location", "Actions"],
+    "inputPlaceholder": ["Use scanner to scan the QR Code", "","","","","Input the shelf location with screen keyboard below"]
+  }
+}

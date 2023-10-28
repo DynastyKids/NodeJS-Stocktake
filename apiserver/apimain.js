@@ -1,7 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const expressApp = express();
-const port = 3000;
 const router = express.Router();
 router.use(bodyParser.urlencoded({extended: true}));
 router.use(bodyParser.json());
@@ -11,24 +10,14 @@ const swaggerDocument = require("./swagger.json");
 
 const MongoClient = require("mongodb").MongoClient;
 const {ServerApiVersion} = require("mongodb");
-// const credentials = JSON.parse(require("../credentials.js" ))
-const fs = require("fs");
-const path = require("path");
-const credentials = JSON.parse(
-    fs.readFileSync(path.join(__dirname, "../config/localsettings.json"))
-);
 
 const cors=require("cors")
 const moment = require("moment-timezone");
-const {session} = require("electron");
-const {result} = require("lodash");
 
-const uriCompents = [credentials.mongodb_protocol, "://"]
-if (credentials.mongodb_username && credentials.mongodb_password) {
-    uriCompents.push(`${credentials.mongodb_username}:${credentials.mongodb_password}@`);
-}
-uriCompents.push(`${credentials.mongodb_server}/?retryWrites=true&w=majority`)
-const uri = encodeURI(uriCompents.join(""))
+const Storage = require("electron-store");
+const newStorage = new Storage();
+const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
+const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
 let sessionClient = new MongoClient(uri, {
     serverApi: {
@@ -59,7 +48,7 @@ router.get("/v1/sessions", async (req, res) => {
         });
         let options = { sort: {"startDate" : 1},  projection: {"_id" : 0} };
         await dbclient.connect();
-        let session = dbclient.db(credentials.mongodb_db).collection("pollingsession");
+        let session = dbclient.db(targetDB).collection("pollingsession");
         let resultArray = await session.find({}, options).toArray();
         sessionResults.acknowledged = true
         sessionResults.data = resultArray
@@ -107,7 +96,7 @@ router.post("/v1/sessions/join", async (req, res) => {
     if(req.body && req.body.session){
         const sessionCode = req.body.session;
         await dbclient.connect();
-        const sessions = dbclient.db(credentials.mongodb_db).collection("pollingsession");
+        const sessions = dbclient.db(targetDB).collection("pollingsession");
         let options = { sort: {"startDate" : 1},  projection: {"_id" : 0} };
         try{
             let result = await sessions.find({session: sessionCode}, options).toArray()
@@ -152,7 +141,7 @@ router.post("/v1/sessions/add",async (req, res) => {
 
     const sessionCode = req.body.session;
     await dbclient.connect();
-    const session = dbclient.db(credentials.mongodb_db).collection("pollingsession");
+    const session = dbclient.db(targetDB).collection("pollingsession");
     try {
         while (true){
             var purposedSessionCode = randomHexGenerator().substring(1)
@@ -203,7 +192,7 @@ router.get("/v1/session/logs",async (req, res) =>{
         console.log(sessionCode)
         try {
             await dbclient.connect()
-            const session = dbclient.db(credentials.mongodb_db).collection("pollinglog");
+            const session = dbclient.db(targetDB).collection("pollinglog");
             // let options = { sort: {"productCode": 1,"productLabel" : 1},  projection: {"_id" : 0} };
             let options = { sort: {"productLabel" : 1},  projection: {"_id" : 0} };
             let result = await session.find({session: sessionCode}, options).toArray()
@@ -268,7 +257,7 @@ router.post("/v1/session/addlog", async (req, res) => {
     if (req.body.item){
         try{
             await dbclient.connect();
-            let session = dbclient.db(credentials.mongodb_db).collection("pollinglog");
+            let session = dbclient.db(targetDB).collection("pollinglog");
                 const filter = {
                     session: req.body.session,
                     productCode: req.body.item.productCode,
@@ -312,7 +301,7 @@ router.get("/v1/products", async (req, res) => {
 
     try{
         await dbclient.connect()
-        let session = dbclient.db(credentials.mongodb_db).collection("products");
+        let session = dbclient.db(targetDB).collection("products");
         let options = { sort: {"productLabel" : 1},  projection: {"_id" : 0} };
         let result = await session.find({}, options).toArray()
         response.data = result
@@ -354,7 +343,7 @@ router.post("/v1/products", async (req, res) =>{
         },
     });
     try {
-        let session = dbclient.db(credentials.mongodb_db).collection("products");
+        let session = dbclient.db(targetDB).collection("products");
         await dbclient.connect()
 
         if(req.body && req.body.action && req.body.item){
@@ -411,7 +400,7 @@ router.get("/v1/stocks", async (req, res) => {
     });
     try {
         await dbclient.connect()
-        const session = dbclient.db(credentials.mongodb_db).collection("pollinglog");
+        const session = dbclient.db(targetDB).collection("pollinglog");
         const options = {$sort: {productCode: 1, bestbefore: -1, productLabel: -1}, projection: {"_id" : 0}}
         let result = await session.find({}, options).toArray()
         response.data = result
@@ -542,7 +531,7 @@ router.post("/v1/stocks", async (req, res)=>{
 
             try {
                 await dbclient.connect()
-                const session = dbclient.db(credentials.mongodb_db).collection("pollinglog");
+                const session = dbclient.db(targetDB).collection("pollinglog");
 
                 let result = await session.updateOne(filter, updateObject, options)
                 if (result.acknowledged){
@@ -634,7 +623,7 @@ function createLogObject(sessioncode, iteminfo) {
 //     let returnResult = {acknowledged: false}
 //     try {
 //         await sessionClient.connect()
-//         const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog")
+//         const session = sessionClient.db(targetDB).collection("pollinglog")
 //         var result = await session.updateMany({
 //             productLabel: labelId,
 //             consumed: 0
@@ -661,7 +650,7 @@ router.get("/v1/stocks/get", async (req, res) => {
     let productLabel = req.query.label
     let response = {acknowledged: false, results: [], info: null}
     await sessionClient.connect()
-    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
+    const sessions = sessionClient.db(targetDB).collection("pollinglog");
 
     try {
         let findingQuery = {}
@@ -693,7 +682,7 @@ router.post("/v1/stocks/get", async (req, res) => {
     const contents = req.body
     let response = {acknowledged: false, results: [], info: null}
     await sessionClient.connect()
-    const sessions = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
+    const sessions = sessionClient.db(targetDB).collection("pollinglog");
     const queryOptions = {projection: {"_id":0}}
     let result;
     let findingQuery = {}
@@ -786,7 +775,7 @@ async function findAndUpdateLogs(findCondition, updateQuery) {
     let returnResult = {}
     try {
         await sessionClient.connect()
-        const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
+        const session = sessionClient.db(targetDB).collection("pollinglog");
         var result = await session.updateMany(findCondition, {$set: updateQuery}, {upsert: false})
         if (result !== null) {
             returnResult = result
@@ -808,7 +797,7 @@ module.exports = router;
 async function insertOneToLog(insertData) {
     try {
         await sessionClient.connect();
-        const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog");
+        const session = sessionClient.db(targetDB).collection("pollinglog");
         var result = await session.findOne({
             session: insertData.session,
             productCode: insertData.productCode,
@@ -831,7 +820,7 @@ async function insertOneToLog(insertData) {
 async function findLastPollionglog(labelId) {
     try {
         await sessionClient.connect()
-        const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog")
+        const session = sessionClient.db(targetDB).collection("pollinglog")
         const projection = {
             _id: 0,
             session: 1,
@@ -865,7 +854,7 @@ async function insertOneLot(productInformationObject) {
     try {
         if (productInformationObject.hasOwnProperty("productCode") && productInformationObject.hasOwnProperty("quantity") && productInformationObject.hasOwnProperty("quantityUnit") && productInformationObject.hasOwnProperty("shelfLocation") && productInformationObject.hasOwnProperty("productName") && productInformationObject.hasOwnProperty("productLabel")) {
             await sessionClient.connect()
-            const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog")
+            const session = sessionClient.db(targetDB).collection("pollinglog")
             const result = await session.insertOne(productInformationObject)
             returnResult.acknowledged = true
         }
@@ -882,7 +871,7 @@ async function updateOneLotByLabel(productLabelId, updateinfoObject) {
     let returnResult = {acknowledged: false}
     try {
         await sessionClient.connect()
-        const session = sessionClient.db(credentials.mongodb_db).collection("pollinglog")
+        const session = sessionClient.db(targetDB).collection("pollinglog")
         const result = await session.updateOne({productLabel: productLabelId}, {$set: updateObject}) //更新信息后也更新最后记录时间
         if (result.matchedCount === result.modifiedCount, result.modifiedCount > 0) {
             returnResult.acknowledged = true
