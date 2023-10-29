@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Label Generator - Stock-take Electron</title>
     <link href="/library/bootstrap.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/library/tabler/tabler-icons.min.css">
 </head>
 <body>
 <div class="container">
@@ -38,34 +38,37 @@
                 <tbody>
                 </tbody>
             </table>
+            <div class="form-group form-check">
+                <input type="checkbox" class="form-check-input" id="preloadCheckbox" checked>
+                <label class="form-check-label" for="preloadCheckbox">Pre-load data to Database</label>
+            </div>
             <hr>
             <div style="justify-content: space-between; display: flex">
                 <span>
                     <button class="btn btn-primary" id="table_submit">Submit</button>
                     <button class="btn btn-danger" id="table_reset">Reset Table</button>
+                    <a href="#" class="btn btn-info" id="downloadPDF" style="display: none;">Download PDF</a>
                 </span>
                 <span style="margin-right: 0;">
-                    <button class="btn btn-info" id="table_addRow" style="align-self: end"><i class="fa-solid fa-plus"></i></button>
+                    <button class="btn btn-info" id="table_addRow" style="align-self: end">
+                        <i class="ti ti-plus"></i>
+                    </button>
                 </span>
             </div>
             <div id="optionalSection" class="container-fluid">
                 <hr>
                 <h5>Optional</h5>
                 <div class="row mb-3">
-                    <div  class="col-sm-3 col-6">
-                        <label for="fileinput_lotfile">LOT File</label>
-                        <input type="file" id="fileinput_lotfile" class="form-control" placeholder="LOT File">
-                    </div>
-                    <div  class="col-sm-3 col-6">
-                        <label for="fileinput_packaging">Packaging File</label>
-                        <input type="file" id="fileinput_packaging" class="form-control" placeholder="Packaging List">
-                    </div>
-                    <div class="col-sm-5 col-10">
+<!--                    <div  class="col-sm-3 col-6">-->
+<!--                        <label for="fileinput_packaging">Manifest File</label>-->
+<!--                        <input type="file" id="fileinput_manifest" class="form-control">-->
+<!--                    </div>-->
+                    <div class="col-sm-4 col-12">
                         <label>Purchase Order No.</label>
                         <input type="text" class="form-control" placeholder="" id="input_purchaseorder">
                     </div>
                 </div>
-                <button class="btn btn-secondary" id="file_load">Load File</button>
+<!--                <button class="btn btn-secondary" id="file_load">Load File</button>-->
             </div>
         </div>
         <datalist id="productSuggestions"></datalist>
@@ -82,194 +85,16 @@
         </datalist>
     </div>
 </div>
+<script src="navbar.js"></script>
 <script src="/library/jquery-3.7.1.min.js"></script>
 <script src="/library/bootstrap.bundle.min.js"></script>
 <script src="/library/axios.min.js"></script>
 <script src="/library/jspdf.umd.min.js"></script> <!--用于生成PDF，从ChromeEXT项目引入-->
 <script src="/library/qrious.min.js"></script>
 <!--JS.PDF用于生成PDF文件，而PDF.js用于读取PDF文件-->
-<script src="navbar.js"></script>
-<script>
-    let rowNumber = 1
-    let productsData=[] //在生成Label时候也可以使用
-    document.addEventListener("DOMContentLoaded",function (ev){
-        var toast = document.querySelector("#toastDiv")
-        axios.get('/api/v1/products', true)
-            .then(function (response) {
-                document.querySelector("#toastDiv .toast-body").innerText = "Product list has fetched successfully"
-                document.querySelector("#toastDiv").classList.add("bg-success");
-                document.querySelector("#toastDiv").classList.remove("bg-warning");
-                console.log(response.data);
-                if(Array.isArray(response.data.data)){
-                    productsData = response.data.data
-                    response.data.data.forEach(eachItem =>{
-                        $("#productSuggestions").append(`<option value="${eachItem.productCode}" label="${eachItem.description}"></option>`);
-                    });
-                    (new bootstrap.Toast(toast)).show();
-                }
-            })
-            .catch(function (response) {
-                document.querySelector("#toastDiv .toast-body").innerText = "There are some problem encountered when fetching product lists"
-                document.querySelector("#toastDiv").classList.add("bg-warning");
-                document.querySelector("#toastDiv").classList.remove("bg-success");
-                (new bootstrap.Toast(toast)).show();
-                console.error(response);
-            })
-    });
 
-    document.querySelector("#table_addRow").addEventListener("click",function (ev){
-        var newRow = `
-            <tr class="rowRecords">
-                <td class="rowid d-none d-sm-table-cell">${rowNumber}</td>
-                <td class="d-inline-block d-sm-table-cell">
-                    <input type="text" list="productSuggestions" class="form-control" placeholder="Select / Enter a product name">
-                </td>
-                <td class="d-inline-block d-sm-table-cell">
-                    <input type="number" min="0" class="form-control">
-                </td>
-                <td class="d-inline-block d-sm-table-cell">
-                    <input type="text" size="10" list="unitSuggestions" class="form-control" placeholder="Select unit">
-                </td>
-                <td class="d-inline-block d-sm-table-cell">
-                    <input type="date" class="form-control">
-                </td>
-                <td class="d-inline-block d-sm-table-cell">
-                    <input type="number" class="form-control" min="1" step="1" value="1">
-                </td>
-                <td class="d-inline-block d-sm-table-cell">
-                    <button class="btn btn-danger deleteRow"><i class="fa-solid fa-trash"></i></button>
-                </td>
-            </tr>
-        `
-        rowNumber += 1;
-        $('table tbody').append(newRow);
-    })
+<script src="labelgenerator.js"></script>
 
-    $('table tbody').on('click', '.deleteRow', function () {
-        rowNumber -= 1;
-        let currentRow = 1;
-        $(this).closest('tr').remove();
-
-        document.querySelectorAll(".rowid").forEach(eachRow => {
-            eachRow.innerText = currentRow;
-            currentRow += 1;
-        })
-    });
-
-    document.querySelector("#table_reset").addEventListener("click",function(ev){
-        rowNumber = 1
-        document.querySelector("table tbody").innerHTML = ""
-    })
-
-    document.querySelector("#file_load").addEventListener("click", function(ev){
-
-    })
-
-    document.querySelector("#table_submit").addEventListener("click",function(ev){
-    //     Submit部分需要引用Chrome插件项目中的JSPDF，生成PDF后在新窗口回弹给用户，以便用户打印label
-    //     新增部分：同时给予用户选择是否添加到数据库，如果选是则开始跳转页面处理（POST请求转发label信息），新页面中弹出modal处理
-        let doc = new jspdf.jsPDF({
-            orientation: 'landscape',
-            unit: 'mm',
-            format: 'a4',
-            compress: true
-        });
-
-        let productLists = document.querySelectorAll(".rowRecords")
-
-        for (let i = 0; i < productLists.length; i++) {
-            let rowInput = productLists[i].querySelectorAll("input")
-            for (let copy = 0; copy < rowInput[4]; copy++) { // Looping when require multiple copies
-                var qrCodeInfos = {
-                    purchaseNo: "",
-                    productCode: "",
-                    productName: "",
-                    copies: 1,
-                    quantity: 1,
-                    unit: "",
-                    bestbefore: "",
-                    labelId: (new Date()).toISOString().replaceAll("-", "").split("T")[0] + getRandomXHexdigits(7)
-                }
-                // 验证输入的productName是否在库中
-                qrCodeInfos.productName = rowInput[0].value
-                console.log(productsData)
-                for (let j = 0; j < productsData.length; j++) {
-                    if (productsData[j].productCode === rowInput[0].value) {
-                        console.log(productsData[j])
-                        qrCodeInfos.productCode = productsData[j].productCode
-                        qrCodeInfos.productName = productsData[j].labelname
-                        break;
-                    }
-                }
-
-                qrCodeInfos.quantity = rowInput[1].value // Quantity
-                qrCodeInfos.unit = rowInput[2].value // Unit
-                qrCodeInfos.bestbefore = rowInput[3].value
-                qrCodeInfos.purchaseNo = document.querySelector("#input_purchaseorder").value ? document.querySelector("#input_purchaseorder").value : ""
-
-                var initTextSize = 125
-                var vMargin = 50
-                var margin = 10
-                var lineHeight = doc.internal.pageSize.height / 4;
-
-                doc.setFontSize(initTextSize).setFont(undefined, 'normal')
-                while (doc.getTextDimensions(qrCodeInfos.productName).w > doc.internal.pageSize.getWidth() - 25) {
-                    initTextSize -= 5;
-                    doc.setFontSize(initTextSize).setFont(undefined, 'normal')
-                }
-                doc.text(qrCodeInfos.productName, doc.internal.pageSize.getWidth() / 2, vMargin, {
-                    lineHeightFactor: 0.8,
-                    align: 'center'
-                });
-                vMargin = vMargin + lineHeight
-
-                doc.setFontSize(105).setFont(undefined, 'normal');
-                doc.text(qrCodeInfos.quantity + "  " + qrCodeInfos.unit, 12, vMargin, {lineHeightFactor: 0.8});
-                vMargin = vMargin + lineHeight;
-
-                doc.setFontSize(95).setFont(undefined, 'normal')
-                doc.text(qrCodeInfos.bestbefore, margin, vMargin + 25, {lineHeightFactor: 0.8});
-                vMargin = vMargin + lineHeight;
-
-                doc.addImage(qrCodeGenerateV3(qrCodeInfos.purchaseNo, qrCodeInfos.productCode, qrCodeInfos.productName, 1,
-                        qrCodeInfos.quantity, qrCodeInfos.unit, qrCodeInfos.bestbefore, qrCodeInfos.labelId)
-                    , "PNG", doc.internal.pageSize.getWidth() - 110, doc.internal.pageSize.getHeight() - 110, 140, 140)
-
-                doc.setFontSize(10).setFont(undefined, 'normal')
-                let bottomVerfiyText = ["V3", qrCodeInfos.labelId, qrCodeInfos.purchaseNo, qrCodeInfos.productCode,
-                    qrCodeInfos.quantity + qrCodeInfos.unit, (qrCodeInfos.bestbefore ? "Exp:" + qrCodeInfos.bestbefore : "*")]
-                doc.text(bottomVerfiyText.toString(), margin, doc.internal.pageSize.getHeight() - 10, {lineHeightFactor: 0.6});
-                doc.addPage();
-            }
-        }
-
-        doc.deletePage(doc.internal.getNumberOfPages()); // Delete last empty page
-        doc.setProperties({ title: `PrintoutLabel${new Date().toJSON().slice(0,19).replaceAll("-","").replaceAll(":","").replaceAll("T","")}` });
-        doc.output('dataurlnewwindow'); // Using non-HTTPs link, only available to pop in new window
-    })
-
-    function getRandomXHexdigits(bit){
-        return  (Math.random() * 0xfffffffff * 1000000000).toString(16).slice(0,bit)
-    }
-
-    // QR代码生成部分沿用Chrome EXT项目中的方法，默认使用V3，等后续按照产品需要引入V5
-    function qrCodeGenerateV3(purchaseNo="",productCode="",productName="", copies=1, quantity=1, unit="", bestbefore="",labelId="") {
-        var qrText ="https://yourAddress.local/?item=" + btoa(
-            JSON.stringify({
-                Build: 3,
-                POIPnumber: purchaseNo, //Purchase Order Reference
-                productCode: productCode,
-                productName: productName,
-                quantity: quantity,
-                quantityUnit: unit,
-                bestbefore: (bestbefore !== null ? bestbefore : ""), // bestbefore by YYYYMMDD
-                productLabel: labelId
-            })
-        );
-        var qrcode = new QRious({ level: "L", size: 165, value: qrText, padding: 2});
-        return qrcode.toDataURL("image/png")
-    }
-</script>
 <style>
     @media (max-width: 576px) { /* For small devices */
         .table thead th.d-block,

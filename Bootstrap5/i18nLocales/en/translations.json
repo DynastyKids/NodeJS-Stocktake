@@ -57,6 +57,7 @@
     "showmovementlog": "Show Movement Logs",
     "addmovementlog": "Add Movement log",
     "nextpallet2unwrap": "Next Dispatch Pallet",
+    "showPrefilled": "Show pre-filled data",
     "h4label_productaction": "Product Actions",
     "showallproducts": "Show All Products",
     "addproduct": "Add Product",
@@ -161,5 +162,18 @@
     "submitbtn": "Submit",
     "resultTableTitle": ["Product","Quantity","Best Before","Label ID","Shelf Location", "Actions"],
     "inputPlaceholder": ["Use scanner to scan the QR Code", "","","","","Input the shelf location with screen keyboard below"]
+  },
+  "prefillstock": {
+    "pagetitle": "Pre-filled Stocks",
+    "reloadTableLink": "Reload Table Now",
+    "refreshText": ["Automatic Refresh in: ","s"],
+    "apauseTimer": "Pause Timer",
+    "labelForFilterdate": "Filter records after Date: ",
+    "switchCheck": ["Showing all Stocks, including removed items.","Showing Current Stocks only"],
+    "table_head": ["Product","Quantity","Best Before","Location","Label ID","Action"],
+    "table_actionRemove": "Remove",
+    "flashtext_success": "Successfully updated the item.",
+    "flashtext_notfound": "Cannot find the item.",
+    "flashtext_failed": "Failed to update the item."
   }
 }

@@ -3,20 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Stock-take Electron</title>
+    <title>Dashboard - Warehouse Electron</title>
     <link href="/library/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
 <div class="container">
     <div class="container-fluid">
-        <h1>Home</h1>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item active" aria-current="page">Home</li>
-            </ol>
-        </nav>
-        <div class="container-fluid">
+        <h1>Welcome to Warehouse Electron</h1>
+        <br>
+        <div id="container-fluid warning-message" style="display: none">
+            <p>HTTPS is a Web Access protocols.
+                It is used for more the secure communication among the network.
+                It's strongly recommended to use HTTPS protocol for this webpage
+            </p>
+
+            <p>A warning message will show as below because browser requires a signed certificate to verify identity of the device.</p>
+            <p>The default certificate in the router is self-signed and doesn't fulfill the default SSL policy of the browser.</p>
+            <p>However, even if you see this warning page, which means website self-signed Certificate is not trusted by your browser,
+                the connection between your browser and the Electron Stocktake localserver is still secure.</p>
+            <p>If you do not want to see this warning page when you login to this webpage,
+                you can click on "Advanced" then click "Proceed to <span id="redirectip"></span> (unsafe)".</p>
+            <br>
+            <a href="#" id="https_desc_link">Click here to Continue</a>
+        </div>
+
+        <div class="container-fluid" id="maincontent">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item active" aria-current="page">Home</li>
+                </ol>
+            </nav>
+
             Select an action from following:
             <ul>
                 <li><a href="labelgenerator.html"><i class="fa-solid fa-tags"></i>Generate Labels</a></li>
@@ -27,5 +45,21 @@
 <script src="/library/jquery-3.7.1.min.js"></script>
 <script src="/library/bootstrap.bundle.min.js"></script>
 <script src="/navbar.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        if (window.location.protocol === "http:") {
+            const hostname = window.location.hostname;
+            const redirectUrl = "https://" + hostname + ":3001";
+            document.querySelector("#warning-message").style.display = "block";
+            document.querySelector("#redirectip").innerText = hostname;
+            document.querySelector("#https_desc_link").href = redirectUrl;
+
+            document.querySelector("#maincontent").style.display = "none";
+            document.querySelectorAll(".nav-item").forEach(eachItem=>{
+                eachItem.style.display ="none"
+            })
+        }
+    });
+</script>
 </body>
 </html>

@@ -15,6 +15,7 @@ const cors=require("cors")
 const moment = require("moment-timezone");
 
 const Storage = require("electron-store");
+const {unset} = require("lodash");
 const newStorage = new Storage();
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
@@ -549,6 +550,119 @@ router.post("/v1/stocks", async (req, res)=>{
 
     } else {
         response.message = "Action is not allowed "
+    }
+    res.json(response)
+})
+
+/*
+ *  Preload  GET 方法
+ *
+ *  获取所有产品预填充信息
+ *  允许用户从label, productCode或 location自行筛选过滤数据
+ */
+router.get("/v1/preload", async (req, res) => {
+    let response = {acknowledged: false, data: [], message: ""};
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+    try {
+        await dbclient.connect()
+        const session = dbclient.db(targetDB).collection("preloadlog");
+        const options = {$sort: {productCode: 1, bestbefore: -1, productLabel: -1}, projection: {"_id" : 0}}
+        let result = await session.find({}, options).toArray()
+        response.data = result
+        response.acknowledged = true
+        //     去掉相同的重复条目
+        let filteredResult = filterDuplicate(['productLabel','productCode'],result)
+        response.data = filteredResult
+
+        // 根据Query筛选
+        if (req.query.consumed){
+            //
+        } else {
+            response.data.forEach(eachitem =>{
+                if (eachitem.consumed === 0){
+                    filteredResult.push(eachitem)
+                }
+            })
+            response.data = filteredResult
+        }
+
+        if(req.query && req.query.product && req.query.product.length >= 3) { //Product
+            let filteredResult = []
+            response.data.forEach(eachitem =>{
+                if (eachitem.productCode.toLowerCase().includes(String(req.query.product).toLowerCase())){
+                    filteredResult.push(eachitem)
+                }
+            })
+            response.data = filteredResult
+        }
+
+        if(req.query && req.query.location && req.query.location.length >= 2){ // Location
+            let filteredResult = []
+            response.data.forEach(eachitem =>{
+                if (eachitem.shelfLocation.toLowerCase().includes(String(req.query.location).toLowerCase())){
+                    filteredResult.push(eachitem)
+                }
+            })
+            response.data = filteredResult
+        }
+
+        if (req.query && req.query.label && req.query.label.length >= 3){ // Label
+            let filteredResult = []
+            response.data.forEach(eachitem =>{
+                if (eachitem.productLabel.toLowerCase().includes(String(req.query.label).toLowerCase())){
+                    filteredResult.push(eachitem)
+                }
+            })
+            response.data = filteredResult
+        }
+
+        console.log(`Get Prefill: Result length: ${result.length}; Filtered Length:${response.length}`)
+    } catch (e) {
+        response.message = e
+    } finally {
+        await dbclient.close()
+    }
+    res.json(response)
+});
+
+/*
+ * Preload - POST方法
+ *
+ * 允许用户预填充产品信息（由Chrome 插件或者WarehouseElectron前端）
+ */
+router.post("/v1/preload", async (req, res)=>{
+    let localMoment = moment(new Date()).tz("Australia/Sydney");
+    let response = {acknowledged: false, data: [], message: ""};
+    let dbclient = new MongoClient(uri, {
+        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true},
+    });
+    let bodyContent = req.body.body
+    if(Array.isArray(bodyContent)){
+        // 检查各种字段中是否由需要的对应参数，如果没有则补齐
+        // 每当切换新版本后，均需要按照新版本参数补齐
+        bodyContent.forEach(eachItem=>{
+            eachItem.consumed = 0
+            eachItem.loggingTime = localMoment.format("YYYY-MM-DD HH:mm:ss");
+            eachItem.createTime = new Date(); // MongoDB Time Series
+        })
+        try {
+            await dbclient.connect()
+            const session = dbclient.db(targetDB).collection("preloadlog");
+            let result = await session.insertMany(bodyContent)
+            if (result.acknowledged){
+                response.acknowledged = true
+                response.data = result
+            }
+        } catch (e) { response.message = e }
+        finally { await dbclient.close() }
+    } else {
+        response.message = "Missing product information's "
     }
     res.json(response)
 })

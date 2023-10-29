@@ -9,16 +9,16 @@ document.addEventListener("DOMContentLoaded", function() {
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="/"><i class="fa-solid fa-house"></i>Home</a>
+                    <a class="nav-link active" aria-current="page" href="/"><i class="ti ti-home"></i>Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="labelgenerator.html"><i class="fa-solid fa-tags"></i>Generate Labels</a>
+                    <a class="nav-link" href="labelgenerator.html"><i class="ti ti-tags"></i>Generate Labels</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fa-solid fa-qrcode"></i>Scan QR Code</a>
+                    <a class="nav-link" href="#"><i class="ti ti-qrcode"></i>Scan QR Code</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fa-regular fa-keyboard"></i>Manual Input</a>
+                    <a class="nav-link" href="#"><i class="ti ti-keyboard"></i>Manual Input</a>
                 </li>
             </ul>
         </div>

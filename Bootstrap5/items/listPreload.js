@@ -62,39 +62,32 @@ function i18n_bodyContents() {
     var breadcrumbs = document.querySelectorAll(".breadcrumb-item");
     breadcrumbs[0].querySelector("a").innerText = i18next.t('index.pagetitle');
     breadcrumbs[1].querySelector("a").innerText = i18next.t('listproducts.pagetitle');
-    breadcrumbs[2].innerText = i18next.t('liststocks.pagetitle');
+    breadcrumbs[2].innerText = i18next.t('prefillstock.pagetitle');
 
     // Contents
-    document.querySelector("h1").textContent = i18next.t('liststocks.pagetitle');
-    document.querySelectorAll(".toggleRefreshText")[0].textContent = i18next.t(`liststocks.refreshText.${0}`)
-    document.querySelectorAll(".toggleRefreshText")[1].textContent = i18next.t(`liststocks.refreshText.${1}`)
-    document.querySelector("#areloadTable").textContent = i18next.t("liststocks.reloadTableLink")
-    document.querySelector("#apauseTimer").textContent = i18next.t("liststocks.apauseTimer")
-    document.querySelector("#labelForFilterdate").textContent = i18next.t("liststocks.labelForFilterdate")
+    document.querySelector("h1").textContent = i18next.t('prefillstock.pagetitle');
+    document.querySelectorAll(".toggleRefreshText")[0].textContent = i18next.t(`prefillstock.refreshText.${0}`)
+    document.querySelectorAll(".toggleRefreshText")[1].textContent = i18next.t(`prefillstock.refreshText.${1}`)
+    document.querySelector("#areloadTable").textContent = i18next.t("prefillstock.reloadTableLink")
+    document.querySelector("#apauseTimer").textContent = i18next.t("prefillstock.apauseTimer")
     document.querySelector("#loadingTableText").textContent = i18next.t('general.loadingTableText')
-
-    if (document.querySelector("#switchCheck").checked){
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
-    } else {
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
-    }
     document.querySelector("#printlink").textContent = i18next.t('general.print')
 
     // Datatables
     var tableheaders = document.querySelectorAll("#stockTable thead th")
     var tablefooters = document.querySelectorAll("#stockTable tfoot th")
     for (let i = 0; i < tableheaders.length; i++) {
-        tableheaders[i].textContent = i18next.t(`liststocks.table_head.${i}`)
+        tableheaders[i].textContent = i18next.t(`prefillstock.table_head.${i}`)
     }
     for (let i = 0; i < tablefooters.length; i++) {
-        tablefooters[i].textContent = i18next.t(`liststocks.table_head.${i}`)
+        tablefooters[i].textContent = i18next.t(`prefillstock.table_head.${i}`)
     }
     document.querySelector("#stockTable_info").innerText.split(" ")
 
     // Table Actions
     var table_action_remove = document.querySelectorAll(".table_action_remove")
     for (let i = 0; i < table_action_remove.length; i++) {
-        table_action_remove[i].textContent = i18next.t(`liststocks.table_actionRemove`)
+        table_action_remove[i].textContent = i18next.t(`prefillstock.table_actionRemove`)
     }
 
     var infotextNumbers = document.querySelector("#stockTable_info").innerText.match(/\d+/g)
@@ -116,25 +109,13 @@ function i18n_bodyContents() {
         eachItem.textContent = i18next.t("dataTables.action_revert")
     })
 }
-
-document.querySelector("#switchCheck").addEventListener("change", function(ev){
-    refreshCheckSwitch()
-})
-
 function refreshCheckSwitch(){
-    if (document.querySelector("#switchCheck").checked){
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
-        loadStockInfoToTable(true)
-    } else {
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
-        loadStockInfoToTable(false)
-    }
+    loadStockInfoToTable(true)
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
     const URLqueries = new URLSearchParams(window.location.search)
-    document.querySelector("#switchCheck").checked = ( URLqueries.get('q') ? true : false) // 该query存在则拉取所有数据
-    refreshCheckSwitch()
+    loadStockInfoToTable(true)
     let shouldRefresh = true
     const automaticRefresh = setInterval(() => {
         if (shouldRefresh) {
@@ -163,12 +144,14 @@ document.addEventListener("DOMContentLoaded", (event) => {
 });
 
 document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
-    //弹出后先填充表格
+    //弹出后先填充表格, 表格填充完毕后，提交修改，然后复制该条目到polling,删除在preload中的数据
     let requestLabelId = ev.relatedTarget.getAttribute("data-bs-itemId")
     console.log(fullResultSet)
     document.querySelector("#modalEditLabelid").value = requestLabelId
     document.querySelector("#editModalSubmitBtn").disabled = true
-    document.querySelector("#editModalSubmitBtn").textContent = "Submit"
+    document.querySelector("#editModalSubmitBtn").textContent = "Save"
+    document.querySelector("#editModalSubmitAddBtn").disabled = true
+    document.querySelector("#editModalSubmitAddBtn").textContent = "Save & Add to stock"
     document.querySelector("#editModal .modal-title").textContent = `Loading Product Information`
     let originProperty = {}
     for (let i = 0; i < fullResultSet.length; i++) {
@@ -182,11 +165,12 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
             document.querySelector("#modalEditBestbefore").value = (fullResultSet[i].bestbefore ? fullResultSet[i].bestbefore : "")
             document.querySelector("#modelEditLocation").value = (fullResultSet[i].shelfLocation ? fullResultSet[i].shelfLocation : "")
             document.querySelector("#editModalSubmitBtn").disabled = false
+            document.querySelector("#editModalSubmitAddBtn").disabled = false
             break;
         }
     }
-    
-    document.querySelector("#editModalSubmitBtn").addEventListener("click", async (ev) => {
+
+    async function updatePrealoadLog() {
         let client = new MongoClient(uri, {
             serverApi: {
                 version: ServerApiVersion.v1,
@@ -194,18 +178,39 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
                 useUnifiedTopology: true
             }
         });
-        const session = client.db(targetDB).collection("pollinglog");
-        document.querySelector("#editModalSubmitBtn").disabled = true
-        document.querySelector("#editModalSubmitBtn").textContent = "Updating"
+        const session = client.db(targetDB).collection("preloadlog");
         let result = await session.updateOne({"productLabel": requestLabelId}, {
             $set: {
-                quantity: (document.querySelector("#modalEditQuantity").value ? document.querySelector("#modalEditQuantity").value : originProperty.quantity ),
-                quantityUnit: (document.querySelector("#modalEditUnit").value ? document.querySelector("#modalEditUnit").value : originProperty.quantityUnit ),
-                bestbefore : (document.querySelector("#modalEditBestbefore").value ? document.querySelector("#modalEditBestbefore").value : originProperty.bestbefore),
+                quantity: (document.querySelector("#modalEditQuantity").value ? document.querySelector("#modalEditQuantity").value : originProperty.quantity),
+                quantityUnit: (document.querySelector("#modalEditUnit").value ? document.querySelector("#modalEditUnit").value : originProperty.quantityUnit),
+                bestbefore: (document.querySelector("#modalEditBestbefore").value ? document.querySelector("#modalEditBestbefore").value : originProperty.bestbefore),
                 shelfLocation: (document.querySelector("#modelEditLocation").value ? document.querySelector("#modelEditLocation").value : originProperty.shelfLocation)
             }
         })
-        if (result.acknowledged){
+        return result;
+    }
+
+    document.querySelector("#editModalSubmitBtn").addEventListener("click", async (ev) => {
+        document.querySelector("#editModalSubmitBtn").disabled = true
+        document.querySelector("#editModalSubmitAddBtn").disabled = true
+        document.querySelector("#editModalSubmitBtn").textContent = "Updating"
+
+        if (await updatePrealoadLog()){
+            bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
+            loadStockInfoToTable()
+        } else {
+            document.querySelector("#editModal .modal-body p").textContent = "Error on Update"
+        }
+    })
+
+    document.querySelector("#editModalSubmitAddBtn").addEventListener("click",async (ev) => {
+        document.querySelector("#editModalSubmitBtn").disabled = true
+        document.querySelector("#editModalSubmitAddBtn").disabled = true
+        document.querySelector("#editModalSubmitAddBtn").textContent = "Updating"
+
+        if (await updatePrealoadLog()) {
+            // Step 1 更新完成，Step2，获取该元素，复制到pollinglog,Step3，删除preloadlog记录
+            await copyDocument("preloadlog", "pollinglog", {"productLabel": requestLabelId}, true)
             bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
             loadStockInfoToTable()
         } else {
@@ -213,6 +218,30 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
         }
     })
 })
+
+async function copyDocument(sourceCollectionName, targetCollectionName, query = {},reqDelete=true) {
+    let client = new MongoClient(uri, {
+        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true
+        }
+    });
+    let results=[{},{}];
+    try {
+        await client.connect();
+        const sourceCollection = client.db(targetDB).collection(sourceCollectionName);
+        const targetCollection = client.db(targetDB).collection(targetCollectionName);
+
+        const documents = await sourceCollection.find(query).toArray();
+        if (documents.length > 0) {
+            results[0] = await targetCollection.insertMany(documents);
+            results[1] = reqDelete ? await sourceCollection.deleteMany(documents) : {acknowledged: true}
+        }
+    } catch (error) {
+        console.error("Error copying data:", error);
+    } finally {
+        await client.close();
+    }
+    return results;
+}
 
 let removeModal = document.querySelector("#removeModal")
 removeModal.addEventListener("show.bs.modal", function (ev) {
@@ -240,8 +269,8 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
     document.querySelector("#removeModalYes").textContent = "Updating"
     try {
         await client.connect();
-        const session = client.db(targetDB).collection("pollinglog");
-        let result = await session.updateMany({productLabel: labelId, consumed: 0} , {$set: {consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")}},{upsert: false})
+        const session = client.db(targetDB).collection("preloadlog");
+        let result = await session.remove({productLabel: labelId, consumed: 0} , {$set: {consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")}},{upsert: false})
         if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
             //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
             console.log("Successfully update status for: ",labelId)
@@ -260,69 +289,9 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
     }
 })
 
-let revertModal = document.querySelector("#revertModal")
-revertModal.addEventListener("show.bs.modal", function (ev) {
-    var lableID = ev.relatedTarget.getAttribute("data-bs-itemId")
-    let hiddenInput = revertModal.querySelector("#revertLabelid")
-    hiddenInput.value = lableID
-
-    document.querySelector("#revertLocation").value = ev.relatedTarget.getAttribute("data-bs-shelf")
-    document.querySelector("#revertModalYes").disabled = false
-    document.querySelector("#revertModalYes").textContent = "Confirm"
-})
-revertModal.querySelector("#revertModalYes").addEventListener("click", async function (ev) {
-    ev.preventDefault()
-    let labelId = revertModal.querySelector("#revertLabelid").value
-    let model = bootstrap.Modal.getInstance(document.querySelector("#revertModal"));
-    let client = new MongoClient(uri, {
-        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
-    });
-
-    document.querySelector("#revertModalYes").disabled = true
-    document.querySelector("#revertModalYes").textContent = "Updating"
-    try {
-        await client.connect();
-        const session = client.db(targetDB).collection("pollinglog");
-        let result = await session.updateMany({productLabel: labelId, consumed: 1} ,
-            {$set: {consumed: 0}, $unset: {"consumedTime":""}},{upsert: false})
-        if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
-            //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
-            console.log("Successfully reverted status for: ",labelId)
-            document.querySelector("#alert_success").style.display = 'flex'
-        } else if (result.matchedCount === 0) { //未找到符合条件的数据但成功执行了
-            console.log(`Label ID: ${labelId} Not Found`)
-            document.querySelector("#alert_warning").style.display = 'flex'
-        }
-    } catch (e) {
-        document.querySelector("#alert_error").style.display = 'flex'
-        console.error(`Revert Stock Error when process: ${labelId};`,e)
-    } finally {
-        loadStockInfoToTable()
-        await client.close()
-        model.hide()
-    }
-})
-
 document.querySelector("#areloadTable").addEventListener("click",function (ev) {
-    if (document.querySelector("#switchCheck").checked){
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
-        loadStockInfoToTable(true)
-    } else {
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
-        loadStockInfoToTable(false)
-    }
+    loadStockInfoToTable(true)
 })
-
-document.querySelector("#filterdate").addEventListener("change", (ev)=>{
-    if (document.querySelector("#switchCheck").checked){
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
-        loadStockInfoToTable(true)
-    } else {
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
-        loadStockInfoToTable(false)
-    }
-});
-
 
 function loadStockInfoToTable(fetchAll) {
     table.clear().draw()
@@ -336,26 +305,16 @@ function loadStockInfoToTable(fetchAll) {
             table.column(2).order('asc');
             for (let index = 0; index < results.length; index++) {
                 const element = results[index];
-                if (document.querySelector("#filterdate").value !== "") {
-                    console.log(document.querySelector("#filterdate").value)
-                    if (element.loggingTime && new Date(element.loggingTime) < new Date(document.querySelector("#filterdate").value)) {
-                        continue;
-                    }
-                }
                 table.row.add([
                     `${element.productCode} - ${element.productName}`,
                     `${element.quantity} ${element.quantityUnit}`,
                     (element.bestbefore ? element.bestbefore : ""),
                     (element.shelfLocation ? element.shelfLocation : ""),
                     `<small>${(element.productLabel ? element.productLabel : "")}</small>`,
-                    (element.consumed < 1 ? `
-                    <a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
+                    `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_edit")}</a>
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
-                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_remove")}</a>
-                    ` : `<small class="table_action_removed">${(element.consumedTime ? i18next.t("dataTables.action_removed") + element.consumedTime.split(" ")[0]: "")}</small>
-                    <a href="#" class="table_actions table_action_revert" data-bs-toggle="modal" data-bs-target="#revertModal" 
-                        data-bs-itemId="${element.productLabel}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_addback")}</a>`)
+                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_remove")}</a>`
                 ]).draw(false);
             }
         }
@@ -372,7 +331,7 @@ async function getAllStockItems(getAll) {
         }
     });
     let nowTime = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
-    const sessions = client.db(targetDB).collection("pollinglog");
+    const sessions = client.db(targetDB).collection("preloadlog");
     let cursor;
     let result = {acknowledged: false, resultSet: [], message: ""}
     try {

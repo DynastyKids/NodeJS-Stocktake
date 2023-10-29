@@ -1,4 +1,4 @@
-# Electron Stocktake Local Server
+# Warehouse Electron - An locally deployed warehouse management system
 
 The Warehouse Manager Electron Application is an open-source tool designed to help users manage their warehouses efficiently. This document provides an overview of the application's features and instructions for configuring the MongoDB database, including MongoDB Atlas integration.
 
@@ -9,21 +9,24 @@ It's a roboust, scalable and user-friendly tool to manageing current stocks.
 - **Inventory Management**: Easily add, edit, and delete items in your warehouse inventory.
 - **Search and Filtering**: Quickly find items using search and filter functionalities.
 - **Export Data**: Export your inventory data for further analysis.
+- **Label Generator**: Generating label in real-time when shipments inbound, allowing easier and clearer organize stocks.
 
 ## Installation - Using package
 1. Download from releases available on the right.
+
 ## Installation - From scratch
 
+This project is build based on Electron 25 & Node.js 18, which require similiar version of NPM (^9.8.3) & NodeJS (^18.16) installed
 1. Clone this repository to your local machine:
 
    ```bash
-   $ git clone https://github.com/yourusername/warehouse-manager.git
+   $ git clone https://github.com/DynastyKids/NodeJS-Stocktake
    ```
 
 2. Install the project dependencies:
 
     ```bash
-    $ cd warehouse-manager
+    $ cd NodeJS-Stocktake
     $ npm install
     ```
 
@@ -32,44 +35,30 @@ It's a roboust, scalable and user-friendly tool to manageing current stocks.
     $ npm start
     ```
 
+4. Pack the Application & build an executable application (Optional)
+   ```bash
+   $ npm run make
+   $ npm run packages
+   ```
+   
 ## Database Configuration
 
-This application uses MongoDB as its database. You can configure the database settings by after open the application and goes to settings page, or you can create your own ```config/localsettings.json``` file, and insert following
-```json
-{
-  "mongodb_protocol": "mongodb",
-  "mongodb_server": "your server address",
-  "mongodb_username": "your username",
-  "mongodb_password": "your password",
-  "mongodb_db": "your database"
-}
-```
+This application uses MongoDB by default as its database. 
+You can configure the database settings by after open the application and goes to settings page.
 
-### MongoDB Atlas Integration
-If you prefer to use MongoDB Atlas, follow these steps:
+Ensure you have MongoDB URI and an account with high-strength password to ensure security.
 
-1. Sign up for a MongoDB Atlas account at https://www.mongodb.com/cloud/atlas.
-
-2. Create a new cluster and set up your MongoDB database.
-
-3. Obtain your MongoDB Atlas connection string.
-
-4. Create your own ```config/localsettings.json``` file, and insert following
-```json
-{
-  "mongodb_protocol": "mongodb+srv",
-  "mongodb_server": "your server address",
-  "mongodb_username": "your username",
-  "mongodb_password": "your password",
-  "mongodb_db": "your database"
-}
-```
+[Mongo Atlas](https://www.mongodb.com/atlas/database) is also supported.
 
 ## Contributing
 We welcome contributions from the community! If you find any issues or have ideas for improvements, please open an issue or submit a pull request.
 
 ## User Manual
-This section will giving out basic instruction of how to use this application
+
+This section will soon be migrated to GitHub Wiki.
+
+This section will be giving out basic instruction of how to use this application
+
 ### First Time using
 1. On first time use, the setting page will pops up, you will need to set up your MongoDB server information and click `submit`, all your information are stored locally in plaintext. If you wish to migrate to another computer, you will require to setup with same process again.
 

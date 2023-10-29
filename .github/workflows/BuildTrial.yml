@@ -17,24 +17,20 @@ jobs:
     - name: Setup Node.js environment
       uses: actions/setup-node@v2.4.0
       with:
-        node-version: '16'
+        node-version: '18'
 
     - name: Install dependencies
       run: npm install
 
-    - name: Build Electron App
-      run: npm run build  # replace with your build script if different
+    - name: Run make script
+      run: npm run make
 
-#     - name: Publish to GitHub Releases
-#       uses: softprops/action-gh-release@v1
-#       with:
-#         files: dist/*  # replace with the directory your build artifacts are in
-#       env:
-#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Run package script
+      run: npm run package
 
-    - name: Build/release Electron app
-      uses: paneron/action-electron-builder@v1.8.1
-      with:
-        # GitHub token, automatically provided to the action
-        # (No need to define this secret in the repo settings)
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+#    - name: Build/release Electron app
+#      uses: paneron/action-electron-builder@v1.8.1
+#      with:
+#        # GitHub token, automatically provided to the action
+#        # (No need to define this secret in the repo settings)
+#        github_token: ${{ secrets.GITHUB_TOKEN }}

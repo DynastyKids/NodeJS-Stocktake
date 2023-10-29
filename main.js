@@ -4,7 +4,10 @@ const os = require('os');
 
 const net = require('net')
 const express = require('express')
-const expressApp = express()
+const http = require('http')
+const https = require('https')
+const fs = require('fs')
+
 const cors=require("cors")
 const apiRequests = require('./apiserver/apimain');
 const {main} = require("@popperjs/core");
@@ -138,7 +141,6 @@ async function pingMongoDB(dburi,dbname){
         await client.connect();
         // Send a ping to confirm a successful connection
         let response = await client.db(dbname).command({ping: 1})
-        console.log(response)
         if (response.ok === 1){
             results = true
         }
@@ -153,7 +155,6 @@ async function pingMongoDB(dburi,dbname){
 function getIPAddress() {
     const networkInterfaces = os.networkInterfaces();
     let addressSet = [];
-
     for (let interface in networkInterfaces) {
         networkInterfaces[interface].forEach(details => {
             // Skip internal (i.e. 127.0.0.1) and non-ipv4 addresses
@@ -169,10 +170,13 @@ app.on("window-all-closed", function () {
     if (process.platform !== "darwin") app.quit();
 });
 
+const expressApp = express()
 expressApp.use(cors())
 expressApp.use("/api", apiRequests);
+expressApp.use(express.static(path.join(__dirname, 'public')));
 
-expressApp.use(express.static(path.join(__dirname,'public')));
+const credentials = {key: fs.readFileSync('config/key.pem', 'utf8'),
+    cert:fs.readFileSync('config/cert.pem', 'utf8')}
 
 app.whenReady().then(() => {
     // 使用portfinder插件查找可用端口，原有方法可能出现undefined
@@ -182,9 +186,13 @@ app.whenReady().then(() => {
             return
         }
         expressApp.listen(port, ()=>{
-            console.log(`Server running at http://localhost:${port}`)
+            console.log(`HTTP  running at http://localhost:${port}`)
             createWindow(port)
         })
+        const httpsServer = https.createServer(credentials, expressApp);
+        httpsServer.listen(port+1, () => {
+            console.log(`HTTPS running at http://localhost:${port+1}`);
+        });
     })
 })
 
