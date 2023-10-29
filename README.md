@@ -100,17 +100,3 @@ This section contains some features that may involve in future developing with w
 **Label Generator**: Currently generator are not available to public due to testing, will release sooner within later this year
 
 **Languages Support**: Everyone could help the project by adding i18n locale files and help to translate the product to your own languages
-## Known Issues
-
-### Running on windows having EACCESS related error
-
-On Windows running with certain environment, it will have error due to port cannot be opened, this issue may be related to Hyper-V services has taken those port numbers.
-refer this [post](https://hungyi.net/posts/wsl2-reserved-ports/) which stated detail of what could cause this.
-
-In short, you may change preserved ports to this issue, i.e. changing port number start from 56789 and giving 8000 ports available to Hyper-V, the command as follows
-```cmd
-netsh int ipv4 set dynamicport tcp start=56789 num=8000
-netsh int ipv6 set dynamicport tcp start=56789 num=8000
-net stop winnat
-net start winnat
-```
