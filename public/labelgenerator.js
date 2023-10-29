@@ -88,7 +88,6 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
                 POIPnumber: "",
                 productCode: "",
                 productName: "",
-                copies: 1,
                 quantity: 1,
                 quantityUnit: "",
                 bestbefore: "",
@@ -125,7 +124,7 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
             doc.setFontSize(90).setFont(undefined, 'normal'); // bestbefore Text
             doc.text(qrCodeInfos.bestbefore, 15, doc.internal.pageSize.getHeight() - 75, {lineHeightFactor: 0.8});
 
-            doc.addImage(qrCodeGenerateV3(qrCodeInfos.POIPnumber, qrCodeInfos.productCode, qrCodeInfos.productName, 1,
+            doc.addImage(qrCodeGenerateV3(qrCodeInfos.POIPnumber, qrCodeInfos.productCode, qrCodeInfos.productName,
                     qrCodeInfos.quantity, qrCodeInfos.quantityUnit, qrCodeInfos.bestbefore, qrCodeInfos.productLabel)
                 , "PNG", doc.internal.pageSize.getWidth() - 255, doc.internal.pageSize.getHeight() - 255, 250, 250)
 
@@ -143,7 +142,9 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
     }
     console.log(prefillArray)
     if (document.querySelector("#preloadCheckbox").checked){
-        axios.post('/api/v1/preload',prefillArray)
+        axios.post('/api/v1/preload',{body: prefillArray},{headers:{
+                'Content-Type': 'application/json'
+            }})
             .then(response=>{
                 console.log(response)
                 if (response.data.acknowledged){
@@ -189,7 +190,7 @@ function getRandomXHexdigits(bit) {
 }
 
 // QR代码生成部分沿用Chrome EXT项目中的方法，默认使用V3，等后续按照产品需要引入V5
-function qrCodeGenerateV3(purchaseNo = "", productCode = "", productName = "", copies = 1, quantity = 1, unit = "", bestbefore = "", labelId = "") {
+function qrCodeGenerateV3(purchaseNo = "", productCode = "", productName = "", quantity = 1, unit = "", bestbefore = "", labelId = "") {
     var qrText = "https://yourAddress.local/?item=" + btoa(
         JSON.stringify({
             Build: 3,

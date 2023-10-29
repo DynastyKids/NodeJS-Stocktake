@@ -15,6 +15,7 @@ const cors=require("cors")
 const moment = require("moment-timezone");
 
 const Storage = require("electron-store");
+const {unset} = require("lodash");
 const newStorage = new Storage();
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
@@ -641,22 +642,19 @@ router.post("/v1/preload", async (req, res)=>{
     let dbclient = new MongoClient(uri, {
         serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true},
     });
-
-    console.log(req.body)
-    if(Array.isArray(req.body)){
+    let bodyContent = req.body.body
+    if(Array.isArray(bodyContent)){
         // 检查各种字段中是否由需要的对应参数，如果没有则补齐
         // 每当切换新版本后，均需要按照新版本参数补齐
-        let updateItems = req.body
-        updateItems.forEach(eachItem=>{
+        bodyContent.forEach(eachItem=>{
             eachItem.consumed = 0
             eachItem.loggingTime = localMoment.format("YYYY-MM-DD HH:mm:ss");
+            eachItem.createTime = new Date(); // MongoDB Time Series
         })
-
         try {
             await dbclient.connect()
             const session = dbclient.db(targetDB).collection("preloadlog");
-
-            let result = await session.insertMany(req.body)
+            let result = await session.insertMany(bodyContent)
             if (result.acknowledged){
                 response.acknowledged = true
                 response.data = result

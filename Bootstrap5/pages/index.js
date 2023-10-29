@@ -74,9 +74,10 @@ function i18n_bodyContents() {
     actionLinks[3].textContent = i18next.t('index.showstocksoverview');
     actionLinks[4].textContent = i18next.t('index.addmovementlog');
     actionLinks[5].textContent = i18next.t('index.nextpallet2unwrap');
+    actionLinks[6].textContent = i18next.t('index.showPrefilled');
     // product actions
-    actionLinks[6].textContent = i18next.t('index.showallproducts');
-    actionLinks[7].textContent = i18next.t('index.addproduct');
+    actionLinks[7].textContent = i18next.t('index.showallproducts');
+    actionLinks[8].textContent = i18next.t('index.addproduct');
 
     var tableTitles = document.querySelectorAll("#activeStocktakeContainer table th")
     tableTitles[0].textContent = i18next.t('tables.stocktable_sessionid');
