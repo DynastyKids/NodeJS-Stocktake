@@ -186,15 +186,14 @@ app.whenReady().then(() => {
             return
         }
         expressApp.listen(port, ()=>{
-            console.log(`Server running at http://localhost:${port}`)
+            console.log(`HTTP  running at http://localhost:${port}`)
             createWindow(port)
         })
+        const httpsServer = https.createServer(credentials, expressApp);
+        httpsServer.listen(port+1, () => {
+            console.log(`HTTPS running at http://localhost:${port+1}`);
+        });
     })
-
-    const httpsServer = https.createServer(credentials, expressApp);
-    httpsServer.listen(3001, () => {
-        console.log('HTTPS Server running on port 3001');
-    });
 })
 
 // 20231020新增，允许用户多开，通过推演端口号

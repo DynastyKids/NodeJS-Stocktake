@@ -18,7 +18,7 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: 0.9.5
+  version: 0.9.6
 servers:
   - url: http://127.0.0.1:3000/api
   - url: https://127.0.0.1:3000/api
@@ -330,6 +330,76 @@ paths:
                     - remove
                 item:
                   $ref: '#/components/schemas/pollinglog'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/trueORfalse'
+        '400':
+          description: Bad Request / Unsuccessful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/trueORfalse'
+
+  /v1/preload:
+    get:
+      tags:
+        - Preload
+      summary: Get all available current Stocks inhouse | 获取所有当前预填充信息
+      operationId: getPrefill
+      parameters:
+        - name: location
+          in: query
+          description: Optional, Using at lease 2 characters for location to filter the result | 可选参数，需要提供至少2位字母的库位号来过滤库存信息
+          required: false
+          schema:
+            type: string
+
+        - name: label
+          in: query
+          description: Optional, typein part of label id (at least 3 characters) to filter the results | 可选参数，可以使用labelid的尾部字段（至少3位字符）来筛选需要的库存信息
+          required: false
+          schema:
+            type: string
+
+        - name: product
+          in: query
+          description: Optional, typein part of product id (at least 3 characters) to filter the results | 可选参数，使用产品ID（至少3位字符）来筛选需要的库存信息
+          required: false
+          schema:
+            type: string
+
+      responses:
+        '200':
+          description: Successful | 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/pollinglogsRespose'
+        '500':
+          description: System Internal error | 失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/trueORfalse'
+    post:
+      tags:
+        - Preload
+      summary: Prefill the information for stocks inbound | 预填充即将上架的货品信息
+      operationId: prefillStocks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/pollinglog'
       responses:
         '200':
           description: Successful operation
