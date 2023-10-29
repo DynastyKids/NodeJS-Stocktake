@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@popperjs/core": "^2.11.8",
+    "@tabler/icons-webfont": "^2.40.0",
     "@tarekraafat/autocomplete.js": "^10.2.7",
     "apexcharts": "^3.44.0",
     "axios": "^1.5.0",
@@ -40,6 +41,7 @@
     "electron-store": "^8.1.0",
     "express": "^4.18.2",
     "flatpickr": "^4.6.13",
+    "https": "^1.0.0",
     "i18next": "^23.5.1",
     "i18next-electron-fs-backend": "^3.0.0",
     "i18next-fs-backend": "^2.1.5",
