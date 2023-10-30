@@ -126,26 +126,30 @@ function createWindow(portNumber) {
     });
 }
 
-async function pingMongoDB(dburi,dbname){
+async function pingMongoDB(dburi, dbname){
+    // 新增内容：ping之后检测是否可以成功连接数据库的所有collection，如果不可则跳转到Settings
     let client = new MongoClient(dburi, {
         serverApi: {
-            version: ServerApiVersion.v1,
-            strict: true,
-            deprecationErrors: true,
-            useNewUrlParser: true,
-            useUnifiedTopology: true
+            version: ServerApiVersion.v1, strict: true, deprecationErrors: true, useNewUrlParser: true, useUnifiedTopology: true
         }
     });
     let results = false
     try {
         await client.connect();
-        // Send a ping to confirm a successful connection
-        let response = await client.db(dbname).command({ping: 1})
-        if (response.ok === 1){
-            results = true
-        }
+        let targetDB = client.db(dbname);
+        let response = await targetDB.command({ping: 1})
+        let collectionList = ['pollinglog','pollingsession','preloadlog','products','settings']
+        let collectionResults = true
+        collectionList.forEach(eachCollection=>{
+            response = targetDB.listCollections({name:eachCollection})
+            if (response.length === 0){
+                collectionResults = false
+            }
+        })
+        results = collectionResults;
     } catch (e) {
         console.error(e)
+        results = false
     } finally {
         await client.close();
     }
@@ -175,8 +179,8 @@ expressApp.use(cors())
 expressApp.use("/api", apiRequests);
 expressApp.use(express.static(path.join(__dirname, 'public')));
 
-const credentials = {key: fs.readFileSync('config/key.pem', 'utf8'),
-    cert:fs.readFileSync('config/cert.pem', 'utf8')}
+const credentials = {key: fs.readFileSync(path.join(__dirname, 'config/key.pem'), 'utf8'),
+    cert:fs.readFileSync(path.join(__dirname, 'config/cert.pem'), 'utf8')}
 
 app.whenReady().then(() => {
     // 使用portfinder插件查找可用端口，原有方法可能出现undefined
@@ -209,4 +213,3 @@ function checkPort(port, callback) {
         callback(false);
     });
 }
-

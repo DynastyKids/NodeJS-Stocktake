@@ -10,7 +10,7 @@
       "<i class=\"ti ti-scan\"></i> Scanner Mode",
       "<i class=\"ti ti-cardboards\"></i> New View"],
     "sessions_navitems": ["New stock-take session", "Show All Sessions"],
-    "products_navitems": [ "Show All Products", "Add Product", "Show Current Stocks", "Show All Stocks"]
+    "products_navitems": [ "Show All Products", "Add Product", "List Current Stocks", "List all history Stocks","List Pre-filled stocks"]
   },
   "general": {
     "loadingTableText": "Loading data...",
@@ -112,7 +112,8 @@
     "titlescheme": "About Connection Scheme",
     "titleenvironment": "Current Environment",
     "textaboutdb": "MongoDB is a cross-platform document-oritented database System. Require to be deployed on Local computer (Installer available from MongoDB) or using Cloud service (e.g. Mongo Atlas)",
-    "textscheme": "mongodb: Standard Connection String Format. The standard format of the MongoDB connection URI is used to connect to a MongoDB deployment: standalone, replica set, or a sharded cluster.\n\nmongodb+srv: DNS Seed List Connection Format. The +srv indicates to the client that the hostname that follows corresponds to a DNS SRV record.\n\n"
+    "textscheme": "mongodb: Standard Connection String Format. The standard format of the MongoDB connection URI is used to connect to a MongoDB deployment: standalone, replica set, or a sharded cluster.\n\nmongodb+srv: DNS Seed List Connection Format. The +srv indicates to the client that the hostname that follows corresponds to a DNS SRV record.\n\n",
+    "dbstatusText": ["Connecting...","Connection Failed, check your connection URI string or permissions on your MongoDB Server","Connection Successful","Connection Successful. But target Database does not have collection required, click button to patch collections.", "Updating Database", "Database update finished"]
   },
   "listproducts": {
     "pagetitle": "Products",
@@ -145,7 +146,7 @@
     "apauseTimer": "Pause Timer",
     "labelForFilterdate": "Filter records after Date: ",
     "switchCheck": ["Showing all Stocks, including removed items.","Showing Current Stocks only"],
-    "table_head": ["Product","Quantity","Best Before","Location","Label ID","Action"],
+    "table_head": ["Product","Quantity","Best Before","Location","Label ID","PO Ref","Action"],
     "table_actionRemove": "Remove",
     "flashtext_success": "Successfully updated the item.",
     "flashtext_notfound": "Cannot find the item.",
@@ -163,14 +164,14 @@
     "resultTableTitle": ["Product","Quantity","Best Before","Label ID","Shelf Location", "Actions"],
     "inputPlaceholder": ["Use scanner to scan the QR Code", "","","","","Input the shelf location with screen keyboard below"]
   },
-  "prefillstock": {
+  "listpreload": {
     "pagetitle": "Pre-filled Stocks",
     "reloadTableLink": "Reload Table Now",
     "refreshText": ["Automatic Refresh in: ","s"],
     "apauseTimer": "Pause Timer",
     "labelForFilterdate": "Filter records after Date: ",
     "switchCheck": ["Showing all Stocks, including removed items.","Showing Current Stocks only"],
-    "table_head": ["Product","Quantity","Best Before","Location","Label ID","Action"],
+    "table_head": ["Product","Quantity","Best Before","Location","Label ID","Shelf Location","Action"],
     "table_actionRemove": "Remove",
     "flashtext_success": "Successfully updated the item.",
     "flashtext_notfound": "Cannot find the item.",

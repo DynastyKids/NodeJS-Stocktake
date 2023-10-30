@@ -9,15 +9,6 @@ const newStorage = new Storage();
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    }
-});
-
-
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 i18next.use(Backend).init({
@@ -123,14 +114,20 @@ ipcRenderer.on('server-info', (event, {address, port, addressSet}) => {
 });
 
 async function getCurrentSession() {
-    let localTime = moment(new Date()).tz("Australia/Sydney")
-    const options = {sort: {startDate: 1},};
-    const sessions = client.db(targetDB).collection("pollingsession");
-    let findingQuery = {endDate: {$gte: localTime.format('YYYY-MM-DD HH:mm:ss')}}
+    let client = new MongoClient(uri, {
+        serverApi: { version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
     let cursor;
     let htmlContent = ""
     try {
         await client.connect();
+
+        let localTime = moment(new Date()).tz("Australia/Sydney")
+        const options = {sort: {startDate: 1},};
+        const sessions = client.db(targetDB).collection("pollingsession");
+        let findingQuery = {endDate: {$gte: localTime.format('YYYY-MM-DD HH:mm:ss')}}
+
+
         cursor = sessions.find(findingQuery, options);
         if ((await sessions.countDocuments(findingQuery)) === 0) {
             console.log("[MongoDB] Nothing Found");
@@ -145,6 +142,8 @@ async function getCurrentSession() {
         }
     } catch (err) {
         console.error(err)
+    } finally {
+        await client.close()
     }
 
     return [cursor, htmlContent];
@@ -156,26 +155,36 @@ window.onload = () => {
 }
 
 async function qrv2patch() {
-    const logsessions = client.db(targetDB).collection("pollinglog");
-    const productsessions = client.db(targetDB).collection("products");
-    var productList = productsessions.find({})
-    for await (const x of productList) {
-        var whereCondition = {productCode: x.labelname}
-        var updateInfo = {
-            $set: {productCode: x.itemcode, productName: x.labelname}
+    let client = new MongoClient(uri, {
+        serverApi: { version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
+    try {
+        await client.connect();
+        const logsessions = client.db(targetDB).collection("pollinglog");
+        const productsessions = client.db(targetDB).collection("products");
+        var productList = productsessions.find({})
+        for await (const x of productList) {
+            var whereCondition = {productCode: x.labelname}
+            var updateInfo = {
+                $set: {productCode: x.itemcode, productName: x.labelname}
+            }
+            var updateResult = await logsessions.updateMany(whereCondition, updateInfo)
         }
-        var updateResult = await logsessions.updateMany(whereCondition, updateInfo)
-    }
 
-    var logLists = logsessions.find({})
-    for await (const x of logLists) {
-        if (String(x.productCode).includes("TP") || String(x.productCode).includes("SP") || String(x.productCode) === "IG001") {
-            if (x.quantityUnit === "" && x.quantity < 50) {
-                logsessions.updateOne({_id: x._id}, {$set: {quantityUnit: "carton"}})
-            } else if (x.quantityUnit === "" && x.quantity >= 50) {
-                logsessions.updateOne({_id: x._id}, {$set: {quantityUnit: "bottles"}})
+        var logLists = logsessions.find({})
+        for await (const x of logLists) {
+            if (String(x.productCode).includes("TP") || String(x.productCode).includes("SP") || String(x.productCode) === "IG001") {
+                if (x.quantityUnit === "" && x.quantity < 50) {
+                    logsessions.updateOne({_id: x._id}, {$set: {quantityUnit: "carton"}})
+                } else if (x.quantityUnit === "" && x.quantity >= 50) {
+                    logsessions.updateOne({_id: x._id}, {$set: {quantityUnit: "bottles"}})
+                }
             }
         }
+    } catch (e) {
+        console.error("Error when executing qrv2patch(deprecated): ",e)
+    } finally {
+        await client.close()
     }
 }
 
@@ -234,37 +243,52 @@ document.querySelector("#inputProductLabel").addEventListener("input", async fun
 
 document.querySelector("#addMovementForm").addEventListener("submit", async function (e) {
     e.preventDefault();
-    var formAction = document.querySelector("#formSelectAction").value
+    let client = new MongoClient(uri, {
+        serverApi: { version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
     var result = {acknowledged: false}
-    var regexLabel = /[0-9]{8}[A-Fa-f0-9]{7}/
-    if (regexLabel.test(document.querySelector("#inputProductLabel").value)) {
-        //用户提交表单,修改loggingTime,如果是move则更新shelfLocation,如果是consumed则修改consumed为1
-        var productInfo = {productLabel: document.querySelector("#inputProductLabel").value}
-        const session = client.db(targetDB).collection("pollinglog");
-        if (formAction === "consume") {
-            result = await session.updateMany(productInfo, {
-                consumed: 1,
-                loggingTime: moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
-            }, {upsert: false})
-        }
-        if (formAction === "move") {
-            var newLocation = document.querySelector("#inputNewLocation").value
-            const regex = /[A-Za-z]{2}[0-9]/
-            if (regex.test(String(newLocation))) {
+    try {
+        await client.connect();
+        var formAction = document.querySelector("#formSelectAction").value
+
+        var regexLabel = /[0-9]{8}[A-Fa-f0-9]{7}/
+        if (regexLabel.test(document.querySelector("#inputProductLabel").value)) {
+            //用户提交表单,修改loggingTime,如果是move则更新shelfLocation,如果是consumed则修改consumed为1
+            var productInfo = {productLabel: document.querySelector("#inputProductLabel").value}
+            const session = client.db(targetDB).collection("pollinglog");
+            if (formAction === "consume") {
                 result = await session.updateMany(productInfo, {
-                    shelfLocation: newLocation,
+                    consumed: 1,
                     loggingTime: moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
                 }, {upsert: false})
             }
+            if (formAction === "move") {
+                var newLocation = document.querySelector("#inputNewLocation").value
+                const regex = /[A-Za-z]{2}[0-9]/
+                if (regex.test(String(newLocation))) {
+                    result = await session.updateMany(productInfo, {
+                        shelfLocation: newLocation,
+                        loggingTime: moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
+                    }, {upsert: false})
+                }
+            }
         }
+    }  catch (e) {
+        console.error("Error when execute AddMovementForm: ",e)
+    } finally {
+        await client.close()
     }
     console.log(result)
 })
 
 async function inputSearchLabel(labelid) {
     // 通过label搜索在库物品，需要确认：物品未被使用，使用findOne，按照loggingTime -1排序
+    let client = new MongoClient(uri, {
+        serverApi: { version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
     let result = {}
     try {
+        await client.connect();
         const logsessions = client.db(targetDB).collection("pollinglog");
         const query = {productLabel: labelid, consumed: 0}
         const options = {
@@ -284,7 +308,9 @@ async function inputSearchLabel(labelid) {
         console.log(productInfo)
         result = productInfo
     } catch (err) {
-        console.error(err)
+        console.error("Error when execuet InputSearchLabel: ",err)
+    } finally {
+        await client.close()
     }
 
     return result
@@ -292,8 +318,12 @@ async function inputSearchLabel(labelid) {
 
 async function inputSearchShelf(shelfString) {
     // 通过库位在库物品，需要确认：物品未被使用，使用loggingTime -1，只取一个findOne
+    let client = new MongoClient(uri, {
+        serverApi: { version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
     let result = {}
     try {
+        await client.connect();
         const logsessions = client.db(targetDB).collection("pollinglog");
         const query = {shelfLocation: shelfString, consumed: 0}
         const options = {
@@ -312,8 +342,10 @@ async function inputSearchShelf(shelfString) {
         let productInfo = await logsessions.findOne(query, options)
         console.log(productInfo)
         result = productInfo
-    } catch (err) {
-        console.error(err)
+    } catch (e) {
+        console.error("Error when executing inputSearchShelf: ", e)
+    } finally {
+        await client.close()
     }
 
     return result

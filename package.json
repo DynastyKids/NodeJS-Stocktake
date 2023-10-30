@@ -1,6 +1,6 @@
 {
   "name": "warehouse_electron",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Warehouse Stocktaking independent server",
   "main": "main.js",
   "scripts": {
