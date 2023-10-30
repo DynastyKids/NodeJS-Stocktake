@@ -175,8 +175,8 @@ expressApp.use(cors())
 expressApp.use("/api", apiRequests);
 expressApp.use(express.static(path.join(__dirname, 'public')));
 
-const credentials = {key: fs.readFileSync('config/key.pem', 'utf8'),
-    cert:fs.readFileSync('config/cert.pem', 'utf8')}
+const credentials = {key: fs.readFileSync(path.join(__dirname, 'config/key.pem'), 'utf8'),
+    cert:fs.readFileSync(path.join(__dirname, 'config/cert.pem'), 'utf8')}
 
 app.whenReady().then(() => {
     // 使用portfinder插件查找可用端口，原有方法可能出现undefined

@@ -145,7 +145,7 @@
     "apauseTimer": "Pause Timer",
     "labelForFilterdate": "Filter records after Date: ",
     "switchCheck": ["Showing all Stocks, including removed items.","Showing Current Stocks only"],
-    "table_head": ["Product","Quantity","Best Before","Location","Label ID","Action"],
+    "table_head": ["Product","Quantity","Best Before","Location","Label ID","PO Ref","Action"],
     "table_actionRemove": "Remove",
     "flashtext_success": "Successfully updated the item.",
     "flashtext_notfound": "Cannot find the item.",

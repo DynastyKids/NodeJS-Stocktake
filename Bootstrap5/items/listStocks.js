@@ -23,7 +23,7 @@ let table = new DataTable('#stockTable', {
     responsive: true,
     pageLength: 25,
     lengthMenu:[10,15,25,50,100],
-    columns: [{"width": "25%"}, null, null, {"width": "10%"}, null, null],
+    columns: [{"width": "25%"}, null, null, {"width": "10%"}, null, null, null],
     order: [[2, 'asc']]
 });
 let shouldRefresh = true;
@@ -348,6 +348,7 @@ function loadStockInfoToTable(fetchAll) {
                     (element.bestbefore ? element.bestbefore : ""),
                     (element.shelfLocation ? element.shelfLocation : ""),
                     `<small>${(element.productLabel ? element.productLabel : "")}</small>`,
+                    `<small>${(element.POIPnumber ? element.POIPnumber : "")}</small>`,
                     (element.consumed < 1 ? `
                     <a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_edit")}</a>
