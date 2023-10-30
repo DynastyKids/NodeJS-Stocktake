@@ -79,6 +79,7 @@ function i18n_bodyContents() {
         document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
     }
     document.querySelector("#printlink").textContent = i18next.t('general.print')
+    document.querySelector("#prefilllink").textContent = i18next.t('listpreload.pagetitle')
 
     // Datatables
     var tableheaders = document.querySelectorAll("#stockTable thead th")

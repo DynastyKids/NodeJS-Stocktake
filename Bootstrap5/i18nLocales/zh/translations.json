@@ -22,7 +22,7 @@
       "<i class=\"ti ti-scan\"></i> 扫码器模式",
       "<i class=\"ti ti-cardboards\"></i> 新主题"],
     "sessions_navitems": ["创建盘点会话", "展示会话列表"],
-    "products_navitems": ["列出所有产品", "添加产品", "展示当前库存", "显示所有库存记录"]
+    "products_navitems": ["列出所有产品", "添加产品", "查看当前库存", "查看历史库存","查看预填充信息"]
   },
   "general": {
     "loadingTableText": "数据加载中...",
@@ -125,6 +125,7 @@
     "titleenvironment": "环境变量",
     "textaboutdb": "MongoDB 是一种文档数据库，它所具备的可扩展性和灵活性可以满足您对查询和索引的需求。",
     "textscheme": "mongodb://是用于标识这是标准连接格式的字符串。从MongoDB v3.6起还支持DNS种子列表。使用DNS构造可用的服务器列表，可以提供更大的部署灵活性，并可以轮流更改服务器而无需重新配置客户端。此时则应当使用mongodb+srv:而不是标准的mongodb:"
+    "dbstatusText": ["正在连接...","数据库连接失败，请检查链接字符串(URI)或者权限设置是否正确","连接成功","连接成功，但目标数据库内未包含需要的数据集合，点击按钮以自动创建/补齐","正在修复数据库","数据库已经就绪"]
   },
   "listproducts": {
     "pagetitle": "产品列表",
@@ -166,14 +167,14 @@
     "resultTableTitle": ["产品名称","数量","在此日期前最佳","标签识别号","货架位", "操作"],
     "inputPlaceholder": ["使用扫码枪扫描一个二维码", "","","","","请填入货架位"]
   },
-  "prefillstock": {
+  "listpreload": {
     "pagetitle": "prefillstock",
     "reloadTableLink": "刷新数据",
     "apauseTimer": "暂停倒计时",
     "labelForFilterdate": "仅筛选在此日期之后的记录：",
     "switchCheck": ["查看所有库存记录(包括历史库存).","查看当前库存"],
     "refreshText": ["距下次刷新还有: ","秒"],
-    "table_head": ["产品","数量","最佳日期","库位","标签ID","操作"],
+    "table_head": ["产品","数量","最佳日期","库位","标签ID","采购订单号","操作"],
     "table_actionRemove": "移除",
     "flashtext_success": "已成功更新",
     "flashtext_notfound": "找不到相关条目",
