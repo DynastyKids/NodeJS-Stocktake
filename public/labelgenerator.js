@@ -1,3 +1,5 @@
+// import axios from "axios";
+
 let rowNumber = 1
 let productsData = [] //在生成Label时候也可以使用
 let toast = document.querySelector("#toastDiv")
@@ -12,11 +14,11 @@ document.addEventListener("DOMContentLoaded", function (ev) {
             document.querySelector("#toastDiv .toast-body").innerText = "Product list has fetched successfully"
             document.querySelector("#toastDiv").classList.add("bg-success");
             document.querySelector("#toastDiv").classList.remove("bg-warning");
-            console.log(response.data);
             if (Array.isArray(response.data.data)) {
                 productsData = response.data.data
                 response.data.data.forEach(eachItem => {
-                    $("#productSuggestions").append(`<option value="${eachItem.productCode}" label="${eachItem.description}"></option>`);
+                    // document.querySelector("#productSuggestions").append(`<option value="${eachItem.productCode}" label="${eachItem.description}"></option>`);
+                    $("#productSuggestions").append(`<option value="${eachItem.description}" data-code="${eachItem.productCode}" data-qty="${eachItem.palletQty}" data-unit="${eachItem.unit}"></option>`);
                 });
                 (new bootstrap.Toast(toast)).show();
             }
@@ -35,16 +37,16 @@ document.querySelector("#table_addRow").addEventListener("click", function (ev) 
         <tr class="rowRecords">
             <td class="rowid d-none d-sm-table-cell">${rowNumber}</td>
             <td class="d-inline-block d-sm-table-cell">
-                <input type="text" list="productSuggestions" class="form-control" placeholder="Select / Enter a product name">
+                <input type="text" list="productSuggestions" class="form-control inputProdname" placeholder="Product name">
             </td>
             <td class="d-inline-block d-sm-table-cell">
-                <input type="number" min="0" class="form-control">
+                <input type="number" min="0" class="form-control" placeholder="quantity">
             </td>
             <td class="d-inline-block d-sm-table-cell">
-                <input type="text" size="10" list="unitSuggestions" class="form-control" placeholder="Select unit">
+                <input type="text" size="10" list="unitSuggestions" class="form-control" placeholder="unit">
             </td>
             <td class="d-inline-block d-sm-table-cell">
-                <input type="date" class="form-control">
+                <input type="date" class="form-control" placeholder="Bestbefore">
             </td>
             <td class="d-inline-block d-sm-table-cell">
                 <input type="number" class="form-control" min="1" step="1" value="1">
@@ -78,7 +80,7 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
     //     Submit部分需要引用Chrome插件项目中的JSPDF，生成PDF后在新窗口回弹给用户，以便用户打印label
     //     新增部分：同时给予用户选择是否添加到数据库，如果选是则提交时候触发API写入数据库（PDF创1页写1条）
     let doc = new jspdf.jsPDF({orientation: 'landscape', unit: 'px', format: 'a4', compress: true });
-    console.log(doc.internal.pageSize.width,doc.internal.pageSize.height) // Line Height在A4横向下总高度约为210
+    // console.log(doc.internal.pageSize.width,doc.internal.pageSize.height) // Line Height在A4横向下总高度约为210
     let prefillArray = []
     let productLists = document.querySelectorAll(".rowRecords")
     for (let i = 0; i < productLists.length; i++) {
@@ -94,18 +96,29 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
                 productLabel: (new Date()).toISOString().replaceAll("-", "").split("T")[0] + getRandomXHexdigits(7),
                 consumed: 0
             }
-            // 验证输入的productName是否在库中
+            
+            // 验证输入的productName是否在库中, 替换rowInput[0].value中的名称为产品Code，通过搜索原datalist的列表
+            document.querySelectorAll("#productSuggestions option").forEach(eachItem =>{
+                if (eachItem.value === rowInput[0].value){
+                    rowInput[0].value = eachItem.getAttribute("data-code")
+                }
+            })
+            let units = {bag:"bags",bottle:"btls",box:"boxes",carton:"ctns",piece:"pcs",roll:"rolls",unit:"units",pallet:"plts",skid:"skids"}
+
             qrCodeInfos.productCode = rowInput[0].value
             qrCodeInfos.productName = checkProductNameInDatabase(productsData,rowInput[0].value) ?
                 checkProductNameInDatabase(productsData,rowInput[0].value) :rowInput[0].value
             qrCodeInfos.quantity = rowInput[1].value // Quantity
-            qrCodeInfos.quantityUnit = rowInput[2].value // Unit
+            qrCodeInfos.quantityUnit = rowInput[2].value.toLowerCase() //
+            if (units[rowInput[2].value.toLowerCase()]){
+                qrCodeInfos.quantityUnit = units[rowInput[2].value.toLowerCase()]
+            }
             qrCodeInfos.bestbefore = rowInput[3].value
             qrCodeInfos.POIPnumber = document.querySelector("#input_purchaseorder").value ? document.querySelector("#input_purchaseorder").value : ""
 
             var initTextSize = 120
             doc.setFontSize(initTextSize).setFont(undefined, 'normal')
-            var part1Text = qrCodeInfos.productName.slice(0,32);
+            var part1Text = qrCodeInfos.productName.slice(0,30);
             while (doc.getTextDimensions(part1Text).w > doc.internal.pageSize.getWidth() - 20) {
                 initTextSize -= 5;
                 doc.setFontSize(initTextSize).setFont(undefined, 'normal')
@@ -119,18 +132,18 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
             // 新增内容，如果字段过长，拆分成2行，每行限制30字符，至多60字符，两行使用相同配置，左对齐
 
             doc.setFontSize(90).setFont(undefined, 'normal'); //Quantity Text
-            doc.text(qrCodeInfos.quantity + "  " + qrCodeInfos.quantityUnit, 15, doc.internal.pageSize.getHeight() - 190, {lineHeightFactor: 0.8});
+            doc.text(qrCodeInfos.quantity + "  " + qrCodeInfos.quantityUnit, 25, doc.internal.pageSize.getHeight() - 190, {lineHeightFactor: 0.8});
 
             doc.setFontSize(90).setFont(undefined, 'normal'); // bestbefore Text
-            doc.text(qrCodeInfos.bestbefore, 15, doc.internal.pageSize.getHeight() - 75, {lineHeightFactor: 0.8});
+            doc.text(qrCodeInfos.bestbefore, 20, doc.internal.pageSize.getHeight() - 75, {lineHeightFactor: 0.8});
 
             doc.addImage(qrCodeGenerateV3(qrCodeInfos.POIPnumber, qrCodeInfos.productCode, qrCodeInfos.productName,
                     qrCodeInfos.quantity, qrCodeInfos.quantityUnit, qrCodeInfos.bestbefore, qrCodeInfos.productLabel)
                 , "PNG", doc.internal.pageSize.getWidth() - 255, doc.internal.pageSize.getHeight() - 255, 250, 250)
 
+            //新增右上角标签号标记
             doc.setFontSize(24).setFont(undefined, 'normal')
-            doc.text(qrCodeInfos.productLabel.slice(-7), doc.internal.pageSize.getWidth()-20, 18,
-                {lineHeightFactor: 0.5, align: "right"});
+            doc.text(qrCodeInfos.productLabel.slice(-7), doc.internal.pageSize.getWidth()-20, 30, {lineHeightFactor: 0.75, align: "right"});
 
             doc.setFontSize(10).setFont(undefined, 'normal')
             let bottomVerfiyText = ["V3", qrCodeInfos.productLabel, qrCodeInfos.POIPnumber, qrCodeInfos.productCode,
@@ -140,13 +153,13 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
             doc.addPage("a4","landscape");
         }
     }
-    console.log(prefillArray)
+    // console.log(prefillArray)
     if (document.querySelector("#preloadCheckbox").checked){
         axios.post('/api/v1/preload',{body: prefillArray},{headers:{
                 'Content-Type': 'application/json'
             }})
             .then(response=>{
-                console.log(response)
+                // console.log(response)
                 if (response.data.acknowledged){
                     document.querySelector("#toastDiv .toast-body").innerText = "Label prefill successfully"
                     document.querySelector("#toastDiv").classList.add("bg-success");
