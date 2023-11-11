@@ -117,8 +117,29 @@ function createWindow(portNumber) {
         mainWindow.webContents.send('window-resize', {width, height});
     });
 
+    mainWindow.webContents.on('did-fail-load',(ev,errorCode, errorDescription, validatedURL,isMainFrame) =>{
+        console.log("Failed on URL"+validatedURL)
+        if (isMainFrame){
+
+        //     Failed in main Frame, load 404 page
+            mainWindow.loadFile(path.join(__dirname,'Modernize/pages/errors/400.html'))
+        }
+    })
+    mainWindow.webContents.on('ERR_FILE',(ev,errorCode, errorDescription, validatedURL,isMainFrame) =>{
+        console.log("Failed on URL"+validatedURL)
+        if (isMainFrame){
+
+            //     Failed in main Frame, load 404 page
+            //     mainWindow.loadFile(path.join(__dirname,'404.html'))
+        }
+    })
+
     ipcMain.on('print', (event) => {
-        mainWindow.webContents.print({},(success, failureReason)=>{
+        mainWindow.webContents.print({
+            pageSize: "A4",
+            silent: "false",
+            printBackground: "false"
+        },(success, failureReason)=>{
             if (failureReason){
                 console.error(failureReason);
             }
@@ -169,6 +190,8 @@ function getIPAddress() {
 app.on("window-all-closed", function () {
     if (process.platform !== "darwin") app.quit();
 });
+
+app.setAsDefaultProtocolClient("warehouseelec");
 
 const expressApp = express()
 expressApp.use(cors())
