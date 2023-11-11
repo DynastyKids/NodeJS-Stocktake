@@ -23,7 +23,7 @@ let table = new DataTable('#stockTable', {
     responsive: true,
     pageLength: 25,
     lengthMenu:[10,15,25,50,100],
-    columns: [{"width": "25%"}, null, null, {"width": "10%"}, null, null],
+    columns: [{"width": "25%"}, null, null, null, null, null, null],
     order: [[2, 'asc']]
 });
 let shouldRefresh = true;
@@ -62,14 +62,15 @@ function i18n_bodyContents() {
     var breadcrumbs = document.querySelectorAll(".breadcrumb-item");
     breadcrumbs[0].querySelector("a").innerText = i18next.t('index.pagetitle');
     breadcrumbs[1].querySelector("a").innerText = i18next.t('listproducts.pagetitle');
-    breadcrumbs[2].innerText = i18next.t('prefillstock.pagetitle');
+    breadcrumbs[2].querySelector("a").innerText = i18next.t('liststocks.pagetitle');
+    breadcrumbs[3].innerText = i18next.t('listpreload.pagetitle');
 
     // Contents
-    document.querySelector("h1").textContent = i18next.t('prefillstock.pagetitle');
-    document.querySelectorAll(".toggleRefreshText")[0].textContent = i18next.t(`prefillstock.refreshText.${0}`)
-    document.querySelectorAll(".toggleRefreshText")[1].textContent = i18next.t(`prefillstock.refreshText.${1}`)
-    document.querySelector("#areloadTable").textContent = i18next.t("prefillstock.reloadTableLink")
-    document.querySelector("#apauseTimer").textContent = i18next.t("prefillstock.apauseTimer")
+    document.querySelector("h1").textContent = i18next.t('listpreload.pagetitle');
+    document.querySelectorAll(".toggleRefreshText")[0].textContent = i18next.t(`listpreload.refreshText.${0}`)
+    document.querySelectorAll(".toggleRefreshText")[1].textContent = i18next.t(`listpreload.refreshText.${1}`)
+    document.querySelector("#areloadTable").textContent = i18next.t("listpreload.reloadTableLink")
+    document.querySelector("#apauseTimer").textContent = i18next.t("listpreload.apauseTimer")
     document.querySelector("#loadingTableText").textContent = i18next.t('general.loadingTableText')
     document.querySelector("#printlink").textContent = i18next.t('general.print')
 
@@ -77,17 +78,17 @@ function i18n_bodyContents() {
     var tableheaders = document.querySelectorAll("#stockTable thead th")
     var tablefooters = document.querySelectorAll("#stockTable tfoot th")
     for (let i = 0; i < tableheaders.length; i++) {
-        tableheaders[i].textContent = i18next.t(`prefillstock.table_head.${i}`)
+        tableheaders[i].textContent = i18next.t(`listpreload.table_head.${i}`)
     }
     for (let i = 0; i < tablefooters.length; i++) {
-        tablefooters[i].textContent = i18next.t(`prefillstock.table_head.${i}`)
+        tablefooters[i].textContent = i18next.t(`listpreload.table_head.${i}`)
     }
     document.querySelector("#stockTable_info").innerText.split(" ")
 
     // Table Actions
     var table_action_remove = document.querySelectorAll(".table_action_remove")
     for (let i = 0; i < table_action_remove.length; i++) {
-        table_action_remove[i].textContent = i18next.t(`prefillstock.table_actionRemove`)
+        table_action_remove[i].textContent = i18next.t(`listpreload.table_actionRemove`)
     }
 
     var infotextNumbers = document.querySelector("#stockTable_info").innerText.match(/\d+/g)
@@ -151,7 +152,7 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
     document.querySelector("#editModalSubmitBtn").disabled = true
     document.querySelector("#editModalSubmitBtn").textContent = "Save"
     document.querySelector("#editModalSubmitAddBtn").disabled = true
-    document.querySelector("#editModalSubmitAddBtn").textContent = "Save & Add to stock"
+    document.querySelector("#editModalSubmitAddBtn").textContent = "Save & Add to stocks"
     document.querySelector("#editModal .modal-title").textContent = `Loading Product Information`
     let originProperty = {}
     for (let i = 0; i < fullResultSet.length; i++) {
@@ -311,6 +312,7 @@ function loadStockInfoToTable(fetchAll) {
                     (element.bestbefore ? element.bestbefore : ""),
                     (element.shelfLocation ? element.shelfLocation : ""),
                     `<small>${(element.productLabel ? element.productLabel : "")}</small>`,
+                    `<small>${(element.POIPnumber ? element.POIPnumber : "")}</small>`,
                     `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_edit")}</a>
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 

@@ -160,7 +160,7 @@ paths:
       tags:
         - Sessions
       summary: Adding items from third-party | 从API添加一个扫描记录
-      description: Thirdparty using session code + base64 string of the product to adding a session log | 该端口目前交由移动端提供会话号和产品base64编码信息
+      description: Thirdparty using session code + base64 string of the products to adding a session log | 该端口目前交由移动端提供会话号和产品base64编码信息
       operationId: addlog
       requestBody:
         content:
@@ -194,7 +194,7 @@ paths:
       tags:
         - Products
       summary: Get all available products | 获取所有产品信息
-      description: Get all available product information, or selected product information when provide a keywork | 获取产品相关信息,若用户提供了某个关键词则会执行搜索并返回所有相关的信息
+      description: Get all available products information, or selected products information when provide a keywork | 获取产品相关信息,若用户提供了某个关键词则会执行搜索并返回所有相关的信息
       operationId: getProducts
       parameters:
         - name: query
@@ -220,8 +220,8 @@ paths:
     post:
       tags:
         - Products
-      summary: Adding/edit a product | 添加或修改一个产品
-      description: Adding a product to product list, actions allow add/update. Under item object, itemcode, description and productUnit are mandatory fields | 添加或更新一个产品信息，其中action字段允许填写add或者update;
+      summary: Adding/edit a products | 添加或修改一个产品
+      description: Adding a products to products list, actions allow add/update. Under item object, itemcode, description and productUnit are mandatory fields | 添加或更新一个产品信息，其中action字段允许填写add或者update;
         item字段中，强制要求要有itemcode, description和productUnit
       requestBody:
         content:
@@ -230,7 +230,7 @@ paths:
               type: object
               properties:
                 action:
-                  description: "Actions alloed: add, update. On update, will update based on product code & vendor code."
+                  description: "Actions alloed: add, update. On update, will update based on products code & vendor code."
                   enum:
                     - add
                     - update
@@ -281,14 +281,14 @@ paths:
 
         - name: product
           in: query
-          description: Optional, typein part of product id (at least 3 characters) to filter the results | 可选参数，使用产品ID（至少3位字符）来筛选需要的库存信息
+          description: Optional, typein part of products id (at least 3 characters) to filter the results | 可选参数，使用产品ID（至少3位字符）来筛选需要的库存信息
           required: false
           schema:
             type: string
 
         - name: consumed
           in: query
-          description: Optional, 0 for in-stock products only(default), 1 for including all history products  | 可选参数，是否需要从已使用的产品中查找，默认为0(仅查找现有库存)，1为包括所有历史参数
+          description: Optional, 0 for in-stocks products only(default), 1 for including all history products  | 可选参数，是否需要从已使用的产品中查找，默认为0(仅查找现有库存)，1为包括所有历史参数
           required: false
           schema:
             type: string
@@ -367,7 +367,7 @@ paths:
 
         - name: product
           in: query
-          description: Optional, typein part of product id (at least 3 characters) to filter the results | 可选参数，使用产品ID（至少3位字符）来筛选需要的库存信息
+          description: Optional, typein part of products id (at least 3 characters) to filter the results | 可选参数，使用产品ID（至少3位字符）来筛选需要的库存信息
           required: false
           schema:
             type: string
@@ -497,7 +497,7 @@ components:
         consumed:
           type: integer
           format: int32
-          description: Flag used to identify whether product has been removed from DB
+          description: Flag used to identify whether products has been removed from DB
         consumedTime:
           type: string
           format: date-time
@@ -549,7 +549,7 @@ components:
         consumed:
           type: integer
           format: int32
-          description: Flag used to identify whether product has been removed from DB
+          description: Flag used to identify whether products has been removed from DB
         consumedTime:
           type: string
           format: date-time
@@ -564,7 +564,7 @@ components:
           description: session code for the adding action | 需要针对操作的会话ID
         item:
           type: string
-          description: Base64 encoded string for the product information | 产品信息，需要Base64编码后的
+          description: Base64 encoded string for the products information | 产品信息，需要Base64编码后的
 
     product:
       type: object
@@ -588,10 +588,10 @@ components:
         productUnit:
           type: string
           example: carton
-          description: Mandatory, the minimum package unit name of the product | 必须字段，产品的最少单位名称
+          description: Mandatory, the minimum package unit name of the products | 必须字段，产品的最少单位名称
         vendorCode:
           type: string
-          description: Optional, the vendor's product code for this item | 可选字段，产品在上游供应商的商品ID
+          description: Optional, the vendor's products code for this item | 可选字段，产品在上游供应商的商品ID
         weight:
           type: integer
           format: int32
@@ -599,7 +599,7 @@ components:
         withBestbefore:
           type: integer
           format: int
-          description: Mandatory, does this product has expire date? (Y=1, N=0) | 产品是否有有效期（1为是，0为否）
+          description: Mandatory, does this products has expire date? (Y=1, N=0) | 产品是否有有效期（1为是，0为否）
           enum:
             - 0
             - 1

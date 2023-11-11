@@ -331,7 +331,7 @@ router.get("/v1/products", async (req, res) => {
 
 /*
 * PRODUCTS
-* product POST方法， 新
+* products POST方法， 新
 * 允许用户通过客户端添加，更新产品信息
 */
 router.post("/v1/products", async (req, res) =>{
@@ -545,7 +545,7 @@ router.post("/v1/stocks", async (req, res)=>{
                 await dbclient.close()
             }
         } else {
-            response.message = "Missing product key information's "
+            response.message = "Missing products key information's "
         }
 
     } else {
@@ -662,7 +662,7 @@ router.post("/v1/preload", async (req, res)=>{
         } catch (e) { response.message = e }
         finally { await dbclient.close() }
     } else {
-        response.message = "Missing product information's "
+        response.message = "Missing products information's "
     }
     res.json(response)
 })
