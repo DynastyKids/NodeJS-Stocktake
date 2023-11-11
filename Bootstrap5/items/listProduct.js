@@ -56,7 +56,7 @@ document.querySelector("#deleteRowModal").addEventListener('show.bs.modal', (ev)
     document.querySelector("#deleteModalConfirmBtn").addEventListener("click", async (ev) => {
         document.querySelector("#deleteModalConfirmBtn").disabled = true
         document.querySelector("#deleteModalConfirmBtn").textContent = "Updating"
-        result = (itemStatus === "true" ? await updateRecordById(itemId, {"inuse": false}) : await updateRecordById(itemId, {"inuse": true}))
+        result = (itemStatus === "true" ? await updateRecordById(itemId, {"active": false}) : await updateRecordById(itemId, {"active": true}))
         // console.log("Delete Model result", result)
         if (result.acknowledged) {
             location.reload()
@@ -274,7 +274,7 @@ async function fetchTablesData(){
             `${(eachItem.withBestbefore > 0 ? "√" : "")}`,
             `
                 <a href="#" data-bs-toggle="modal" data-bs-target="#editRowModal" data-bs-itemid="${eachItem._id.toHexString()}">${i18next.t("dataTables.action_edit")}</a>
-                <a href="#" data-bs-toggle="modal" data-bs-target="#deleteRowModal" data-bs-productname="${eachItem.labelname}" data-bs-itemid="${eachItem._id.toHexString()}" data-bs-state="${eachItem.inuse}">${(eachItem.inuse ? i18next.t("dataTables.action_remove") : i18next.t("dataTables.action_addback"))}</a>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#deleteRowModal" data-bs-productname="${eachItem.labelname}" data-bs-itemid="${eachItem._id.toHexString()}" data-bs-state="${eachItem.active}">${(eachItem.active ? i18next.t("dataTables.action_remove") : i18next.t("dataTables.action_addback"))}</a>
             `
         ]);
     })
