@@ -720,6 +720,11 @@
             "type": "string",
             "format": "date-time",
             "description": "Date Format must be YYYY-MM-DD HH:mm:ss"
+          },
+          "unitprice": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, Unit price of the item | 可选字段，产品价格"
           }
         }
       },
@@ -842,6 +847,26 @@
             "type": "integer",
             "format": "int32",
             "description": "Optional, the weight of each unit, recommand measure with grams | 可选字段，产品的重量（推荐用克表示）"
+          },
+          "height": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, the height of each unit (cm) | 可选字段，产品的高度（单位cm）"
+          },
+          "length": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, the length of each unit (cm) | 可选字段，产品的长度（单位cm）"
+          },
+          "width": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, the width of each unit (cm) | 可选字段，产品的宽度（单位cm）"
+          },
+          "unitprice": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, Unit price of the item | 可选字段，产品价格"
           },
           "withBestbefore": {
             "type": "integer",
