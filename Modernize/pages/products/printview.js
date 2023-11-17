@@ -29,6 +29,7 @@ window.onload = async () => {
         searching:false,
         columns: [null, {"width": "45%"}, null, null, null],
         order: [0, 'asc'],
+        orderFixed: [0, 'asc'],
         data: await fetchTablesData()
     });
 }

@@ -23,7 +23,8 @@ let table = new DataTable('#table', {
     paging:false,
     searching: false,
     columns: [{"width": "25%"}, {"width": "15%"}, {"width": "15%"}, {"width": "10%"}, {"width": "20%"}, null],
-    order: [[3, 'asc']]
+    order: [[3, 'asc']],
+    orderFixed: [ 3, 'asc']
 });
 let shouldRefresh = true;
 const countdownFrom = 60;

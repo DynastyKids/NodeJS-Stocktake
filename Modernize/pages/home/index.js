@@ -205,23 +205,19 @@ document.addEventListener("DOMContentLoaded",async () => {
     // Card 3: Best Seller page
     let topSeller = getTopSeller(stockRecords,productsList)
     document.querySelector("#card_topseller h5").textContent = `Best Sellers in last 3 months`
-
-    let itemDiv1 = document.createElement("div")
-    itemDiv1.className = "d-flex justify-content-between align-items-center mb-3"
-    itemDiv1.innerHTML = `<div><h6 class="mb-1 fs-3 fw-semibold">${topSeller[0]['labelname']}</h6></div>`+
-        `<div><span class="badge bg-light-info text-info fw-normal fs-2">$ ${new Intl.NumberFormat('en-AU').format(topSeller[0]['value'])}</span></div>`
-    let itemDiv2 = document.createElement("div")
-    itemDiv2.className = "d-flex justify-content-between align-items-center mb-3"
-    itemDiv2.innerHTML = `<div><h6 class="mb-1 fs-3 fw-semibold">${topSeller[1]['labelname']}</h6></div>`+
-        `<div><span class="badge bg-light-info text-info fw-normal fs-2">$ ${new Intl.NumberFormat('en-AU').format(topSeller[1]['value'])}</span></div>`
-    let itemDiv3 = document.createElement("div")
-    itemDiv3.className = "d-flex justify-content-between align-items-center mb-3"
-    itemDiv3.innerHTML = `<div><h6 class="mb-1 fs-3 fw-semibold">${topSeller[2]['labelname']}</h6></div>`+
-        `<div><span class="badge bg-light-info text-info fw-normal fs-2">$ ${new Intl.NumberFormat('en-AU').format(topSeller[2]['value'])}</span></div>`
-
-    document.querySelector("#card_topseller h5").insertAdjacentElement('afterend',itemDiv3)
-    document.querySelector("#card_topseller h5").insertAdjacentElement('afterend',itemDiv2)
-    document.querySelector("#card_topseller h5").insertAdjacentElement('afterend',itemDiv1)
+    let successfulInsert = 3
+    for (let i = 0; i < topSeller.length && successfulInsert > 0; i++) {
+        try{
+            let itemDiv = document.createElement("div")
+            itemDiv.className = "d-flex justify-content-between align-items-center mb-3"
+            itemDiv.innerHTML = `<div><h6 class="mb-1 fs-3 fw-semibold">${topSeller[i]['labelname'] ? topSeller[i]['labelname'] : ''}</h6></div>`+
+                `<div><span class="badge bg-light-info text-info fw-normal fs-2">$ ${new Intl.NumberFormat('en-AU').format(topSeller[i]['value'])}</span></div>`
+            document.querySelector("#card_topseller h5").append(itemDiv)
+            successfulInsert -= 1
+        } catch (e) {
+            console.log("Error while insert best seller:",e)
+        }
+    }
 
     // Card 4 - Apex Chart 3 Inventory Report
     // 创建一个循环，循环到第一个pollinglog时候的数据的年份，然后添加对应的财年选项，每次用户选定财年后再拉取数据
@@ -463,35 +459,39 @@ function isSameYearmonth(date = new Date(), date2 = new Date()){
 
 function getTopSeller(stockRecords, productList) { // 默认选择x位的top seller
     let stockList = []
-    for (const eachStock of stockRecords) {
+    for (let i = 0; i < stockRecords.length; i++) {
+        let eachStock = stockRecords[i]
         let productInfo = {}
-        for (let i = 0; i < productList.length; i++) {
-            if (productList[i].productCode === eachStock.productCode) {
-                productInfo=productList[i]
+        for (let j = 0; j < productList.length; j++) {
+            if (productList[j].productCode === eachStock.productCode) {
+                productInfo=productList[j]
             }
         }
-        let setMonth = (new Date().getMonth() >= 3 ? new Date().getMonth() - 3 : 12 + (new Date().getMonth() - 3))
-        let setYear = (new Date().getMonth() >= 3 ? new Date().getFullYear() : new Date().getFullYear() - 1)
-        if (eachStock.hasOwnProperty("consumedTime") && new Date(eachStock.consumedTime) > new Date(setYear, setMonth, new Date().getDate())) {
-            //时间在范围内可继续计算
-            let foundInList = false
-            for (let i = 0; i < stockList.length; i++) {
-                if (stockList[i].productCode === eachStock.productCode) {
-                    foundInList = true
-                    stockList.quantity += (!isNaN(eachStock.quantity) ? eachStock.quantity : 0)
-                    stockList.value += Math.round((!isNaN(eachStock.quantity) ? eachStock.quantity : 0 ) * (!isNaN(eachStock.unitPrice) ? eachStock.unitPrice : 0))
-                    break ;
+
+        if (new Date(new Date() - new Date(stockRecords[i].consumedTime)).getUTCMonth() > 3){
+            continue; //时间不在范围内，跳过
+        } //时间在范围内可继续计算
+
+        let foundInList = false
+        for (let j = 0; j < stockList.length && !foundInList; j++) { //查找这样产品是否在已经添加的列表里面
+            if (stockList[j].productCode === stockRecords[i].productCode){
+                foundInList = true
+
+                stockList[j].quantity += (isNaN(stockRecords[i].quantity) ? parseInt(stockRecords[i].quantity) : stockRecords[i].quantity)
+                if (stockRecords[i].hasOwnProperty("unitPrice")){
+                    stockList[j].value += Math.round((isNaN(stockRecords[i].quantity) ? parseInt(stockRecords[i].quantity) : stockRecords[i].quantity) * (!isNaN(stockRecords[i].unitPrice) ? stockRecords[i].unitPrice : 0))
                 }
             }
-            if (!foundInList) {              //如果不在当前库存列表记录则创建新纪录
-                stockList.push({
-                    productCode: eachStock.productCode,
-                    labelname: eachStock.productName,
-                    quantity: eachStock.quantity,
-                    unit: eachStock.quantityUnit,
-                    value: Math.round((!isNaN(eachStock.quantity) ? eachStock.quantity : 0) * isNaN((eachStock.unitPrice) ? eachStock.unitPrice : 0))
-                })
-            }
+        }
+
+        if (!foundInList) {              //如果不在当前库存列表记录则创建新纪录
+            stockList.push({
+                productCode: stockRecords[i].productCode,
+                labelname: stockRecords[i].productName,
+                quantity: stockRecords[i].quantity,
+                unit: stockRecords[i].quantityUnit,
+                value: Math.round((!isNaN(stockRecords[i].quantity) ? stockRecords[i].quantity : 0) * (!isNaN(stockRecords[i].unitPrice) ? stockRecords[i].unitPrice : 0))
+            })
         }
     }
 
