@@ -137,8 +137,6 @@ function createWindow(portNumber) {
     ipcMain.on('print', (event) => {
         mainWindow.webContents.print({
             pageSize: "A4",
-            silent: "false",
-            printBackground: "false"
         },(success, failureReason)=>{
             if (failureReason){
                 console.error(failureReason);
