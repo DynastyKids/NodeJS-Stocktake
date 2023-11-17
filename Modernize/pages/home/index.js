@@ -317,7 +317,7 @@ document.addEventListener("DOMContentLoaded",async () => {
         newRow.className = "timeline-item d-flex position-relative overflow-hidden"
         let iconElement = document.createElement("div")
         iconElement.className = "timeline-badge-wrap d-flex flex-column align-items-center"
-        iconElement.innerHTML = `<span class="timeline-badge border-2 border ${(recentTransList[i].direction == "in" ? "border-success" : "border-primary")} flex-shrink-0 my-8"></span>
+        iconElement.innerHTML = `<span class="timeline-badge border-2 border ${(recentTransList[i].direction === "in" ? "border-success" : "border-primary")} flex-shrink-0 my-8"></span>
                                         <span class="timeline-badge-border d-block flex-shrink-0"></span>`
         let timeElement = document.createElement("div")
         timeElement.className = "timeline-time text-dark flex-shrink-0 text-end"
@@ -478,8 +478,8 @@ function getTopSeller(stockRecords, productList) { // 默认选择x位的top sel
             for (let i = 0; i < stockList.length; i++) {
                 if (stockList[i].productCode === eachStock.productCode) {
                     foundInList = true
-                    stockList.quantity += eachStock.quantity
-                    stockList.value += Math.round(eachStock.quantity * eachStock.unitPrice)
+                    stockList.quantity += (!isNaN(eachStock.quantity) ? eachStock.quantity : 0)
+                    stockList.value += Math.round((!isNaN(eachStock.quantity) ? eachStock.quantity : 0 ) * (!isNaN(eachStock.unitPrice) ? eachStock.unitPrice : 0))
                     break ;
                 }
             }
@@ -489,7 +489,7 @@ function getTopSeller(stockRecords, productList) { // 默认选择x位的top sel
                     labelname: eachStock.productName,
                     quantity: eachStock.quantity,
                     unit: eachStock.quantityUnit,
-                    value: Math.round(eachStock.quantity*eachStock.unitPrice)
+                    value: Math.round((!isNaN(eachStock.quantity) ? eachStock.quantity : 0) * isNaN((eachStock.unitPrice) ? eachStock.unitPrice : 0))
                 })
             }
         }
