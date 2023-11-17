@@ -98,8 +98,8 @@ async function fetchTablesData(){
     dataset = []
     results.forEach(eachItem =>{
         dataset.push([
-            eachItem.productCode,
-            eachItem.labelname,
+            (eachItem.productCode ? eachItem.productCode : ""),
+            (eachItem.labelname ? eachItem.labelname : ""),
             `${stocksLevel[eachItem.productCode] ? stocksLevel[eachItem.productCode].quantity+" "+stocksLevel[eachItem.productCode].unit:""}`,
             `${(eachItem.cartonQty ? eachItem.cartonQty + (eachItem.unit ? " " + eachItem.unit : "") : " - ")}`+
             `<br><small ${eachItem.cartonQty && eachItem.palletQty ? "data-bs-toggle=\"tooltip\"" +
@@ -186,7 +186,7 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
     document.querySelector("#modelEditSubmitBtn").textContent = "Fetching...";
     document.querySelectorAll("#editRowModal .modal-body input").forEach(item=>{
         item.disabled = true
-        item.value=""
+        item.value = ""
     })
     document.querySelector("#editRowModalLabel").textContent = "Loading Data ..."
     document.querySelector("#expiredateCheck").checked = false
@@ -210,7 +210,9 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
             document.querySelector("#editRowModalinput_height").value = (result.sizeHeight ? result.sizeHeight : "")
 
             document.querySelector("#editRowModalinput_vendorCode").value = (result.vendorCode ? result.vendorCode : "")
-            if (result.withBestbefore && result.withBestbefore == 1){
+            document.querySelector("#editRowModalinput_purcPrice").value = (result.unitPrice ? result.unitPrice : "")
+            document.querySelector("#editRowModalinput_sellPrice").value = (result.sellPrice ? result.sellPrice : "")
+            if (result.withBestbefore && result.withBestbefore === 1){
                 document.querySelector("#expiredateCheck").checked = true
             } else {
                 document.querySelector("#expiredateCheck").checked = false
@@ -228,6 +230,9 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
 
     //当用户编辑完成后，开始提交
     document.querySelector("#modelEditSubmitBtn").addEventListener("click",async (ev) => {
+        document.querySelectorAll("#editRowModal .modal-body input").forEach(eachInputbox=>{
+            eachInputbox.disabled = true
+        })
         document.querySelector("#modelEditSubmitBtn").disabled = true
         document.querySelector("#modelEditSubmitBtn").textContent = "Updating";
 
@@ -246,18 +251,47 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
         result.sizeHeight = document.querySelector("#editRowModalinput_height").value
 
         result.vendorCode = document.querySelector("#editRowModalinput_vendorCode").value
+        result.unitPrice = document.querySelector("#editRowModalinput_purcPrice").value
+        result.sellPrice = document.querySelector("#editRowModalinput_sellPrice").value
 
         let updateResult = await updateRecordById(itemId, result)
         //     当最后确认提交成功则dismiss并回弹成功信息
         if (updateResult.acknowledged) {
             bootstrap.Modal.getInstance( document.querySelector("#editRowModal")).hide()
-            if (table) {
-                let results = await fetchTablesData();
-                table.clear().draw()
-                table.rows.add(results).draw()
-            }
+            window.location.reload()
         } else {
             document.querySelector("#deleteRowModal .modal-body p").innerText = "Error happened while on updates."
         }
     })
+})
+
+async function updateRecordById(recordId, updateData) {
+    let client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            strict: true,
+            deprecationErrors: true,
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        }
+    });
+    let sessions = client.db(targetDB).collection("products");
+    let results;
+    try {
+        await client.connect();
+        results = await sessions.updateOne({'_id': (new ObjectID(recordId))}, {$set: updateData});
+    } catch (e) {
+        console.error("Fetching error:", e)
+    } finally {
+        await client.close();
+    }
+    return results
+}
+
+document.querySelector("#act_reloadTable").addEventListener("click",async (ev) => {
+    if (table) {
+        table.clear().draw()
+        let results = await fetchTablesData();
+        table.rows.add(results).draw()
+    }
 })

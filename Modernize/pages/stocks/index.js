@@ -2,6 +2,7 @@ const { ipcRenderer } = require('electron');
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 const moment = require('moment-timezone')
+moment.locale("en-AU")
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
@@ -89,11 +90,17 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
             originProperty = fullResultSet[i]
             //找到了目标信息，继续填充
             document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${fullResultSet[i].productName}`
-            document.querySelector("#editModal .modal-body p").innerHTML = `Product Info: ${fullResultSet[i].productCode} - ${fullResultSet[i].productName}<br>Label ID: ${fullResultSet[i].productLabel}`
+            document.querySelector("#editModal .modal-body #productInfoText").textContent = `${fullResultSet[i].productCode} - ${fullResultSet[i].productName}`
+            document.querySelector("#editModal .modal-body #labelIDText").textContent = `${fullResultSet[i].productLabel}`
             document.querySelector("#modalEditQuantity").value = (fullResultSet[i].quantity ? fullResultSet[i].quantity : "")
             document.querySelector("#modalEditUnit").value = (fullResultSet[i].quantityUnit ? fullResultSet[i].quantityUnit : "")
             document.querySelector("#modalEditBestbefore").value = (fullResultSet[i].bestbefore ? fullResultSet[i].bestbefore : "")
             document.querySelector("#modelEditLocation").value = (fullResultSet[i].shelfLocation ? fullResultSet[i].shelfLocation : "")
+            document.querySelector("#modelEditPOIP").value = (fullResultSet[i].POIPnumber ? fullResultSet[i].POIPnumber : "")
+            document.querySelector("#modelEditUnitprice").value = (fullResultSet[i].unitPrice ? fullResultSet[i].unitPrice : "")
+            document.querySelector("#modelEditLoggingTime").value = (fullResultSet[i].loggingTime ? fullResultSet[i].loggingTime : "")
+            document.querySelector("#modelCheckboxConsumed").checked = (fullResultSet[i].consumed === 1)
+            document.querySelector("#modelEditConsumeTime").value = (fullResultSet[i].consumedTime ? fullResultSet[i].consumedTime : "")
             document.querySelector("#editModalSubmitBtn").disabled = false
             break;
         }
@@ -119,8 +126,10 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
             }
         })
         if (result.acknowledged){
-            bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
-            loadStockInfoToTable()
+            setTimeout(function(){
+                bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
+                window.location.reload()
+            },2500)
         } else {
             document.querySelector("#editModal .modal-body p").textContent = "Error on Update"
         }
@@ -259,17 +268,18 @@ function loadStockInfoToTable(fetchAll) {
                     `${element.productCode} - ${element.productName}`,
                     `${element.quantity} ${element.quantityUnit}`,
                     (element.bestbefore ? element.bestbefore : ""),
+                    // (element.bestbefore ? moment(element.bestbefore).format("l") : ""),
                     (element.shelfLocation ? element.shelfLocation : ""),
-                    `<a href="#" data-bs-toggle="tooltip" data-bs-placement="top" title="Record on: ${( element.loggingTime ?  element.loggingTime
-                     : "")}">${(element.productLabel ? element.productLabel : "")}</a>`,
+                    `<p>${(element.productLabel ? element.productLabel : "")}</p><p style="font-size: xx-small">${( element.loggingTime ? moment(element.loggingTime).format("lll") : "")}</p>`,
+                    `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
+                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>` +
                     (element.consumed < 1 ? `
-                    <a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
-                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>
-                    ` : `<small class="table_action_removed">${(element.consumedTime ? "Removed on " + element.consumedTime.split(" ")[0]: "")}</small>
-                    <a href="#" class="table_actions table_action_revert" data-bs-toggle="modal" data-bs-target="#revertModal" 
-                        data-bs-itemId="${element.productLabel}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}" style="margin: 0 2px 0 2px">Revert</a>`)
+                    ` : `<a href="#" class="table_actions table_action_revert" data-bs-toggle="modal" data-bs-target="#revertModal" 
+                        data-bs-itemId="${element.productLabel}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}" style="margin: 0 2px 0 2px">Revert</a>
+                        <p class="table_action_removed" style="font-size: xx-small;">${(element.consumedTime ? "Removed on " +
+                        element.consumedTime.split(" ")[0]: "")}</p>`)
                 ]).draw(false);
             }
         }

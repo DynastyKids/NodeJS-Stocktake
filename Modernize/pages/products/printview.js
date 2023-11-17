@@ -52,8 +52,8 @@ async function fetchTablesData(){
     dataset = []
     results.forEach(eachItem =>{
         dataset.push([
-            eachItem.productCode,
-            eachItem.labelname,
+            eachItem.productCode ? eachItem.productCode : "",
+            eachItem.labelname ? eachItem.labelname : "",
             `${(eachItem.cartonQty ? eachItem.cartonQty + (eachItem.unit ? " " + eachItem.unit : "") : " - ")}`,
             `${(eachItem.palletQty ? eachItem.palletQty + (eachItem.unit ? " " + eachItem.unit : "") : " - ")}` +
             `${((eachItem.cartonQty && eachItem.palletQty) ? "<br><small>" + eachItem.palletQty / eachItem.cartonQty + " ctns</small>" : "")}`,

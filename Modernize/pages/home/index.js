@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded",async () => {
         chart: {
             width: 175,
             type: "donut",
-            fontFamily: "Plus Jakarta Sans', sans-serif",
+            fontFamily: "sans-serif",
             foreColor: "#adb0bb",
         },
         plotOptions: {
@@ -204,15 +204,15 @@ document.addEventListener("DOMContentLoaded",async () => {
 
     // Card 3: Best Seller page
     let topSeller = getTopSeller(stockRecords,productsList)
-    document.querySelector("#card_topseller h5").textContent = `Best Sellers in last 3 months`
-    let successfulInsert = 3
+    let successfulInsert = 5
+    document.querySelector("#card_topseller h5").textContent = `Top ${successfulInsert} sellers in last 3 months`
     for (let i = 0; i < topSeller.length && successfulInsert > 0; i++) {
         try{
             let itemDiv = document.createElement("div")
             itemDiv.className = "d-flex justify-content-between align-items-center mb-3"
             itemDiv.innerHTML = `<div><h6 class="mb-1 fs-3 fw-semibold">${topSeller[i]['labelname'] ? topSeller[i]['labelname'] : ''}</h6></div>`+
                 `<div><span class="badge bg-light-info text-info fw-normal fs-2">$ ${new Intl.NumberFormat('en-AU').format(topSeller[i]['value'])}</span></div>`
-            document.querySelector("#card_topseller h5").append(itemDiv)
+            document.querySelector("#card_topseller").append(itemDiv)
             successfulInsert -= 1
         } catch (e) {
             console.log("Error while insert best seller:",e)
@@ -402,9 +402,8 @@ function getRecentTransactions(recordsArray, limit = 500){
                 reorderedDupArray.push(pushElement)
             }
         }
-        reorderedDupArray.sort((a,b)=>b.compTime - a.compTime)
+        reorderedDupArray.sort((a,b)=>new Date(b.compTime) - new Date(a.compTime))
     }
-
     return reorderedDupArray
 }
 
