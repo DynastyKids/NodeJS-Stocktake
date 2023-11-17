@@ -125,147 +125,81 @@
                 </div>
                 <div class="col-lg-4 col-sm-6">
                     <div class="card">
-                        <div class="card-body">
-                            <div class="mb-7 pb-1">
-                                <h5 class="card-title mb-5 fw-semibold">Best Seller This Month</h5>
-                                <div class="d-flex justify-content-between align-items-center mb-6">
-                                    <div><h6 class="mb-1 fs-4 fw-semibold">Strawberry Popping</h6></div>
-                                    <div>
-                                        <span class="badge bg-light-primary text-primary fw-semibold fs-3">180 carton</span>
-                                    </div>
-                                </div>
-                                <div class="progress bg-light-primary" style="height: 4px;">
-                                    <div class="progress-bar w-50" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="d-flex justify-content-between align-items-center mb-6">
-                                    <div><h6 class="mb-1 fs-4 fw-semibold">Watermelon Syrup</h6></div>
-                                    <div>
-                                        <span class="badge bg-light-secondary text-secondary fw-bold fs-3">72 carton</span>
-                                    </div>
-                                </div>
-                                <div class="progress bg-light-secondary" style="height: 4px;">
-                                    <div class="progress-bar bg-secondary w-25" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                            </div>
+                        <div class="card-body" id="card_topseller">
+                            <h5 class="card-title mb-5 fw-semibold">Loading Best Sellers</h5>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="row">
-                <div class="col-lg-8 d-flex align-items-strech">
+                <div class="col-12 d-flex align-items-strech">
                     <div class="card w-100">
-                        <div class="card-body">
+                        <div class="card-body" id="inventoryOverviews">
                             <div class="d-sm-flex d-block align-items-center justify-content-between mb-9">
                                 <div class="mb-3 mb-sm-0">
-                                    <h5 class="card-title fw-semibold">Pallets of goods processed Overview</h5>
+                                    <h5 class="card-title fw-semibold">Loading Inventory data</h5>
                                 </div>
                                 <div>
-                                    <select class="form-select">
-                                        <option value="1">March 2023</option>
-                                        <option value="2">April 2023</option>
-                                        <option value="3">May 2023</option>
-                                        <option value="4">June 2023</option>
+                                    <select class="form-select" id="inv_optionslist">
+                                        <option value="-6">Last 6 months</option>
                                     </select>
                                 </div>
                             </div>
-                            <div id="chart"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-8 d-flex align-items-stretch">
-                    <div class="card w-100">
-                        <div class="card-body p-4">
-                            <div class="mb-4">
-                                <h5 class="card-title fw-semibold">Recent Inbound Transactions</h5>
-                            </div>
-                            <ul class="timeline-widget mb-0 position-relative mb-n5">
-                                <li class="timeline-item d-flex position-relative overflow-hidden">
-                                    <div class="timeline-badge-wrap d-flex flex-column align-items-center">
-                                        <span class="timeline-badge border-2 border border-primary flex-shrink-0 my-8"></span>
-                                        <span class="timeline-badge-border d-block flex-shrink-0"></span>
-                                    </div>
-                                    <div class="timeline-time text-dark flex-shrink-0 text-end">28/10 09:30</div>
-                                    <div class="timeline-item fw-semibold fs-3 text-dark mt-n1">TP006 - Lychee Jelly
-                                        <div class="timeline-desc d-block fw-normal"> 45 Carton, 2024-01-01 , IN FA2
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div id="inventoryOverviewChart" style="min-height: 400px;"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="hstack mb-4 pb-1">
+                                        <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
+                                            <i class="ti ti-grid-dots text-primary fs-6"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="mb-0 fs-7 fw-semibold" id="stockValue"></h4>
+                                            <p class="fs-3 mb-0">Current in-stock Value</p>
                                         </div>
                                     </div>
-
-                                </li>
-                                <li class="timeline-item d-flex position-relative overflow-hidden">
-                                    <div class="timeline-badge-wrap d-flex flex-column align-items-center">
-                                        <span class="timeline-badge border-2 border border-info flex-shrink-0 my-8"></span>
-                                        <span class="timeline-badge-border d-block flex-shrink-0"></span>
+                                    <div>
+                                        <div class="d-flex align-items-baseline mb-4">
+                                            <span class="round-8 text-bg-primary rounded-circle me-6"></span>
+                                            <div>
+                                                <p class="fs-3 mb-1">Imported value this month</p>
+                                                <h6 class="fs-5 fw-semibold mb-0" id="inboundValue"></h6>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-baseline mb-4 pb-1">
+                                            <span class="round-8 text-bg-secondary rounded-circle me-6"></span>
+                                            <div>
+                                                <p class="fs-3 mb-1">Shipped value this month</p>
+                                                <h6 class="fs-5 fw-semibold mb-0" id="outboundValue"></h6>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="timeline-time text-dark flex-shrink-0 text-end">10:00 am</div>
-                                    <div class="timeline-desc fs-3 text-dark mt-n1 fw-semibold">New sale recorded
-                                    </div>
-                                    <div class="timeline-item fs-3 text-dark mt-n1 fw-semibold">Pearls
-                                    </div>
-                                </li>
-                                <li class="timeline-item d-flex position-relative overflow-hidden">
-                                    <div class="timeline-badge-wrap d-flex flex-column align-items-center">
-                                        <span class="timeline-badge border-2 border border-success flex-shrink-0 my-8"></span>
-                                        <span class="timeline-badge-border d-block flex-shrink-0"></span>
-                                    </div>
-                                    <div class="timeline-time text-dark flex-shrink-0 text-end">12:00 am</div>
-                                    <div class="timeline-desc fs-3 text-dark mt-n1">Payment was made of $64.95 to
-                                        Michael
-                                    </div>
-                                </li>
-                                <li class="timeline-item d-flex position-relative overflow-hidden">
-
-                                    <div class="timeline-badge-wrap d-flex flex-column align-items-center">
-                                        <span class="timeline-badge border-2 border border-warning flex-shrink-0 my-8"></span>
-                                        <span class="timeline-badge-border d-block flex-shrink-0"></span>
-                                    </div>
-                                    <div class="timeline-time text-dark flex-shrink-0 text-end">09:30 am</div>
-                                    <div class="timeline-desc fs-3 text-dark mt-n1 fw-semibold">New sale recorded <a
-                                            href="javascript:void(0)"
-                                            class="text-primary d-block fw-normal">#ML-3467</a>
-                                    </div>
-                                </li>
-                                <li class="timeline-item d-flex position-relative overflow-hidden">
-                                    <div class="timeline-badge-wrap d-flex flex-column align-items-center">
-                                        <span class="timeline-badge border-2 border border-danger flex-shrink-0 my-8"></span>
-                                        <span class="timeline-badge-border d-block flex-shrink-0"></span>
-                                    </div>
-                                    <div class="timeline-time text-dark flex-shrink-0 text-end">09:30 am</div>
-                                    <div class="timeline-desc fs-3 text-dark mt-n1 fw-semibold">New arrival recorded
-                                    </div>
-                                </li>
-                            </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4 col-md-6 d-flex align-items-stretch">
+                <div class="col-12 d-flex align-items-stretch">
                     <div class="card w-100">
-                        <div class="card-body">
-                            <h5 class="card-title fw-semibold">Overall Transactions</h5>
-                            <p class="card-subtitle mb-4">Overview of inbound/outbound count</p>
-                            <div class="d-flex align-items-center">
-                                <div class="me-4">
-                                    <span class="round-8 bg-primary rounded-circle me-2 d-inline-block"></span>
-                                    <span class="fs-2">Inbound</span>
-                                </div>
-                                <div>
-                                    <span class="round-8 bg-secondary rounded-circle me-2 d-inline-block"></span>
-                                    <span class="fs-2">Outbound</span>
-                                </div>
+                        <div class="card-body p-4" id="recentTransactionsCard">
+                            <div class="mb-4">
+                                <h5 class="card-title fw-semibold">Loading Transactions</h5>
                             </div>
-
+                            <ul class="timeline-widget mb-0 position-relative mb-n5">
+                            </ul>
                         </div>
                     </div>
                 </div>
             </div>
             <hr>
             <p class="mb-0 fs-1" style="font-size: x-small">
-                Project was developed by DynastyKids on <a href="https://github.com/DynastyKids/NodeJS-Stocktake" target="_blank" class="pe-1 text-primary text-decoration-underline">GitHub</a>,
-                Theme Design by <a href="https://adminmart.com/" target="_blank" class="pe-1 text-primary text-decoration-underline">AdminMart</a>
-                Distributed by <a href="https://themewagon.com" target="_blank" class="pe-1 text-primary text-decoration-underline">ThemeWagon</a></p>
+                Project was developed by DynastyKids & opensourced on
+                <a href="https://github.com/DynastyKids/NodeJS-Stocktake" target="_blank">GitHub</a>,
+                <a href="https://adminmart.com/product/modernize-free-bootstrap-5-admin-template/" target="_blank">Moderize</a>
+                theme Design & Distributed by <a href="https://adminmart.com/" target="_blank"
+                                   class="pe-1 text-primary text-decoration-underline">AdminMart</a>
+            </p>
         </div>
     </div>
 </div>

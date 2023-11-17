@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Add Stock - Warehouse Electron (N)</title>
+    <title>List Sessions - Warehouse Electron (N)</title>
     <link rel="shortcut icon" type="image/png" href="../../assets/images/logos/favicon.png"/>
     <link rel="stylesheet" href="../../assets/css/styles.min.css"/>
 </head>
@@ -22,7 +22,8 @@
                 })
         </script>
     </aside>
-
+    <!--  Sidebar End -->
+    <!--  Main wrapper -->
     <div class="body-wrapper">
         <!--  Header Start -->
         <header class="app-header">
@@ -75,10 +76,61 @@
         </header>
         <!--  Header End -->
         <div class="container-fluid">
+            <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+                <div class="card-body px-4 py-3">
+                    <div class="row align-items-center">
+                        <div class="col-12">
+                            <h4 class="fw-semibold mb-8">Sessions</h4>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../home/index.html">Home</a>
+                                    </li>
+                                    <li class="breadcrumb-item" aria-current="page">sessions</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title fw-semibold mb-4">Sample Page</h5>
-                    <p class="mb-0">This is a sample page </p>
+                    <h5 class="card-title fw-semibold mb-4">Actions</h5>
+                    <div class="list-group-item-action">
+                        <a class="mb-0 ms-2" href="#" id="act_listchange" data-value="all">List All Sessions</a>
+                        <a class="mb-0 ms-2" href="#" id="act_reloadTable">Refresh Session List</a>
+                        <a class="mb-0 ms-2" href="./add.html">Add session</a>
+                        <div id="loadingStatus">
+                            <span class="spinner-border" role="status" id="loadingSpinners"></span>
+                            <span class="" id="loadingTableText">Loading data...</span>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="card-body">
+                    <h5 class="card-title fw-semibold mb-4">List of Sessions</h5>
+                    <p class="mb-0"><table class="table">
+                    <thead class="thead-light">
+                    <tr>
+                        <th scope="col">Session ID</th>
+                        <th scope="col">Start Time</th>
+                        <th scope="col">End Time</th>
+                        <th scope="col">Setup Time</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                    </thead>
+                    <tfoot>
+                    <tr>
+                        <th scope="col">Session ID</th>
+                        <th scope="col">Start Time</th>
+                        <th scope="col">End Time</th>
+                        <th scope="col">Setup Time</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                    </tfoot>
+                    <tbody id="activeTBody">
+                    </tbody>
+                </table> </p>
                 </div>
             </div>
         </div>

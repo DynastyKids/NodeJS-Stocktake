@@ -13,11 +13,12 @@ const {weekNumberYearSun} = require("weeknumber");
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const dbname = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
+const moment = require("moment")
+
 // Preset Global Vaiable, Request data on page load
 let stockRecords = []
-let productsList =[]
+let productsList = []
 // Apex Charts
-
 
 document.addEventListener("DOMContentLoaded",async () => {
     stockRecords = await getAllStockRecords();
@@ -25,6 +26,21 @@ document.addEventListener("DOMContentLoaded",async () => {
 
     console.log(stockRecords)
     console.log(productsList)
+
+    // 预先转换所有Carton单位到最小单位，避免后续二次转换出错
+    for (let i = 0; i < stockRecords.length; i++) {
+        stockRecords[i].quantityUnit = stockRecords[i].quantityUnit.toLowerCase()
+        if (stockRecords[i].quantityUnit.includes("ctn") || stockRecords[i].quantityUnit.includes("carton")){
+            for (let j = 0; j < productsList.length; j++) {
+                if (productsList[j].productCode === stockRecords[i].productCode && productsList[j].hasOwnProperty("cartonQty")){
+                    stockRecords[i].quantityUnit = productsList[j].unit
+                    stockRecords[i].quantity = stockRecords[i].quantity * productsList[j].cartonQty
+                    break;
+                }
+            }
+        }
+    }
+
 
     // index.js Apex chart 1, Quarterly Breakup
     //// 脚注标记
@@ -37,12 +53,6 @@ document.addEventListener("DOMContentLoaded",async () => {
     //// 获取季度数据
     let quarterDatas= [0,0,0,0]
     for (let i = 0; i < stockRecords.length; i++) {
-        for (let j = 0; j < productsList.length; j++) {
-            if (stockRecords[i].productCode === productsList[j].productCode && stockRecords[i].quantityUnit.toLowerCase() === "carton"
-                && productsList[j].hasOwnProperty("cartonQty")){
-                stockRecords[i].quantity = stockRecords[i].quantity * productsList[j].cartonQty
-            }
-        }
         for (let j = 0; j < last4Qtrs.length; j++) {
             if (last4Qtrs[j] === getFiscalQuarter(stockRecords[i].consumedTime) && stockRecords[i].hasOwnProperty("unitPrice")){
                 quarterDatas[j] += Math.round(parseInt(stockRecords[i].quantity) * parseFloat(stockRecords[i].unitPrice))
@@ -64,12 +74,11 @@ document.addEventListener("DOMContentLoaded",async () => {
     document.querySelector("#diffWithLastYear").append()
     document.querySelector("#diffWithLastYear p").innerHTML = `${ posResult ? "+":"-"}${Math.abs(100-Math.round(quarterDatas[0]/quarterDatas[1]*100))}% than ${last4Qtrs[1]}`
 
-    
 
     // Yearly Breakup Charts
     // 按照季度计算整托盘产品的出货数量，1个托盘记为1件/或可以用货值替代，需要记录出货时候的货值
     // 如果产品按照box/carton计算，则需要另外计算其托盘价值
-    var breakup = {
+    var quarterBreakup = {
         color: "#adb5bd",
         series: quarterDatas,
         labels: getLast4Quarters(),
@@ -99,16 +108,14 @@ document.addEventListener("DOMContentLoaded",async () => {
             },
         ],
         tooltip: {
-            theme: "dark",
+            theme: "light",
             fillSeriesColor: false,
         },
     };
-    new ApexCharts(document.querySelector("#breakup"), breakup).render();
+    new ApexCharts(document.querySelector("#breakup"), quarterBreakup).render();
 
 
-
-
-    //Apex Chart 2  Stock Turnover Time
+    // Apex Chart 2  Stock Turnover Time
     // Stock Turnover部分仅整托盘计算(出库时间-入库时间)/总托盘数量
     let stockTurnOverArray = calcStockTurnover(stockRecords)  // Stock Turnover time will be calculated in days/hours
     if (stockTurnOverArray.length>0){
@@ -126,7 +133,6 @@ document.addEventListener("DOMContentLoaded",async () => {
             })
             lastmonthAvg = Math.round(lastmonthAvg / stockTurnOverArray.length)
         }
-        console.log(avgTime,lastmonthAvg)
 
         document.querySelector("#apex_turnoverChart h5").textContent = `Stock Turnover Time`
         document.querySelector("#apex_turnoverChart h4").textContent = `${(avgTime/60/60/24).toFixed(1)} days*`
@@ -183,7 +189,7 @@ document.addEventListener("DOMContentLoaded",async () => {
         ],
         markers: {size: 0,},
         tooltip: {
-            theme: "dark",
+            theme: "light",
             intersect: false,
             fixed: {
                 enabled: true,
@@ -194,7 +200,304 @@ document.addEventListener("DOMContentLoaded",async () => {
         },
     };
     new ApexCharts(document.querySelector("#turnovers"), turnOvers).render();
+
+
+    // Card 3: Best Seller page
+    let topSeller = getTopSeller(stockRecords,productsList)
+    document.querySelector("#card_topseller h5").textContent = `Best Sellers in last 3 months`
+
+    let itemDiv1 = document.createElement("div")
+    itemDiv1.className = "d-flex justify-content-between align-items-center mb-3"
+    itemDiv1.innerHTML = `<div><h6 class="mb-1 fs-3 fw-semibold">${topSeller[0]['labelname']}</h6></div>`+
+        `<div><span class="badge bg-light-info text-info fw-normal fs-2">$ ${new Intl.NumberFormat('en-AU').format(topSeller[0]['value'])}</span></div>`
+    let itemDiv2 = document.createElement("div")
+    itemDiv2.className = "d-flex justify-content-between align-items-center mb-3"
+    itemDiv2.innerHTML = `<div><h6 class="mb-1 fs-3 fw-semibold">${topSeller[1]['labelname']}</h6></div>`+
+        `<div><span class="badge bg-light-info text-info fw-normal fs-2">$ ${new Intl.NumberFormat('en-AU').format(topSeller[1]['value'])}</span></div>`
+    let itemDiv3 = document.createElement("div")
+    itemDiv3.className = "d-flex justify-content-between align-items-center mb-3"
+    itemDiv3.innerHTML = `<div><h6 class="mb-1 fs-3 fw-semibold">${topSeller[2]['labelname']}</h6></div>`+
+        `<div><span class="badge bg-light-info text-info fw-normal fs-2">$ ${new Intl.NumberFormat('en-AU').format(topSeller[2]['value'])}</span></div>`
+
+    document.querySelector("#card_topseller h5").insertAdjacentElement('afterend',itemDiv3)
+    document.querySelector("#card_topseller h5").insertAdjacentElement('afterend',itemDiv2)
+    document.querySelector("#card_topseller h5").insertAdjacentElement('afterend',itemDiv1)
+
+    // Card 4 - Apex Chart 3 Inventory Report
+    // 创建一个循环，循环到第一个pollinglog时候的数据的年份，然后添加对应的财年选项，每次用户选定财年后再拉取数据
+    let earliestLog = getEarliestTransactionLog();
+    earliestLog = (earliestLog.length > 0 ? new Date(earliestLog[0].loggingTime) : new Date())
+    console.log(earliestLog)
+    // 计算该财年的时间，然后制作对应的选项列表，并给对应的选项列表创建方法
+    for (var i= earliestLog.getFullYear(); i < new Date().getFullYear()+1; i++){
+        var newFYoption = document.createElement("option")
+        newFYoption.value = i;
+        newFYoption.textContent = "Financial Year "+i
+        console.log(newFYoption)
+        document.querySelector("#inv_optionslist").append(newFYoption);
+    }
+
+    var inventoryStatChart = {
+        series: [
+            {
+                name: "Imported this month",
+                data: [1.5, 2.7, 2.2, 3.6, 1.5, 1.0],
+            },
+            {
+                name: "Exported this month",
+                data: [-1.8, -1.1, -2.5, -1.5, -0.6, -1.8],
+            },
+        ],
+        chart: {
+            toolbar: {
+                show: false,
+            },
+            type: "bar",
+            fontFamily:  "sans-serif",
+            foreColor: "#adb0bb",
+            height: 320,
+            stacked: true,
+        },
+        colors: ["var(--bs-primary)", "var(--bs-secondary)"],
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                barHeight: "60%",
+                columnWidth: "20%",
+                borderRadius: [6],
+                borderRadiusApplication: "end",
+                borderRadiusWhenStacked: "all",
+            },
+        },
+        dataLabels: {
+            enabled: false,
+        },
+        legend: {
+            show: false,
+        },
+        grid: {
+            borderColor: "rgba(0,0,0,0.1)",
+            strokeDashArray: 3,
+            xaxis: {
+                lines: {
+                    show: false,
+                },
+            },
+        },
+        yaxis: {
+            min: -5,
+            max: 5,
+            title: {
+                // text: 'Age',
+            },
+            tickAmount: 4,
+        },
+        xaxis: {
+            axisBorder: {
+                show: false,
+            },
+            categories: getXlabels(),
+        },
+        tooltip: { theme: "light" },
+    };
+
+    new ApexCharts(document.querySelector("#inventoryOverviewChart"), inventoryStatChart).render();
+    document.querySelector("#inventoryOverviews h5").textContent = "Inventory Overview"
+    document.querySelector("#inventoryOverviews #stockValue").textContent = `$ ${new Intl.NumberFormat('en-AU').format(calculateInstockValue(stockRecords)[0])}`
+    document.querySelector("#inventoryOverviews #inboundValue").textContent = `$ ${new Intl.NumberFormat('en-AU').format(calculateInstockValue(stockRecords)[1])}`
+    document.querySelector("#inventoryOverviews #outboundValue").textContent = `$ ${new Intl.NumberFormat('en-AU').format(calculateInstockValue(stockRecords)[2])}`
+
+
+    // Recent Transactions
+    let recentTransList = getRecentTransactions(stockRecords);
+    console.log(recentTransList)
+    document.querySelector("#recentTransactionsCard h5").textContent = "Recent Transactions"
+    for (let i = 0; i < 10 && i<recentTransList.length; i++) {
+        let newRow = document.createElement("li")
+        newRow.className = "timeline-item d-flex position-relative overflow-hidden"
+        let iconElement = document.createElement("div")
+        iconElement.className = "timeline-badge-wrap d-flex flex-column align-items-center"
+        iconElement.innerHTML = `<span class="timeline-badge border-2 border ${(recentTransList[i].direction == "in" ? "border-success" : "border-primary")} flex-shrink-0 my-8"></span>
+                                        <span class="timeline-badge-border d-block flex-shrink-0"></span>`
+        let timeElement = document.createElement("div")
+        timeElement.className = "timeline-time text-dark flex-shrink-0 text-end"
+        timeElement.textContent = (recentTransList[i].direction === "in" ?
+            moment(recentTransList[i].loggingTime).format("MMM DD HH:mm") :
+            moment(recentTransList[i].consumedTime).format("MMM DD HH:mm"))
+
+        let itemElement = document.createElement("div")
+        itemElement.className = "timeline-item fw-semibold fs-3 text-dark mt-n1"
+        itemElement.innerHTML = `${recentTransList[i].productCode} - ${recentTransList[i].productName} ` +
+            ` Action: ${recentTransList[i].direction === "in"? '<i class="ti ti-transfer-in"></i>': '<i class="ti ti-transfer-out"></i>'}`
+
+        let itemElementSmallText = document.createElement("div")
+        itemElementSmallText.className = "timeline-desc d-block fw-normal"
+        itemElementSmallText.innerHTML = `${recentTransList[i].quantity} ${recentTransList[i].quantityUnit}`+
+            `${recentTransList[i].hasOwnProperty("bestbefore") ? " / Best before: "+ moment(recentTransList[i].bestbefore).format("DD MMM YYYY"): ""}` +
+            " / " + (recentTransList[i].direction === "in" ? "<i class='ti ti-transfer-in'></i>" : '<i class="ti ti-transfer-out"></i>')+ recentTransList[i].direction+
+            `${recentTransList[i].hasOwnProperty("shelfLocation") ? " / " + recentTransList[i].shelfLocation :""}`
+
+
+        itemElement.append(itemElementSmallText)
+        newRow.append(iconElement,timeElement,itemElement)
+
+        document.querySelector("#recentTransactionsCard ul").append(newRow)
+
+    }
 })
+
+async function getEarliestTransactionLog() {
+    let client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true
+        }
+    });
+    try {
+        await client.connect()
+        let session = await client.db(dbname).collection("pollinglog");
+        return await session.find({loggingTime: {$exists: true, $ne: null}}).sort({loggingTime: 1}).limit(1).toArray()
+    } catch (e) {
+        console.error(`Error on CheckDBConnection: ${e}`)
+        return false;
+    } finally {
+        await client.close()
+    }
+    return []
+}
+
+function getProductbyCode(productCodeIn) {
+    for (let i = 0; i < productsList.length; i++) {
+        if (productsList[i].productCode === productCodeIn) {
+            return productsList[i]
+        }
+    }
+    return {}
+}
+
+function getXlabels(date = new Date(), count=6){
+    // 默认仅获取近半年记录，整财年记录需要调整count为12
+    let months = [];
+    for (let i = 0; i < count; i++) {
+        let year = date.getFullYear().toString().slice(-2);
+        let month = ('0' + (date.getMonth() + 1)).slice(-2);
+
+        months.push(`${month}/${year}`);
+        date.setMonth(date.getMonth() - 1);
+    }
+    return months;
+}
+
+function getRecentTransactions(recordsArray, limit = 500){
+    let reorderedDupArray = []
+    if (Array.isArray(recordsArray)) {
+        for (let i = 0; i < recordsArray.length; i++) {
+            if (recordsArray[i].hasOwnProperty("loggingTime")) {
+                let pushElement = recordsArray[i]
+                pushElement.compTime = recordsArray[i].loggingTime
+                pushElement.direction = "in"
+                reorderedDupArray.push(pushElement)
+            }
+        }
+        for (let i = 0; i < recordsArray.length; i++) {
+            if (recordsArray[i].hasOwnProperty("consumedTime")) {
+                let pushElement = recordsArray[i]
+                pushElement.compTime = recordsArray[i].consumedTime
+                pushElement.direction = "out"
+                reorderedDupArray.push(pushElement)
+            }
+        }
+        reorderedDupArray.sort((a,b)=>b.compTime - a.compTime)
+    }
+
+    return reorderedDupArray
+}
+
+function calculateMonthStockMovementValue(stockRecords,date = new Date()){
+    // 使用Date对象，用户给定一个时间，获取当月的所有销售进出数值，并在图标上计算进出货品数量
+    let monthlyImport={value:0 , count: 0}
+    let monthlyExport = {value: 0, count: 0}
+    if (Array.isArray(stockRecords)){
+        stockRecords.forEach(eachRecord =>{
+            if (eachRecord.hasOwnProperty("loggingTime") && isSameYearmonth(new Date(eachRecord.loggingTime),date)){
+                monthlyImport.count += 1;
+                if (eachRecord.hasOwnProperty("unitPrice") && eachRecord.hasOwnProperty("quantity")){
+                    monthlyImport.value += (monthlyImport.value+eachRecord.unitPrice*eachRecord.quantity).toFixed(2)
+                }
+            }
+            if (eachRecord.hasOwnProperty("consumed") && eachRecord.consumed === 1 &&
+                eachRecord.hasOwnProperty("consumedTime") && isSameYearmonth(new Date(eachRecord.consumedTime),date)){
+                monthlyExport.count += 1;
+                if (eachRecord.hasOwnProperty("unitPrice") && eachRecord.hasOwnProperty("quantity")){
+                    monthlyImport.value += (monthlyImport.value+eachRecord.unitPrice*eachRecord.quantity).toFixed(2)
+                }
+            }
+        })
+    }
+    return {import : monthlyImport, export: monthlyExport}
+}
+
+function calculateInstockValue(stockRecords){
+    let currentInstockvalue=0;
+    let thisMonthImportVal = 0;
+    let thisMonthExportVal = 0
+    if (Array.isArray(stockRecords)){
+        stockRecords.forEach(eachRecord=>{
+            if (eachRecord.hasOwnProperty("unitPrice") && eachRecord.hasOwnProperty("quantity")){
+                currentInstockvalue += eachRecord.quantity * eachRecord.quantity
+                if (eachRecord.hasOwnProperty("loggingTime") && isSameYearmonth(new Date(eachRecord.loggingTime))){
+                    thisMonthImportVal += eachRecord.quantity * eachRecord.quantity
+                    if (eachRecord.hasOwnProperty("consumedTime") && isSameYearmonth(new Date(eachRecord.consumedTime))){
+                        thisMonthExportVal += eachRecord.quantity * eachRecord.quantity
+                    }
+                }
+            }
+        })
+    }
+    return [currentInstockvalue,thisMonthImportVal,thisMonthExportVal]
+}
+
+function isSameYearmonth(date = new Date(), date2 = new Date()){
+    return date.getMonth() === date2.getMonth() && date.getFullYear() === date2.getFullYear();
+
+}
+
+function getTopSeller(stockRecords, productList) { // 默认选择x位的top seller
+    let stockList = []
+    for (const eachStock of stockRecords) {
+        let productInfo = {}
+        for (let i = 0; i < productList.length; i++) {
+            if (productList[i].productCode === eachStock.productCode) {
+                productInfo=productList[i]
+            }
+        }
+        let setMonth = (new Date().getMonth() >= 3 ? new Date().getMonth() - 3 : 12 + (new Date().getMonth() - 3))
+        let setYear = (new Date().getMonth() >= 3 ? new Date().getFullYear() : new Date().getFullYear() - 1)
+        if (eachStock.hasOwnProperty("consumedTime") && new Date(eachStock.consumedTime) > new Date(setYear, setMonth, new Date().getDate())) {
+            //时间在范围内可继续计算
+            let foundInList = false
+            for (let i = 0; i < stockList.length; i++) {
+                if (stockList[i].productCode === eachStock.productCode) {
+                    foundInList = true
+                    stockList.quantity += eachStock.quantity
+                    stockList.value += Math.round(eachStock.quantity * eachStock.unitPrice)
+                    break ;
+                }
+            }
+            if (!foundInList) {              //如果不在当前库存列表记录则创建新纪录
+                stockList.push({
+                    productCode: eachStock.productCode,
+                    labelname: eachStock.productName,
+                    quantity: eachStock.quantity,
+                    unit: eachStock.quantityUnit,
+                    value: Math.round(eachStock.quantity*eachStock.unitPrice)
+                })
+            }
+        }
+    }
+
+    stockList.sort((a, b) => b.value - a.value)
+    return stockList
+}
 
 function calcStockTurnover(stockData, limit = 25000, compareDate = new Date()){ // 该方法仅计算Turnover时长，默认仅计算最近的25000组数据，默认计算截止时间到现在
     let turnOverArrayDiff=[]
@@ -287,7 +590,6 @@ function RecentWeeksRemoveCount(weeks = 12) {// 计算最近连续的X个周的�
         turnOverValueArrays.value.push(0);
     }
     turnOverValueArrays.week[weeks-1] = weekNumberYearSun(turnOverValueArrays.week[weeks-1])
-    console.log(turnOverValueArrays)
     for (let i = 0; i < stockRecords.length && i < 25000; i++) {
         if (stockRecords[i].hasOwnProperty("consumedTime")) {
             for (let j = 0; j < turnOverValueArrays.week.length; j++) {
@@ -296,7 +598,6 @@ function RecentWeeksRemoveCount(weeks = 12) {// 计算最近连续的X个周的�
                     for (let k = 0; k < productsList.length; k++) {
                         if (productsList[k].productCode === stockRecords[i]['productCode'] && productsList[k].hasOwnProperty('cartonQty')&&
                             (stockRecords[i]['quantityUnit'].toLowerCase().includes("carton") || stockRecords[i]['quantityUnit'].toLowerCase().includes("ctn"))){
-                            // console.log(stockRecords[i],productsList[k],stockRecords[i]['quantity'], turnOverValueArrays.value[j])
                             stockRecords[i]['quantity'] = Math.round(parseInt(stockRecords[i]['quantity']) * parseInt(productsList[k]['cartonQty']))
                             break;
                         }
@@ -311,98 +612,8 @@ function RecentWeeksRemoveCount(weeks = 12) {// 计算最近连续的X个周的�
             }
         }
     }
-    console.log(turnOverValueArrays)
     return turnOverValueArrays
 }
-
-
-$(function () {
-    // Sales Overview 图表
-    // let
-        
-    var chart = {
-        series: [
-            {name: "Inbound Pallets:", data: [355, 390, 300, 350, 390, 180, 355, 390]},
-            {name: "Outbound Toppings:", data: [280, 250, 325, 215, 250, 310, 280, 250]},
-            {name: "Outbound Syrups:", data: [280, 250, 325, 215, 250, 310, 280, 250]},
-        ],
-        chart: {
-            type: "bar",
-            height: 345,
-            offsetX: -15,
-            toolbar: {show: true},
-            foreColor: "#adb0bb",
-            fontFamily: 'inherit',
-            sparkline: {enabled: false},
-        },
-        colors: ["#5D87FF", "#49BEFF", "#0065FF", "#3200FF"],
-        plotOptions: {
-            bar: {
-                horizontal: false,
-                columnWidth: "35%",
-                borderRadius: [6],
-                borderRadiusApplication: 'end',
-                borderRadiusWhenStacked: 'all'
-            },
-        },
-        markers: {size: 0},
-        dataLabels: {
-            enabled: false,
-        },
-        legend: {
-            show: false,
-        },
-        grid: {
-            borderColor: "rgba(0,0,0,0.1)",
-            strokeDashArray: 3,
-            xaxis: {
-                lines: {
-                    show: false,
-                },
-            },
-        },
-        xaxis: {
-            type: "category",
-            categories: ["16/08", "17/08", "18/08", "19/08", "20/08", "21/08", "22/08", "23/08"],
-            labels: {
-                style: {cssClass: "grey--text lighten-2--text fill-color"},
-            },
-        },
-        yaxis: {
-            show: true,
-            min: 0,
-            max: 400,
-            tickAmount: 4,
-            labels: {
-                style: {
-                    cssClass: "grey--text lighten-2--text fill-color",
-                },
-            },
-        },
-        stroke: {
-            show: true,
-            width: 3,
-            lineCap: "butt",
-            colors: ["transparent"],
-        },
-
-        tooltip: {theme: "light"},
-        responsive: [
-            {
-                breakpoint: 600,
-                options: {
-                    plotOptions: {
-                        bar: {
-                            borderRadius: 3,
-                        }
-                    },
-                }
-            }
-        ]
-    };
-    new ApexCharts(document.querySelector("#chart"), chart).render();
-})
-
 
 async function checkDBConnection() {
     let client = new MongoClient(uri, {
@@ -434,7 +645,11 @@ async function getAllStockRecords(limit = 50000){
     try {
         await client.connect()
         let collections = client.db(dbname).collection("pollinglog");
-        result = await collections.find({}).sort({"consumedTime":-1,"loggingTime":1}).limit(limit).toArray()
+        if (limit < 0){
+            result = await collections.find({}).sort({"consumedTime":-1,"loggingTime":1}).toArray()
+        } else {
+            result = await collections.find({}).sort({"consumedTime":-1,"loggingTime":1}).limit(limit).toArray()
+        }
     } catch (e) {
         console.error(`Error on CheckDBConnection: ${e}`)
         return result

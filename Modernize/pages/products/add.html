@@ -50,21 +50,7 @@
                                 <img src="../../assets/images/profile/user-1.jpg" alt="" width="35" height="35"
                                      class="rounded-circle">
                             </a>
-                            <!--                            <div class="dropdown-menu dropdown-menu-end dropdown-menu-animate-up"-->
-                            <!--                                 aria-labelledby="drop2">-->
-                            <!--                                <div class="message-body">-->
-                            <!--                                    <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">-->
-                            <!--                                        <i class="ti ti-user fs-6"></i>-->
-                            <!--                                        <p class="mb-0 fs-3">My Profile</p>-->
-                            <!--                                    </a>-->
-                            <!--                                    <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">-->
-                            <!--                                        <i class="ti ti-mail fs-6"></i>-->
-                            <!--                                        <p class="mb-0 fs-3">My Account</p>-->
-                            <!--                                    </a>-->
-                            <!--                                    <a href="./authentication-login.html"-->
-                            <!--                                       class="btn btn-outline-primary mx-3 mt-2 d-block">Logout</a>-->
-                            <!--                                </div>-->
-                            <!--                            </div>-->
+
                         </li>
                     </ul>
                 </div>
@@ -92,13 +78,18 @@
                     </div>
                 </div>
             </div>
+            <div class="alert alert-success alert-dismissible bg-success text-white border-0 fade show" role="alert"
+                 style="display: none" id="div_alertblock">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                <span id="alert_text"><strong>Success</strong> - Product has been successfully added, redirect in <span>X</span> seconds.</span>
 
+            </div>
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title fw-semibold mb-1">Actions</h5>
                     <div class="list-group-item-action">
                         <a class="mb-0 ms-2" href="../products/index.html">List products</a>
-                        <a class="mb-0 ms-2" href="../stocks/index.html">List items in-stock</a>
+<!--                        <a class="mb-0 ms-2" href="../stocks/index.html">List items in-stock</a>-->
                         <a class="mb-0 ms-2" href="#" id="act_reset">Reset Form</a>
                     </div>
                 </div>
@@ -106,11 +97,12 @@
             <div class="card">
                 <div class="card-body" id="div_datatable">
                     <h5 class="card-title fw-semibold mb-2">Fill the below table for products</h5>
-                    <form>
+                    <form id="form_product">
                         <div class="row">
                             <div class="col-sm-6 mb-2">
                                 <label for="input_prodCode">Product Code</label>
                                 <input type="text" class="form-control" id="input_prodCode" placeholder="Product code must unique" value="" required="">
+                                <div class="invalid-feedback"></div>
                             </div>
                             <div class="col-sm-6 mb-2">
                                 <label for="inpt_prodName">Product Label Name</label>
@@ -121,7 +113,7 @@
                                 <input type="text" class="form-control" id="inpt_prodDesc" placeholder="Product Descriptions" value="">
                             </div>
                             <div class="col-sm-6 mb-2">
-                                <label for="inpt_prodPltQty">Quantity per pallet</label>
+                                <label for="inpt_prodPltQty">Quantity</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="inpt_prodPltQty" placeholder="Qty per pallet" value="">
                                     <input type="text" class="form-control" id="inpt_prodCtnQty" placeholder="Qty per carton" value="">
@@ -129,19 +121,24 @@
                             </div>
                             <div class="col-sm-3 col-6 mb-2">
                                 <label for="inpt_unit">Unit</label>
-                                <input type="text" class="form-control" id="inpt_unit" placeholder="Quantitiy per pallet" value="" required="" >
+                                <input type="text" class="form-control" id="inpt_unit" placeholder="Unit" value="" required="" >
                             </div>
                             <div class="col-sm-3 col-6 mb-2">
                                 <label for="inpt_weight">Weight</label>
                                 <input type="number" class="form-control" id="inpt_weight" placeholder="Weight (g)">
                             </div>
                             <div class="col-sm-6 col-12 mb-2">
-                                <label for="">Size (cm)</label>
-                                <div class="input-group">
+                                <label for="inputSizeGroup">Size (cm)</label>
+                                <div class="input-group" id="inputSizeGroup">
                                     <input type="number" min="0" class="form-control" id="inpt_length" placeholder="Length" aria-describedby="inputGroupPrepend2">
                                     <input type="number" min="0" class="form-control" id="inpt_width" placeholder="Width" aria-describedby="inputGroupPrepend2">
                                     <input type="number" min="0" class="form-control" id="inpt_height" placeholder="Height" aria-describedby="inputGroupPrepend2">
                                 </div>
+                            </div>
+                            <div class="col-sm-6 col-6 mb-2">
+                                <label for="inpt_weight">Vendor Code</label>
+                                <input type="number" class="form-control" id="inpt_vendorcode"
+                                       placeholder="Vendor Code">
                             </div>
                         </div>
                         <div class="form-group">
@@ -150,7 +147,7 @@
                                 <label class="form-check-label" for="inpt_expire">Product has best before date</label>
                             </div>
                         </div>
-                        <button class="btn btn-info rounded-pill px-4 mt-3" type="submit">Submit form</button>
+                        <button class="btn btn-info rounded-pill px-4 mt-3" type="submit" disabled>Submit</button>
                     </form>
                 </div>
             </div>
@@ -158,6 +155,30 @@
     </div>
 </div>
 <script> window.$ = window.jQuery = require('jquery');</script>
+<script src="../../../node_modules/jquery/dist/jquery.min.js"></script>
+<script src="../../../node_modules/jquery-ui/dist/jquery-ui.min.js"></script>
+<script>
+    $(document).ready(function(){
+        $("#inpt_unit").autocomplete({
+            source:  ["bag","box","carton","bottle","roll","skid","pallet","piece","unit"],
+            messages:{
+                noResults:"",
+                results:function(){}
+            }
+        });
+    });
+</script>
+<style>
+    .ui-autocomplete {
+        background: #eeeeee;
+        color: #4a4a4a;
+        border: 2px solid #efefef;
+        border-radius: 0px;
+        box-shadow: 0 0;
+        width: auto;
+    }
+</style>
+
 <script src="../../assets/js/sidebarmenu.js"></script>
 <script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
 <script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -165,7 +186,8 @@
 <script src="../../assets/js/app.min.js"></script>
 <script src="../../assets/js/app-style-switcher.js"></script>
 <script src="../../../node_modules/prismjs/prism.js"></script>
-<script src="./index.js"></script>
+<script src="./add.js"></script>
+<script> if (window.module) module = window.module</script>
 </body>
 
 </html>
