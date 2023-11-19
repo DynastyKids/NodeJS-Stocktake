@@ -71,7 +71,8 @@
                         </div>
                         <a class="mb-0 ms-2" href="#" id="act_reloadTable">Reload Table</a>
                         <a class="mb-0 ms-2" href="./add.html">Add Stock</a>
-                        <a class="mb-0 ms-2" href="./printview.html" id="">Print</a>
+                        <a class="mb-0 ms-2" href="./printview.html">Print</a>
+                        <a class="mb-0 ms-2" href="#" id="act_pause">Pause Timer</a>
                     </div>
                 </div>
                 <div card="card-body" id="loadingStatus">
@@ -208,7 +209,7 @@
                                 <input type="checkbox" class="form-check-input" id="modelCheckboxConsumed">
                                 <label class="form-label">Product has been removed?</label>
                             </div>
-                            <div class="col-6">
+                            <div class="col-6" id="group_consumeTime" style="display: none">
                                 <label for="modelEditConsumeTime" class="form-label">Consume Time:</label>
                                 <input type="datetime-local" class="form-control col-6" id="modelEditConsumeTime" value="">
                             </div>

@@ -64,13 +64,13 @@ document.addEventListener("DOMContentLoaded", (event) => {
         }
     }, 1000)
 
-    document.querySelector("#apauseTimer").addEventListener("click", (ev)=> {
+    document.querySelector("#act_pause").addEventListener("click", (ev)=> {
         shouldRefresh= !shouldRefresh
         if (!shouldRefresh){
             clearInterval(automaticRefresh)
-            document.querySelector("#apauseTimer").innerText = "Resume & Refresh";
+            document.querySelector("#act_pause").innerText = "Resume Timer";
         } else {
-            document.querySelector("#apauseTimer").innerText = "Pause";
+            document.querySelector("#act_pause").innerText = "Pause Timer";
             location.reload()
         }
     })
@@ -134,6 +134,15 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
             document.querySelector("#editModal .modal-body p").textContent = "Error on Update"
         }
     })
+})
+
+document.querySelector("#modelCheckboxConsumed").addEventListener("change",(ev)=>{
+    if (ev.target.checked){
+        document.querySelector("#group_consumeTime").style = ""
+    } else {
+        document.querySelector("#group_consumeTime").style = "display:none"
+        document.querySelector("#inpt_consumeTime").value = ""
+    }
 })
 
 let removeModal = document.querySelector("#removeModal")
