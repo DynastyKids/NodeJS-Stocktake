@@ -218,30 +218,36 @@ document.addEventListener("DOMContentLoaded",async () => {
             console.log("Error while insert best seller:",e)
         }
     }
-
+    
     // Card 4 - Apex Chart 3 Inventory Report
     // 创建一个循环，循环到第一个pollinglog时候的数据的年份，然后添加对应的财年选项，每次用户选定财年后再拉取数据
     let earliestLog = getEarliestTransactionLog();
     earliestLog = (earliestLog.length > 0 ? new Date(earliestLog[0].loggingTime) : new Date())
-    console.log(earliestLog)
     // 计算该财年的时间，然后制作对应的选项列表，并给对应的选项列表创建方法
     for (var i= earliestLog.getFullYear(); i < new Date().getFullYear()+1; i++){
         var newFYoption = document.createElement("option")
         newFYoption.value = i;
-        newFYoption.textContent = "Financial Year "+i
-        console.log(newFYoption)
+        newFYoption.textContent = "Year "+i
         document.querySelector("#inv_optionslist").append(newFYoption);
     }
+
+    let fetchInventoryData = await fetchInventoryGraphData()
+    let maxy = 0
+    for (let i = 0; i < fetchInventoryData.import.length; i++) {
+        maxy = (fetchInventoryData.import[i] > maxy ? fetchInventoryData.import[i] : maxy )
+        maxy = (Math.abs(fetchInventoryData.export[i]) > maxy ? Math.abs(fetchInventoryData.export[i]) : maxy)
+    }
+    maxy = Math.ceil(maxy/1000)*1000
 
     var inventoryStatChart = {
         series: [
             {
                 name: "Imported this month",
-                data: [1.5, 2.7, 2.2, 3.6, 1.5, 1.0],
+                data: fetchInventoryData.import
             },
             {
                 name: "Exported this month",
-                data: [-1.8, -1.1, -2.5, -1.5, -0.6, -1.8],
+                data: fetchInventoryData.export,
             },
         ],
         chart: {
@@ -281,18 +287,19 @@ document.addEventListener("DOMContentLoaded",async () => {
             },
         },
         yaxis: {
-            min: -5,
-            max: 5,
+            min: -maxy,
+            max: maxy,
             title: {
-                // text: 'Age',
+                text: 'Value',
             },
-            tickAmount: 4,
+            tickAmount: 8,
         },
         xaxis: {
-            axisBorder: {
-                show: false,
+            axisBorder: {show: false,},
+            title: {
+                text: 'Month/Year',
             },
-            categories: getXlabels(),
+            categories: getXaxislabels(new Date(), 12),
         },
         tooltip: { theme: "light" },
     };
@@ -306,7 +313,6 @@ document.addEventListener("DOMContentLoaded",async () => {
 
     // Recent Transactions
     let recentTransList = getRecentTransactions(stockRecords);
-    console.log(recentTransList)
     document.querySelector("#recentTransactionsCard h5").textContent = "Recent Transactions"
     for (let i = 0; i < 10 && i<recentTransList.length; i++) {
         let newRow = document.createElement("li")
@@ -342,6 +348,56 @@ document.addEventListener("DOMContentLoaded",async () => {
     }
 })
 
+async function fetchInventoryGraphData(yearoption = new Date().getFullYear()){
+    if(yearoption < 2000 || yearoption > 2999) {
+        yearoption = new Date().getFullYear()
+    }
+    let result = [];
+    let client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true
+        }
+    });
+    try {
+        await client.connect()
+        let session = await client.db(dbname).collection("pollinglog");
+        let regex = new RegExp("^"+yearoption)
+        result = await session.find({$or:[{"loggingTime":regex},{"loggingTime":regex}]}).toArray()
+    } catch (e) {           
+        console.error(`Error on CheckDBConnection: ${e}`)
+    } finally {
+        await client.close()
+    }
+
+    let values = {import: [0,0,0,0,0,0,0,0,0,0,0,0,0], export:[0,0,0,0,0,0,0,0,0,0,0,0,0]}
+    result.forEach(eachData=>{
+        if(eachData.hasOwnProperty("loggingTime") && eachData.hasOwnProperty("unitPrice")){
+            values.import[new Date(eachData.loggingTime).getMonth()] += eachData.quantity * eachData.unitPrice
+        }
+        if(eachData.hasOwnProperty("consumedTime") && eachData.hasOwnProperty("unitPrice")){
+            values.export[new Date(eachData.consumedTime).getMonth()] -= eachData.quantity * eachData.unitPrice
+        }
+    })
+
+    for (let i = 0; i < values.import.length; i++) {
+        values.import[i] = Math.round(values.import[i])
+        values.export[i] = Math.round(values.export[i])
+
+    }
+    console.log(values)
+    return values
+}
+
+document.querySelector("#inv_optionslist").addEventListener("change",(ev)=>{
+    console.log(ev)
+    console.log(document.querySelector("#inv_optionslist").value)
+    if (document.querySelector("#inv_optionslist").value === -6){
+    //     切换图形到近6个月出入库信息
+    } else {
+        
+    }
+})
+
 async function getEarliestTransactionLog() {
     let client = new MongoClient(uri, {
         serverApi: {
@@ -370,12 +426,12 @@ function getProductbyCode(productCodeIn) {
     return {}
 }
 
-function getXlabels(date = new Date(), count=6){
+function getXaxislabels(date = new Date()){
     // 默认仅获取近半年记录，整财年记录需要调整count为12
     let months = [];
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < 12; i++) {
         let year = date.getFullYear().toString().slice(-2);
-        let month = ('0' + (date.getMonth() + 1)).slice(-2);
+        let month = ('0' + (i+1)).slice(-2);
 
         months.push(`${month}/${year}`);
         date.setMonth(date.getMonth() - 1);
