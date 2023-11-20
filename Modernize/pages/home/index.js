@@ -312,8 +312,8 @@ document.addEventListener("DOMContentLoaded",async () => {
 
 
     // Recent Transactions
-    let recentTransList = getRecentTransactions(stockRecords);
-    document.querySelector("#recentTransactionsCard h5").textContent = "Recent Transactions"
+    var recentTransList = getRecentTransactions(stockRecords, 200, "in");
+    document.querySelector("#recentTransactionsCardIn h5").textContent = "Recent Inbound Transactions"
     for (let i = 0; i < 10 && i<recentTransList.length; i++) {
         let newRow = document.createElement("li")
         newRow.className = "timeline-item d-flex position-relative overflow-hidden"
@@ -343,7 +343,42 @@ document.addEventListener("DOMContentLoaded",async () => {
         itemElement.append(itemElementSmallText)
         newRow.append(iconElement,timeElement,itemElement)
 
-        document.querySelector("#recentTransactionsCard ul").append(newRow)
+        document.querySelector("#recentTransactionsCardIn ul").append(newRow)
+
+    }
+
+    var recentTransList = getRecentTransactions(stockRecords, 200, "out");
+    document.querySelector("#recentTransactionsCardOut h5").textContent = "Recent Outbound Transactions "
+    for (let i = 0; i < 10 && i<recentTransList.length; i++) {
+        let newRow = document.createElement("li")
+        newRow.className = "timeline-item d-flex position-relative overflow-hidden"
+        let iconElement = document.createElement("div")
+        iconElement.className = "timeline-badge-wrap d-flex flex-column align-items-center"
+        iconElement.innerHTML = `<span class="timeline-badge border-2 border ${(recentTransList[i].direction === "in" ? "border-success" : "border-primary")} flex-shrink-0 my-8"></span>
+                                        <span class="timeline-badge-border d-block flex-shrink-0"></span>`
+        let timeElement = document.createElement("div")
+        timeElement.className = "timeline-time text-dark flex-shrink-0 text-end"
+        timeElement.textContent = (recentTransList[i].direction === "in" ?
+            moment(recentTransList[i].loggingTime).format("MMM DD HH:mm") :
+            moment(recentTransList[i].consumedTime).format("MMM DD HH:mm"))
+
+        let itemElement = document.createElement("div")
+        itemElement.className = "timeline-item fw-semibold fs-3 text-dark mt-n1"
+        itemElement.innerHTML = `${recentTransList[i].productCode} - ${recentTransList[i].productName} ` +
+            ` Action: ${recentTransList[i].direction === "in"? '<i class="ti ti-transfer-in"></i>': '<i class="ti ti-transfer-out"></i>'}`
+
+        let itemElementSmallText = document.createElement("div")
+        itemElementSmallText.className = "timeline-desc d-block fw-normal"
+        itemElementSmallText.innerHTML = `${recentTransList[i].quantity} ${recentTransList[i].quantityUnit}`+
+            `${recentTransList[i].hasOwnProperty("bestbefore") ? " / Best before: "+ moment(recentTransList[i].bestbefore).format("DD MMM YYYY"): ""}` +
+            " / " + (recentTransList[i].direction === "in" ? "<i class='ti ti-transfer-in'></i>" : '<i class="ti ti-transfer-out"></i>')+ recentTransList[i].direction+
+            `${recentTransList[i].hasOwnProperty("shelfLocation") ? " / " + recentTransList[i].shelfLocation :""}`
+
+
+        itemElement.append(itemElementSmallText)
+        newRow.append(iconElement,timeElement,itemElement)
+
+        document.querySelector("#recentTransactionsCardOut ul").append(newRow)
 
     }
 })
@@ -439,23 +474,28 @@ function getXaxislabels(date = new Date()){
     return months;
 }
 
-function getRecentTransactions(recordsArray, limit = 500){
+function getRecentTransactions(recordsArray, limit = 500, direction = "both"){
+    // Direction can be in/out/both
     let reorderedDupArray = []
     if (Array.isArray(recordsArray)) {
-        for (let i = 0; i < recordsArray.length; i++) {
-            if (recordsArray[i].hasOwnProperty("loggingTime")) {
-                let pushElement = recordsArray[i]
-                pushElement.compTime = recordsArray[i].loggingTime
-                pushElement.direction = "in"
-                reorderedDupArray.push(pushElement)
+        if (direction=== "both" || direction === "in") {
+            for (let i = 0; i < recordsArray.length; i++) {
+                if (recordsArray[i].hasOwnProperty("loggingTime")) {
+                    let pushElement = recordsArray[i]
+                    pushElement.compTime = recordsArray[i].loggingTime
+                    pushElement.direction = "in"
+                    reorderedDupArray.push(pushElement)
+                }
             }
         }
-        for (let i = 0; i < recordsArray.length; i++) {
-            if (recordsArray[i].hasOwnProperty("consumedTime")) {
-                let pushElement = recordsArray[i]
-                pushElement.compTime = recordsArray[i].consumedTime
-                pushElement.direction = "out"
-                reorderedDupArray.push(pushElement)
+        if (direction=== "both" || direction === "out") {
+            for (let i = 0; i < recordsArray.length; i++) {
+                if (recordsArray[i].hasOwnProperty("consumedTime")) {
+                    let pushElement = recordsArray[i]
+                    pushElement.compTime = recordsArray[i].consumedTime
+                    pushElement.direction = "out"
+                    reorderedDupArray.push(pushElement)
+                }
             }
         }
         reorderedDupArray.sort((a,b)=>new Date(b.compTime) - new Date(a.compTime))
