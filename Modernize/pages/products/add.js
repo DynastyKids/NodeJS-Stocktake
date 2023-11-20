@@ -86,6 +86,8 @@ document.addEventListener("DOMContentLoaded",async (ev) => {
                     document.querySelector("#div_alertblock").style.display = "block"
                     document.querySelector("#div_alertblock span").textContent = `${data.itemcode} has found ${response.matchedCount} records,  ${response.upsertedCount} record has been inserted`
                     setTimeout(function(){
+                        const bsAlert = new bootstrap.Alert(document.querySelector("#div_alertblock"));
+                        bsAlert.close();
                         window.location.href = "../products/index.html"
                     },3000)
                 }

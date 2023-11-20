@@ -70,7 +70,7 @@ function createWindow(portNumber) {
             nodeIntegration: true,
             // Additional security options
             contextIsolation: false, // 需要使用IPC Renderer,保持为False
-            enableRemoteModule: false, // Consider setting this to true in production
+            enableRemoteModule: true, // Consider setting this to true in production
         },
     });
 
