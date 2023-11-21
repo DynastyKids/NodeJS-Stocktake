@@ -10,6 +10,7 @@ let dataset = [];
 
 const Storage = require("electron-store");
 const i18next = require("i18next");
+const {initRenderer} = require("electron-store");
 const newStorage = new Storage();
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
@@ -56,7 +57,8 @@ async function fetchProducts(conditionObject) {
 }
 
 async function fetchUnusedStocks(conditionObject) {
-    let results = []
+    let stocks = []
+    let products = []
     let client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
@@ -66,47 +68,63 @@ async function fetchUnusedStocks(conditionObject) {
             useUnifiedTopology: true
         }
     });
-    let sessions = client.db(targetDB).collection("pollinglog");
-    let options = {sort: {productCode: 1}};
     try {
         await client.connect();
-        results = await sessions.find({consumed : 0}, options).toArray();
+        stocks = await client.db(targetDB).collection("pollinglog").find({consumed: 0}, {sort: {productCode: 1}}).toArray();
+        products = await client.db(targetDB).collection("products").find({active: 1}).toArray();
     } catch (e) {
         console.error("Fetching error:", e)
     } finally {
         await client.close();
         document.querySelector("#loadingStatus").style.display = "none"
     }
-
     // Merging Stocks
-    let mergedResult ={}
-    results.forEach(eachResult=>{
-        if(mergedResult.hasOwnProperty(eachResult.productCode)){
-            if(mergedResult[eachResult.productCode].quantityUnit === eachResult.quantityUnit){
+    let mergedResult = {}
+    stocks.forEach(eachResult => {
+        //     Convert from carton to unit
+        for (let i = 0; i < products.length; i++) {
+            if (eachResult.productCode === products[i].productCode) {
+                if (eachResult.quantityUnit && products[i].hasOwnProperty("cartonQty") && products[i].hasOwnProperty("unit") &&
+                    (eachResult.quantityUnit.toLowerCase().search("ctn") >= 0 || eachResult.quantityUnit.toLowerCase().search("carton") >= 0)) {
+                    eachResult.quantityUnit = products[i].unit
+                    eachResult.quantity = eachResult.quantity * products[i].cartonQty
+                }
+                if (eachResult.quantityUnit && products[i].hasOwnProperty("palletQty") && products[i].hasOwnProperty("unit") &&
+                    (eachResult.quantityUnit.toLowerCase().search("plt") >= 0 && eachResult.quantityUnit.toLowerCase().search("pallet") >= 0)) {
+                    eachResult.quantityUnit = products[i].unit
+                    eachResult.quantity = eachResult.quantity * products[i].palletQty
+                }
+                break;
+            }
+        }
+        if (mergedResult.hasOwnProperty(eachResult.productCode)) {
+            if (mergedResult[eachResult.productCode].quantityUnit === eachResult.quantityUnit) {
                 mergedResult[eachResult.productCode].quantity += eachResult.quantity
             }
         } else {
-            mergedResult[eachResult.productCode] = {quantity: (eachResult.quantity ? eachResult.quantity: "") , unit: (eachResult.quantityUnit ? eachResult.quantityUnit :"")}
+            mergedResult[eachResult.productCode] = {
+                quantity: (eachResult.quantity ? eachResult.quantity : ""),
+                unit: (eachResult.quantityUnit ? eachResult.quantityUnit : "")
+            }
         }
     })
     return mergedResult
 }
 
-async function fetchTablesData(){
+async function fetchTablesData() {
     let stocksLevel = await fetchUnusedStocks();
     let results = await fetchProducts();
     dataset = []
-    results.forEach(eachItem =>{
+    results.forEach(eachItem => {
         dataset.push([
             (eachItem.productCode ? eachItem.productCode : ""),
-            (eachItem.labelname ? eachItem.labelname : ""),
-            `${stocksLevel[eachItem.productCode] ? stocksLevel[eachItem.productCode].quantity+" "+stocksLevel[eachItem.productCode].unit:""}`,
-            `${(eachItem.cartonQty ? eachItem.cartonQty + (eachItem.unit ? " " + eachItem.unit : "") : " - ")}`+
-            `<br><small ${eachItem.cartonQty && eachItem.palletQty ? "data-bs-toggle=\"tooltip\"" +
-                " data-bs-placement=\"top\" title=\" + eachItem.palletQty / eachItem.cartonQty +\" ctns": null} >${(eachItem.palletQty ?
-             eachItem.palletQty + (eachItem.unit ? " " + eachItem.unit : "") : " -" +
-                " ")}</small>`,
-            `${(eachItem.withBestbefore > 0 ? "√" : "")}`,
+            `${eachItem.labelname ? eachItem.labelname : ""}<br><span>${eachItem.withBestbefore > 0 ? "<i class=\"ti ti-calendar-due\"></i>" : ""}</span>`,
+            `${stocksLevel[eachItem.productCode] ? stocksLevel[eachItem.productCode].quantity + " " + stocksLevel[eachItem.productCode].unit : ""}`,
+            `${(eachItem.cartonQty ? eachItem.cartonQty + (eachItem.unit ? " " + eachItem.unit : "") : " - ")}` +
+            `<br><small ${eachItem.cartonQty && eachItem.palletQty ? "data-bs-toggle=\"tooltip\" data-bs-placement=\"top\" " +
+                "title=\" + eachItem.palletQty / eachItem.cartonQty +\" ctns" : null} >${(eachItem.palletQty ?
+                eachItem.palletQty + (eachItem.unit ? " " + eachItem.unit : "") : " - ")}</small>`,
+            `${(eachItem.unitPrice ? eachItem.unitPrice : "")}`,
             `
                 <a href="#" data-bs-toggle="modal" data-bs-target="#editRowModal" data-bs-itemid="${eachItem._id.toHexString()}">Edit</a>
                 <a href="#" data-bs-toggle="modal" data-bs-target="#deleteRowModal" data-bs-productname="${eachItem.labelname}" data-bs-itemid="${eachItem._id.toHexString()}" data-bs-state="${eachItem.active}">${(eachItem.active ? "Remove" : "Revert (Add)")}</a>
@@ -116,7 +134,7 @@ async function fetchTablesData(){
     return dataset;
 }
 
-async function findOneRecordById(recordId){
+async function findOneRecordById(recordId) {
     let client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
@@ -140,7 +158,6 @@ async function findOneRecordById(recordId){
 }
 
 
-
 // 删除条目弹窗
 document.querySelector("#deleteRowModal").addEventListener('show.bs.modal', (ev) => {
     let itemId = ev.relatedTarget.getAttribute("data-bs-itemid");
@@ -148,7 +165,7 @@ document.querySelector("#deleteRowModal").addEventListener('show.bs.modal', (ev)
     let result;
     // console.log("Delete Model: Delete Clicked", itemId, itemStatus)
 
-    if (itemStatus === "true"){
+    if (itemStatus === "true") {
         document.querySelector("#deleteRowModal .modal-title span").textContent = `delete?`
         document.querySelector("#deleteRowModal .modal-body span").textContent = `delete ${ev.relatedTarget.getAttribute("data-bs-productname")}?`
         document.querySelector("#deleteModalConfirmBtn").className = 'btn btn-danger'
@@ -184,7 +201,7 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
     //初始化设置，默认设置submit btn为不可用，清空所有input
     document.querySelector("#modelEditSubmitBtn").disabled = true;
     document.querySelector("#modelEditSubmitBtn").textContent = "Fetching...";
-    document.querySelectorAll("#editRowModal .modal-body input").forEach(item=>{
+    document.querySelectorAll("#editRowModal .modal-body input").forEach(item => {
         item.disabled = true
         item.value = ""
     })
@@ -194,8 +211,8 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
     try {
         let result = await findOneRecordById(itemId)
         //     回填数据到输入框，对输入框解除disabled
-        if (result){
-            document.querySelector("#editRowModalLabel").textContent = `Edit Product Infos ${result.productCode ? " for "+ result.productCode + (result.labelname ? " - " + result.labelname : "") : ""}`
+        if (result) {
+            document.querySelector("#editRowModalLabel").textContent = `Edit Product Infos ${result.productCode ? " for " + result.productCode + (result.labelname ? " - " + result.labelname : "") : ""}`
             document.querySelector("#editRowModalinput_productCode").value = (result.productCode ? result.productCode : "")
             document.querySelector("#editRowModalinput_labelName").value = (result.labelname ? result.labelname : "")
             document.querySelector("#editRowModalinput_description").value = (result.description ? result.description : "")
@@ -212,14 +229,14 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
             document.querySelector("#editRowModalinput_vendorCode").value = (result.vendorCode ? result.vendorCode : "")
             document.querySelector("#editRowModalinput_purcPrice").value = (result.unitPrice ? result.unitPrice : "")
             document.querySelector("#editRowModalinput_sellPrice").value = (result.sellPrice ? result.sellPrice : "")
-            if (result.withBestbefore && result.withBestbefore === 1){
+            if (result.withBestbefore && result.withBestbefore === 1) {
                 document.querySelector("#expiredateCheck").checked = true
             } else {
                 document.querySelector("#expiredateCheck").checked = false
             }
         }
 
-        document.querySelectorAll("#editRowModal .modal-body input").forEach(item=>{
+        document.querySelectorAll("#editRowModal .modal-body input").forEach(item => {
             item.disabled = false
         })
         document.querySelector("#modelEditSubmitBtn").disabled = false
@@ -229,8 +246,8 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
     }
 
     //当用户编辑完成后，开始提交
-    document.querySelector("#modelEditSubmitBtn").addEventListener("click",async (ev) => {
-        document.querySelectorAll("#editRowModal .modal-body input").forEach(eachInputbox=>{
+    document.querySelector("#modelEditSubmitBtn").addEventListener("click", async (ev) => {
+        document.querySelectorAll("#editRowModal .modal-body input").forEach(eachInputbox => {
             eachInputbox.disabled = true
         })
         document.querySelector("#modelEditSubmitBtn").disabled = true
@@ -257,7 +274,7 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
         let updateResult = await updateRecordById(itemId, result)
         //     当最后确认提交成功则dismiss并回弹成功信息
         if (updateResult.acknowledged) {
-            bootstrap.Modal.getInstance( document.querySelector("#editRowModal")).hide()
+            bootstrap.Modal.getInstance(document.querySelector("#editRowModal")).hide()
             window.location.reload()
         } else {
             document.querySelector("#deleteRowModal .modal-body p").innerText = "Error happened while on updates."
@@ -288,7 +305,7 @@ async function updateRecordById(recordId, updateData) {
     return results
 }
 
-document.querySelector("#act_reloadTable").addEventListener("click",async (ev) => {
+document.querySelector("#act_reloadTable").addEventListener("click", async (ev) => {
     if (table) {
         table.clear().draw()
         let results = await fetchTablesData();
