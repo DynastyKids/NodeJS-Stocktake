@@ -40,17 +40,23 @@
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^8.1.0",
     "express": "^4.18.2",
+    "flag-icons": "^6.15.0",
     "flatpickr": "^4.6.13",
+    "font-awesome": "^4.7.0",
+    "gsap": "^3.12.2",
     "https": "^1.0.0",
     "i18next": "^23.5.1",
     "i18next-electron-fs-backend": "^3.0.0",
     "i18next-fs-backend": "^2.1.5",
     "instascan": "^1.0.0",
     "jquery": "^3.7.0",
+    "jquery-ui": "^1.13.2",
     "js-datepicker": "^5.18.2",
+    "jsqr": "^1.4.0",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.43",
+    "moment-with-locales-es6": "^1.0.1",
     "mongodb": "^5.7.0",
     "popper.js": "^1.16.1",
     "portfinder": "^1.0.32",
@@ -61,6 +67,7 @@
     "sass": "^1.69.5",
     "simple-keyboard": "^3.7.14",
     "simplebar": "^6.2.5",
-    "swagger-ui-express": "^5.0.0"
+    "swagger-ui-express": "^5.0.0",
+    "weeknumber": "^1.2.1"
   }
 }

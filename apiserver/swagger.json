@@ -720,6 +720,11 @@
             "type": "string",
             "format": "date-time",
             "description": "Date Format must be YYYY-MM-DD HH:mm:ss"
+          },
+          "unitprice": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, Unit price of the item | 可选字段，产品价格"
           }
         }
       },
@@ -843,10 +848,35 @@
             "format": "int32",
             "description": "Optional, the weight of each unit, recommand measure with grams | 可选字段，产品的重量（推荐用克表示）"
           },
+          "height": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, the height of each unit (cm) | 可选字段，产品的高度（单位cm）"
+          },
+          "length": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, the length of each unit (cm) | 可选字段，产品的长度（单位cm）"
+          },
+          "width": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, the width of each unit (cm) | 可选字段，产品的宽度（单位cm）"
+          },
+          "unitPrice": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, Unit price of the item | 可选字段，产品价格"
+          },
+          "sellPrice": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, Selling price of the item"
+          },
           "withBestbefore": {
             "type": "integer",
             "format": "int",
-            "description": "Mandatory, does this product has expire date? (Y=1, N=0) | 产品是否有有效期（1为是，0为否）",
+            "description": "Mandatory, does this product has expire date? (Y=1, N=0)",
             "enum": [
               0,
               1

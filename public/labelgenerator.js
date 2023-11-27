@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function (ev) {
             }
         })
         .catch(function (response) {
-            document.querySelector("#toastDiv .toast-body").innerText = "There are some problem encountered when fetching product lists"
+            document.querySelector("#toastDiv .toast-body").innerText = "There are some problem encountered when fetching products lists"
             document.querySelector("#toastDiv").classList.add("bg-warning");
             document.querySelector("#toastDiv").classList.remove("bg-success");
             (new bootstrap.Toast(toast)).show();

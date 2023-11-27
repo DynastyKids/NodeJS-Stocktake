@@ -20,6 +20,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 <li class="nav-item">
                     <a class="nav-link" href="#"><i class="ti ti-keyboard"></i>Manual Input</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/api"><i class="ti ti-keyboard"></i>Swagger Portal (OpenAPI)</a>
+                </li>
             </ul>
         </div>
     </div>

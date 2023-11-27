@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../../../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../../node_modules/prismjs/themes/prism-okaidia.min.css">
+    <link rel="stylesheet" href="../../../node_modules/simplebar/dist/simplebar.min.css"/>
+    <link rel="stylesheet" href="../../../node_modules/@tabler/icons-webfont/tabler-icons.min.css">
+    <link rel="stylesheet" href="../../assets/css/styles.css"/>
+</head>
+<body>
+<div>
+    <div class="brand-logo d-flex align-items-center justify-content-between">
+        <a href="../home/index.html" class="text-nowrap">
+            <h4>Warehouse Electron</h4>
+        </a>
+        <div class="close-btn d-xl-none d-block sidebartoggler cursor-pointer" id="sidebarCollapse">
+            <i class="ti ti-x fs-8"></i>
+        </div>
+    </div>
+    <!-- Sidebar navigation-->
+    <nav class="sidebar-nav scroll-sidebar" data-simplebar="">
+        <ul id="sidebarnav">
+            <li class="nav-small-cap">
+                <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
+                <span class="hide-menu">Home</span>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="../home/index.html" aria-expanded="false">
+                    <span><i class="ti ti-layout-dashboard"></i></span>
+                    <span class="hide-menu">Dashboard</span>
+                </a>
+            </li>
+
+            <li class="nav-small-cap">
+                <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
+                <span class="hide-menu">Warehouse managements</span>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link has-arrow" href="#" aria-expanded="false">
+                  <span class="d-flex"><i class="ti ti-archive"></i></span>
+                    <span class="hide-menu">Products</span>
+                </a>
+                <ul aria-expanded="false" class="collapse first-level">
+                    <li class="sidebar-item">
+                        <a href="../products/index.html" class="sidebar-link">
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-table"></i>
+                            </div>
+                            <span class="hide-menu">List Products</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="../products/add.html" class="sidebar-link">
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-plus"></i>
+                            </div>
+                            <span class="hide-menu">Add Product</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <li class="sidebar-item">
+                <a class="sidebar-link has-arrow" href="#" aria-expanded="false">
+                  <span class="d-flex">
+                    <i class="ti ti-layout-grid"></i>
+                  </span>
+                    <span class="hide-menu">Stocks</span>
+                </a>
+                <ul aria-expanded="false" class="collapse first-level">
+                    <li class="sidebar-item">
+                        <a href="../stocks/index.html" class="sidebar-link">
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-table"></i>
+                            </div>
+                            <span class="hide-menu">List Stocks</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="../stocks/add.html" class="sidebar-link">
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-plus"></i>
+                            </div>
+                            <span class="hide-menu">Add Stock</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="../stocks/nextdisp.html" class="sidebar-link">
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-door-exit"></i>
+                            </div>
+                            <span class="hide-menu">Next Dispatch</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="../stocks/transactions.html" class="sidebar-link">
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-history"></i>
+                            </div>
+                            <span class="hide-menu">History Transactions</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link has-arrow" href="#" aria-expanded="false">
+                    <span class="d-flex"><i class="ti ti-users-group"></i></span>
+                    <span class="hide-menu">Sessions</span>
+                </a>
+                <ul aria-expanded="false" class="collapse first-level">
+                    <li class="sidebar-item">
+                        <a href="../sessions/index.html" class="sidebar-link">
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-table"></i>
+                            </div>
+                            <span class="hide-menu">List Sessions</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="../sessions/add.html" class="sidebar-link">
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-plus"></i>
+                            </div>
+                            <span class="hide-menu">Add Session</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <li class="nav-small-cap">
+                <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
+                <span class="hide-menu">Operations</span>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="../operations/labelgenerator.html" aria-expanded="false">
+                    <span><i class="ti ti-note"></i></span>
+                    <span class="hide-menu">Label Generator</span>
+                </a>
+            </li>
+<!--            <li class="sidebar-item">-->
+<!--                <a class="sidebar-link" href="../operations/scanner.html" aria-expanded="false">-->
+<!--                    <span><i class="ti ti-scan"></i></span>-->
+<!--                    <span class="hide-menu">Scanner Mode</span>-->
+<!--                </a>-->
+<!--            </li>-->
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="../settings/index.html" aria-expanded="false">
+                    <span><i class="ti ti-settings"></i></span>
+                    <span class="hide-menu">Settings</span>
+                </a>
+            </li>
+            <li class="nav-small-cap">
+                <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
+                <span class="hide-menu">Others</span>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link has-arrow" href="#" aria-expanded="false">
+                    <span class="d-flex"><i class="ti ti-language"></i></span>
+                    <span class="hide-menu">Language</span>
+                </a>
+                <ul aria-expanded="false" class="collapse first-level">
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link">
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-circle"></i>
+                            </div>
+                            <span class="hide-menu">English</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link">
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-circle"></i>
+                            </div>
+                            <span class="hide-menu">Mandarin</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="../../../Bootstrap5/pages/index.html" aria-expanded="false">
+                    <span><i class="ti ti-cardboards"></i></span>
+                    <span class="hide-menu">Legacy View</span>
+                </a>
+            </li>
+        </ul>
+    </nav> <!-- End Sidebar navigation -->
+</div> <!-- End Sidebar scroll-->
+
+<!-- Import Js Files -->
+<script> window.$ = window.jQuery = require('jquery');</script>
+
+<script src="../assets/js/sidebarmenu.js"></script>
+<script src="../../node_modules/simplebar/dist/simplebar.min.js"></script>
+<script src="../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<!-- core files -->
+<script src="../assets/js/app.min.js"></script>
+<script src="../assets/js/app.init.js"></script>
+<script src="../assets/js/app-style-switcher.js"></script>
+<script src="../../node_modules/prismjs/prism.js"></script>
+
+<script> if (window.module) module = window.module</script>
+<script>
+    const i18nextNav = require('i18next');
+    const Backend2 = require('i18next-fs-backend');
+    const path2 = require("path");
+    const StorageNav = require("electron-store");
+    const newStorageNav = new StorageNav();
+
+    i18nextNav.use(Backend2).init({
+        lng: (newStorageNav.get('language') ? newStorageNav.get('language') : 'en'), backend: {loadPath: path2.join(__dirname, '../../i18nLocales/{{lng}}/translations.json')}
+    }).then(() => {
+        i18n_navbar();
+    });
+
+    document.getElementById('languageSelector').addEventListener('change', (e) => {
+        i18nextNav.changeLanguage(e.target.value).then(() => {
+            i18n_navbar();
+            newStorageNav.set("language",e.target.value)
+        });
+    });
+
+    function i18n_navbar() {
+        // Navbar Section
+        var navlinks = document.querySelectorAll(".nav-topitem");
+        for (let i = 0; i < navlinks.length; i++) {
+            navlinks[i].innerHTML = i18nextNav.t(`navbar.navitems.${i}`)
+        }
+
+        var sessionDropdownLinks = document.querySelectorAll("#sessionDropdownList a");
+        for (let i = 0; i < sessionDropdownLinks.length; i++) {
+            sessionDropdownLinks[i].innerHTML = i18nextNav.t(`navbar.sessions_navitems.${i}`)
+        }
+
+        var productDropdownLinks = document.querySelectorAll("#productDropdownList a");
+        for (let i = 0; i < productDropdownLinks.length; i++) {
+            productDropdownLinks[i].innerHTML = i18nextNav.t(`navbar.products_navitems.${i}`)
+        }
+    }
+</script>
+</body>
+</html>

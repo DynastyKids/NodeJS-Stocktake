@@ -70,7 +70,7 @@ function createWindow(portNumber) {
             nodeIntegration: true,
             // Additional security options
             contextIsolation: false, // 需要使用IPC Renderer,保持为False
-            enableRemoteModule: false, // Consider setting this to true in production
+            enableRemoteModule: true, // Consider setting this to true in production
         },
     });
 
@@ -117,8 +117,27 @@ function createWindow(portNumber) {
         mainWindow.webContents.send('window-resize', {width, height});
     });
 
+    mainWindow.webContents.on('did-fail-load',(ev,errorCode, errorDescription, validatedURL,isMainFrame) =>{
+        console.log("Failed on URL"+validatedURL)
+        if (isMainFrame){
+
+        //     Failed in main Frame, load 404 page
+            mainWindow.loadFile(path.join(__dirname,'Modernize/pages/errors/400.html'))
+        }
+    })
+    mainWindow.webContents.on('ERR_FILE',(ev,errorCode, errorDescription, validatedURL,isMainFrame) =>{
+        console.log("Failed on URL"+validatedURL)
+        if (isMainFrame){
+
+            //     Failed in main Frame, load 404 page
+            //     mainWindow.loadFile(path.join(__dirname,'404.html'))
+        }
+    })
+
     ipcMain.on('print', (event) => {
-        mainWindow.webContents.print({},(success, failureReason)=>{
+        mainWindow.webContents.print({
+            pageSize: "A4",
+        },(success, failureReason)=>{
             if (failureReason){
                 console.error(failureReason);
             }
@@ -173,6 +192,8 @@ function getIPAddress() {
 app.on("window-all-closed", function () {
     if (process.platform !== "darwin") app.quit();
 });
+
+app.setAsDefaultProtocolClient("warehouseelec");
 
 const expressApp = express()
 expressApp.use(cors())

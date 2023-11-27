@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scanner - Warehouse Electron (N)</title>
+    <link rel="shortcut icon" type="image/png" href="../../../assets/images/logos/favicon.png"/>
+    <link rel="stylesheet" href="../../../assets/css/styles.min.css"/>
+</head>
+<!-- This page is only intended to use for Billboard Screen / TV on warehouse Working Area-->
+<body>
+<div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+     data-sidebar-position="fixed" data-header-position="fixed"><!-- Sidebar Start -->
+    <aside class="left-sidebar"><!-- Sidebar scroll-->
+        <script>
+            const sidebarContent = document.querySelector("#main-wrapper aside")
+            fetch('../../layout/sidebar.html')
+                .then(response => response.text())
+                .then(data => {
+                    sidebarContent.innerHTML = data
+                })
+        </script>
+    </aside>
+    <div class="body-wrapper">
+        <div id="navbarAnchor"></div> <!-- Navbar Header from fetch-->
+        <script>
+            const navbarContent = document.querySelector("#navbarAnchor")
+            fetch('../../layout/navbar.html')
+                .then(response => response.text())
+                .then(data => {
+                    navbarContent.innerHTML = data
+                })
+        </script>
+
+        <div class="container-fluid">
+            <div class="container-fluid">
+                <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+                    <div class="card-body px-4 py-3">
+                        <div class="row align-items-center">
+                            <div class="col-12">
+                                <h4 class="fw-semibold mb-8">Add Stock</h4>
+                                <nav aria-label="breadcrumb">
+                                    <ol class="breadcrumb">
+                                        <li class="breadcrumb-item">
+                                            <a class="text-muted text-decoration-none" href="../home/index.html">Home</a>
+                                        </li>
+                                        <li class="breadcrumb-item">
+                                            <a class="text-muted text-decoration-none"
+                                               href="../stocks/index.html">Stocks
+                                            </a>
+                                        </li>
+                                        <li class="breadcrumb-item" aria-current="page">Add Stock</li>
+                                    </ol>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title fw-semibold mb-4">Scanner</h5>
+                        <p class="mb-0">Require Attached with a Scanner, if you don't have one, you can use your
+                            mobile camera by visiting <a href="#">here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script> window.$ = window.jQuery = require('jquery');</script>
+    <script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../assets/js/sidebarmenu.js"></script>
+    <script src="../../assets/js/app.min.js"></script>
+    <script src="../../assets/libs/simplebar/dist/simplebar.js"></script>
+</body>
+
+</html>

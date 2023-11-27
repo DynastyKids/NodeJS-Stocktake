@@ -66,7 +66,7 @@ function i18n_bodyContents() {
     actionLinks[4].textContent = i18next.t('index.addmovementlog');
     actionLinks[5].textContent = i18next.t('index.nextpallet2unwrap');
     actionLinks[6].textContent = i18next.t('index.showPrefilled');
-    // product actions
+    // products actions
     actionLinks[7].textContent = i18next.t('index.showallproducts');
     actionLinks[8].textContent = i18next.t('index.addproduct');
 
