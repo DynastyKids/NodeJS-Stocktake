@@ -79,7 +79,8 @@ function createWindow(portNumber) {
 
         } else if (pingMongoDB((new Store).get('mongoURI'),(new Store).get("mongoDB"))){
             //尝试链接数据库，ping，如果无响应则跳转设置页面
-            mainWindow.loadFile('Bootstrap5/pages/index.html')
+            // mainWindow.loadFile('Bootstrap5/pages/index.html')
+            mainWindow.loadFile('Modernize/pages/home/index.html')
         } else {
             mainWindow.loadFile("Bootstrap5/settings/settings.html")
         }

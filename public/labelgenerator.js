@@ -142,8 +142,8 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
                 , "PNG", doc.internal.pageSize.getWidth() - 255, doc.internal.pageSize.getHeight() - 255, 250, 250)
 
             //新增右上角标签号标记
-            doc.setFontSize(24).setFont(undefined, 'normal')
-            doc.text(qrCodeInfos.productLabel.slice(-7), doc.internal.pageSize.getWidth()-20, 30, {lineHeightFactor: 0.75, align: "right"});
+            doc.setFontSize(28).setFont(undefined, 'normal')
+            doc.text(qrCodeInfos.productLabel.slice(-7), doc.internal.pageSize.getWidth()-20, 32, {lineHeightFactor: 0.75, align: "right"});
 
             doc.setFontSize(10).setFont(undefined, 'normal')
             let bottomVerfiyText = ["V3", qrCodeInfos.productLabel, qrCodeInfos.POIPnumber, qrCodeInfos.productCode,
