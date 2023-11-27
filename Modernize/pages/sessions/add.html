@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Add Session - Warehouse Electron (N)</title>
+    <link rel="shortcut icon" type="image/png" href="../../assets/images/logos/favicon.png"/>
+    <link rel="stylesheet" href="../../assets/css/styles.min.css"/>
+</head>
+
+<body><!--  Body Wrapper -->
+<div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+     data-sidebar-position="fixed" data-header-position="fixed"><!-- Sidebar Start -->
+    <aside class="left-sidebar"><!-- Sidebar scroll-->
+        <script>
+            const sidebarContent = document.querySelector("#main-wrapper aside")
+            fetch('../../layout/sidebar.html')
+                .then(response => response.text())
+                .then(data => {
+                    sidebarContent.innerHTML = data
+                })
+        </script>
+    </aside>
+
+    <div class="body-wrapper">
+        <div id="navbarAnchor"></div> <!-- Navbar Header from fetch-->
+        <script>
+            const navbarContent = document.querySelector("#navbarAnchor")
+            fetch('../../layout/navbar.html')
+                .then(response => response.text())
+                .then(data => {
+                    navbarContent.innerHTML = data
+                })
+        </script>
+
+        <div class="container-fluid">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title fw-semibold mb-4">Sample Page</h5>
+                    <p class="mb-0">This is a sample page </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script> window.$ = window.jQuery = require('jquery');</script>
+<script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../assets/js/sidebarmenu.js"></script>
+<script src="../../assets/js/app.min.js"></script>
+<script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
+</body>
+
+</html>

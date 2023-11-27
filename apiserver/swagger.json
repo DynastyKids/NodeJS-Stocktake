@@ -10,7 +10,7 @@
       "name": "Apache 2.0",
       "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "version": "0.9.6"
+    "version": "0.9.7"
   },
   "servers": [
     {
@@ -451,7 +451,7 @@
         "tags": [
           "Stocks"
         ],
-        "summary": "Add  / Move / Consume Stocks | 添加，修改，移动和删除货架上的货品信息",
+        "summary": "(Deprecated in Next Ver) Provide Stock actions in All-in-one Space",
         "description": "Actions alloed: add, move, update, remove. | 允许操作包括增删改查，填入对应关键词，当update时，使用labelid作为主键更新，labelid本身不允许更新",
         "operationId": "poststocks",
         "requestBody": {
@@ -490,6 +490,161 @@
           },
           "400": {
             "description": "Bad Request / Unsuccessful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/trueORfalse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/stocks/update": {
+      "post": {
+        "tags": [
+          "Stocks (New)"
+        ],
+        "summary": "Add / Edit / Update | 添加，修改和更新货架上的货品信息",
+        "description": "This method was inherited from /v1/stocks, and split actions by URL, this method is enabled with Upsert, any data not in database process by this method will be inserted to database",
+        "operationId": "updateStocks",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/pollinglog"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/trueORfalse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request / Unsuccessful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/trueORfalse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/stocks/move": {
+      "post": {
+        "tags": [
+          "Stocks (New)"
+        ],
+        "summary": "Move Stock by Item Label ID | 提供Label ID以添加产品移动记录",
+        "description": "Move Stock by giving newLocation and item.productLabel, if item does not exist, it will redirect to add action as insert. | 提供newLocation和item中的ProductLabel字段作为更新条件，该状态下不支持upsert",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "newLocation": {
+                    "type": "string"
+                  },
+                  "item": {
+                    "type": "object",
+                    "properties": {
+                      "productLabel": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "moveStocks",
+        "responses": {
+          "200": {
+            "description": "Successful | 成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/pollinglogsRespose"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "System Internal error | 失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/trueORfalse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/stocks/remove": {
+      "post": {
+        "tags": [
+          "Stocks (New)"
+        ],
+        "summary": "Remove Stock by Item Label ID | 提供Label ID以添加产品移除记录",
+        "description": "Only productLabel field will be required, data parameter is optional | 仅要求传入信息，时间参数为可选",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "item": {
+                    "type": "object",
+                    "properties": {
+                      "productLabel": {
+                        "type": "string"
+                      },
+                      "consumedTime": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "removeStocks",
+        "responses": {
+          "200": {
+            "description": "Successful | 成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/pollinglogsRespose"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "System Internal error | 失败",
             "content": {
               "application/json": {
                 "schema": {
@@ -559,24 +714,72 @@
             }
           }
         }
-      },
+      }
+    },
+    "/v1/preload/update": {
       "post": {
         "tags": [
           "Preload"
         ],
-        "summary": "Prefill the information for stocks inbound | 预填充即将上架的货品信息",
-        "operationId": "prefillStocks",
+        "summary": "Prefill/Edit the information for stocks inbound | 预填充/修改即将上架的货品信息",
+        "operationId": "updatePreload",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "items": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/pollinglog"
-                    }
+                  "item": {
+                    "$ref": "#/components/schemas/pollinglog"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/trueORfalse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request / Unsuccessful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/trueORfalse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/preload/remove": {
+      "post": {
+        "tags": [
+          "Preload"
+        ],
+        "summary": "Remove the Pre-fill data by LabelID | 根据预填充的Label ID删除预填充的数据",
+        "operationId": "addPreload",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productLabel": {
+                    "type": "string"
+                  },
+                  "removeTime": {
+                    "type": "string",
+                    "format": "date-time"
                   }
                 }
               }
@@ -720,6 +923,11 @@
             "type": "string",
             "format": "date-time",
             "description": "Date Format must be YYYY-MM-DD HH:mm:ss"
+          },
+          "unitprice": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, Unit price of the item | 可选字段，产品价格"
           }
         }
       },
@@ -843,10 +1051,35 @@
             "format": "int32",
             "description": "Optional, the weight of each unit, recommand measure with grams | 可选字段，产品的重量（推荐用克表示）"
           },
+          "height": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, the height of each unit (cm) | 可选字段，产品的高度（单位cm）"
+          },
+          "length": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, the length of each unit (cm) | 可选字段，产品的长度（单位cm）"
+          },
+          "width": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, the width of each unit (cm) | 可选字段，产品的宽度（单位cm）"
+          },
+          "unitPrice": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, Unit price of the item | 可选字段，产品价格"
+          },
+          "sellPrice": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, Selling price of the item"
+          },
           "withBestbefore": {
             "type": "integer",
             "format": "int",
-            "description": "Mandatory, does this product has expire date? (Y=1, N=0) | 产品是否有有效期（1为是，0为否）",
+            "description": "Mandatory, does this product has expire date? (Y=1, N=0)",
             "enum": [
               0,
               1

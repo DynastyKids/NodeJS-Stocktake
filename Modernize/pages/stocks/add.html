@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Add Stock - Warehouse Electron (N)</title>
+    <link rel="shortcut icon" type="image/png" href="../../assets/images/logos/favicon.png"/>
+    <link rel="stylesheet" href="../../assets/css/styles.min.css"/>
+</head>
+
+<body>
+<div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+     data-sidebar-position="fixed" data-header-position="fixed"><!-- Sidebar Start -->
+    <aside class="left-sidebar">
+        <script>
+            const sidebarContent = document.querySelector("#main-wrapper aside")
+            fetch('../../layout/sidebar.html')
+                .then(response => response.text())
+                .then(data => {
+                    sidebarContent.innerHTML = data
+                })
+        </script>
+    </aside>
+
+    <div class="body-wrapper">
+        <div id="navbarAnchor"></div> <!-- Navbar Header from fetch-->
+        <script>
+            const navbarContent = document.querySelector("#navbarAnchor")
+            fetch('../../layout/navbar.html')
+                .then(response => response.text())
+                .then(data => {
+                    navbarContent.innerHTML = data
+                })
+        </script>
+
+        <div class="container-fluid">
+            <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+                <div class="card-body px-4 py-3">
+                    <div class="row align-items-center">
+                        <div class="col-12">
+                            <h4 class="fw-semibold mb-8">Add Stock</h4>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../home/index.html">Home</a>
+                                    </li>
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../stocks/index.html">Stocks
+                                        </a>
+                                    </li>
+                                    <li class="breadcrumb-item" aria-current="page">Add Stocks</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="alertAnchor"></div>
+            <div class="alert alert-success alert-dismissible bg-success text-white border-0 fade show" role="alert"
+                 style="display: none" id="div_successAlertblock">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                <span id="alert_text"><strong>Success</strong> - Stock has been successfully added, redirect to
+                    stock-list now.</span>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title fw-semibold mb-1">Actions</h5>
+                    <div class="list-group-item-action">
+                        <a class="mb-0 ms-2" href="../stocks/index.html">List stocks</a>
+                        <a class="mb-0 ms-2" href="#" id="act_reset">Reset Form</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body" id="div_datatable">
+                    <h5 class="card-title fw-semibold mb-2">Fill the below table for products</h5>
+                    <form id="form_product">
+                        <div class="row">
+                            <div class="col-sm-6 mb-2">
+                                <label for="inpt_prodCode">Product Code</label>
+                                <input class="form-control" id="inpt_prodCode" placeholder="Select from list" value="" required="">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-sm-6 mb-2">
+                                <label for="inpt_prodName">Product Label Name</label>
+                                <input type="text" class="form-control" id="inpt_prodName" placeholder="Label name" value="" required="">
+                            </div>
+                            <div class="col-sm-6 mb-2">
+                                <label for="inpt_quantity">Quantity</label>
+                                <input type="number" class="form-control" id="inpt_quantity" placeholder="Quantity" value="">
+                            </div>
+                            <div class="col-sm-6 col-6 mb-2">
+                                <label for="inpt_unit">Unit</label>
+                                <input class="form-control" id="inpt_unit" placeholder="Unit" list="unitlists" required="" >
+                            </div>
+                            <div class="col-sm-6 col-6 mb-2">
+                                <label for="inpt_purchaseorder">Purchase Order No.</label>
+                                <input type="text" class="form-control" id="inpt_purchaseorder" placeholder="Purchase Order Number">
+                            </div>
+                            <div class="col-sm-6 col-6 mb-2">
+                                <label for="inpt_bestbefore">Best before</label>
+                                <input type="date" class="form-control" id="inpt_bestbefore">
+                            </div>
+                            <div class="col-sm-6 col-6 mb-2">
+                                <label for="inpt_labelid">Label ID</label>
+                                <input type="text" class="form-control" id="inpt_labelid" placeholder="Label ID">
+                            </div>
+                            <div class="col-sm-6 col-6 mb-2">
+                                <label for="inpt_sessionid">Session ID</label>
+                                <input type="text" class="form-control" id="inpt_sessionid" placeholder="Session ID">
+                            </div>
+                            <div class="col-sm-6 col-6 mb-2">
+                                <label for="inpt_shelflocation">Location</label>
+                                <input type="text" class="form-control" id="inpt_shelflocation" placeholder="Location">
+                            </div>
+                            <div class="col-sm-6 col-6 mb-2">
+                                <label for="inpt_unitprice">Unit Price</label>
+                                <input type="number" step="0.01" class="form-control" id="inpt_unitprice"
+                                       placeholder="Unit Price">
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="form-group row">
+                            <div class="form-check mr-sm-2 col-12">
+                                <input type="checkbox" class="form-check-input" id="check_manualTime">
+                                <label class="form-check-label" for="check_manualTime">Set Log timestamp manually</label>
+                            </div>
+                            <div class="col-sm-6 col-6 mb-2" id="group_loggingTime" style="display: none">
+                                <label for="inpt_loggingTime">Logging Datetime</label>
+                                <input type="datetime-local" class="form-control" id="inpt_loggingTime" value="">
+                            </div>
+                            <div class="col-sm-6 col-6 mb-2" id="group_consumeTime" style="display: none">
+                                <label for="inpt_consumeTime">Remove Datetime</label>
+                                <input type="datetime-local" class="form-control" id="inpt_consumeTime" value="">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary rounded-pill px-4 mt-3" type="submit" id="btn_submit"
+                                disabled="">Submit
+                        </button>
+                    </form>
+                    <button class="btn btn-info rounded-pill px-4 mt-3" id="btn_scanqrcode">QR Scanner</button>
+                    <br>
+                    <div class="container" id="videobox" style="display: none">
+                        <h5>Camera Preview</h5>
+                        <video id="video"></video>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <datalist id="unitlists">
+        <option value="bag">Bag</option>
+        <option value="bottle">Bottle</option>
+        <option value="box">Box</option>
+        <option value="carton">Carton</option>
+        <option value="roll">Roll</option>
+        <option value="unit">Unit</option>
+        <option value="skid">Skid</option>
+        <option value="pallet">Pallet</option>
+    </datalist>
+</div>
+<script> window.$ = window.jQuery = require('jquery');</script>
+<script src="../../../node_modules/jquery/dist/jquery.min.js"></script>
+<script src="../../../node_modules/jquery-ui/dist/jquery-ui.min.js"></script>
+<script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../assets/js/sidebarmenu.js"></script>
+<script src="../../assets/js/app.min.js"></script>
+<script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
+
+<script src="./add.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Home - Warehouse Electron (N)</title>
+    <link rel="shortcut icon" type="image/png" href="../../assets/images/logos/favicon.png"/>
+    <link rel="stylesheet" href="../../../node_modules/simplebar/dist/simplebar.min.css">
+    <link rel="stylesheet" href="../../assets/css/styles.min.css"/>
+    <link rel="stylesheet ">
+</head>
+
+<body>
+<!--  Body Wrapper -->
+<div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+     data-sidebar-position="fixed" data-header-position="fixed">
+    <!-- Sidebar Start -->
+    <aside class="left-sidebar">
+        <!-- Sidebar scroll-->
+        <script>
+            const sidebarContent = document.querySelector("#main-wrapper aside")
+            fetch('../../layout/sidebar.html')
+                .then(response => response.text())
+                .then(data => {
+                    sidebarContent.innerHTML = data
+                })
+        </script>
+    </aside>
+    <div class="body-wrapper">
+        <div id="navbarAnchor"></div>
+        <script>
+            const navbarContent = document.querySelector("#navbarAnchor")
+            fetch('../../layout/navbar.html')
+                .then(response => response.text())
+                .then(data => {
+                    navbarContent.innerHTML = data
+                })
+        </script>
+
+        <div class="container-fluid">
+            <div class="row">    <!-- Bootstrap Rows 大3小2 -->
+                <div class="col-lg-4 col-sm-6"> <!-- Quartly Breakup -->
+                    <div class="card overflow-hidden" id="apex_quarterlyBreakup">
+                        <div class="card-body p-4">
+                            <h5 class="card-title mb-9 fw-semibold">Loading Quarterly Data</h5>
+                            <div class="row align-items-center">
+                                <div class="col-7">
+                                    <h4 class="fw-semibold mb-5"></h4>
+                                    <div class="d-flex align-items-center mb-5" id="diffWithLastYear">
+                                        <span></span>
+                                        <p class="text-dark me-1 fs-2 mb-0"></p>
+                                    </div>
+                                </div>
+                                <div class="col-5">
+                                    <div class="d-flex justify-content-center">
+                                        <div id="breakup"></div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-4"><span class="fs-2" style="color: #5b42ff"></span></div>
+                                        <div class="me-4"><span class="fs-2" style="color: #6b1fcf"></span></div>
+                                        <div class="me-4"><span class="fs-2" style="color: #be02f7"></span></div>
+                                        <div class="me-4"><span class="fs-2" style="color: #ff004c"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <p style="font-size: x-small">*Only removed product treated as sale</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6"> <!-- Stock Turnover Calculations-->
+                    <div class="card" id="apex_turnoverChart">
+                        <div class="card-body">
+                            <div class="row alig n-items-start">
+                                <div class="col-12">
+                                    <h5 class="card-title mb-9 fw-semibold">Loading Turnover Data</h5>
+                                    <h4 class="fw-semibold mb-2"></h4>
+                                    <div class="d-flex align-items-center pb-1">
+                                        <span></span>
+                                        <p class="text-dark me-1 fs-2 mb-0"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="turnovers"></div>
+                        <div class="card-footer">
+                            <p style="font-size: x-small">* Calculate with recent 25000 records</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6">
+                    <div class="card">
+                        <div class="card-body" id="card_topseller">
+                            <h5 class="card-title mb-5 fw-semibold">Loading Best Sellers</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 d-flex align-items-strech">
+                    <div class="card w-100">
+                        <div class="card-body" id="inventoryOverviews">
+                            <div class="d-sm-flex d-block align-items-center justify-content-between mb-9">
+                                <div class="mb-3 mb-sm-0">
+                                    <h5 class="card-title fw-semibold">Loading Inventory data</h5>
+                                </div>
+                                <div>
+                                    <select class="form-select" id="inv_optionslist"></select>
+                                </div>
+                            </div>
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div id="inventoryOverviewChart" style="min-height: 400px;"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="hstack mb-4 pb-1">
+                                        <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
+                                            <i class="ti ti-grid-dots text-primary fs-6"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="mb-0 fs-7 fw-semibold" id="stockValue"></h4>
+                                            <p class="fs-3 mb-0">Current in-stock Value</p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="d-flex align-items-baseline mb-4">
+                                            <span class="round-8 text-bg-primary rounded-circle me-6"></span>
+                                            <div>
+                                                <p class="fs-3 mb-1">Imported value this month</p>
+                                                <h6 class="fs-5 fw-semibold mb-0" id="inboundValue"></h6>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-baseline mb-4 pb-1">
+                                            <span class="round-8 text-bg-secondary rounded-circle me-6"></span>
+                                            <div>
+                                                <p class="fs-3 mb-1">Shipped value this month</p>
+                                                <h6 class="fs-5 fw-semibold mb-0" id="outboundValue"></h6>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 col-lg-6 d-flex align-items-stretch">
+                    <div class="card w-100">
+                        <div class="card-body p-4" id="recentTransactionsCardIn">
+                            <div class="mb-4">
+                                <h5 class="card-title fw-semibold">Loading Inbound Transactions</h5>
+                            </div>
+                            <ul class="timeline-widget mb-0 position-relative mb-n5">
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6 d-flex align-items-stretch">
+                    <div class="card w-100">
+                        <div class="card-body p-4" id="recentTransactionsCardOut">
+                            <div class="mb-4">
+                                <h5 class="card-title fw-semibold">Loading Outbound Transactions</h5>
+                            </div>
+                            <ul class="timeline-widget mb-0 position-relative mb-n5">
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <p class="mb-0 fs-1" style="font-size: x-small">
+                Project was developed by DynastyKids & opensourced on
+                <a href="https://github.com/DynastyKids/NodeJS-Stocktake" target="_blank">GitHub</a>,
+                <a href="https://adminmart.com/product/modernize-free-bootstrap-5-admin-template/" target="_blank">Moderize</a>
+                theme Design & Distributed by <a href="https://adminmart.com/" target="_blank"
+                                   class="pe-1 text-primary text-decoration-underline">AdminMart</a>
+            </p>
+        </div>
+    </div>
+</div>
+<script> window.$ = window.jQuery = require('jquery');</script>
+<script src="../../../node_modules/jquery/dist/jquery.min.js"></script>
+<script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../assets/js/sidebarmenu.js"></script>
+<script src="../../assets/js/app.min.js"></script>
+<script src="../../../node_modules/apexcharts/dist/apexcharts.min.js"></script>
+<script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
+<script src="../home/index.js"></script>
+
+<script> if (window.module) module = window.module</script>
+</body>
+
+</html>

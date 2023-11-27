@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>List Sessions - Warehouse Electron (N)</title>
+    <link rel="shortcut icon" type="image/png" href="../../assets/images/logos/favicon.png"/>
+    <link rel="stylesheet" href="../../assets/css/styles.min.css"/>
+</head>
+
+<body><!--  Body Wrapper -->
+<div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+     data-sidebar-position="fixed" data-header-position="fixed"><!-- Sidebar Start -->
+    <aside class="left-sidebar"><!-- Sidebar scroll-->
+        <script>
+            const sidebarContent = document.querySelector("#main-wrapper aside")
+            fetch('../../layout/sidebar.html')
+                .then(response => response.text())
+                .then(data => {
+                    sidebarContent.innerHTML = data
+                })
+        </script>
+    </aside>
+
+    <div class="body-wrapper">
+        <div id="navbarAnchor"></div> <!-- Navbar Header from fetch-->
+        <script>
+            const navbarContent = document.querySelector("#navbarAnchor")
+            fetch('../../layout/navbar.html')
+                .then(response => response.text())
+                .then(data => {
+                    navbarContent.innerHTML = data
+                })
+        </script>
+
+        <div class="container-fluid">
+            <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+                <div class="card-body px-4 py-3">
+                    <div class="row align-items-center">
+                        <div class="col-12">
+                            <h4 class="fw-semibold mb-8">Sessions</h4>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../home/index.html">Home</a>
+                                    </li>
+                                    <li class="breadcrumb-item" aria-current="page">sessions</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title fw-semibold mb-4">Actions</h5>
+                    <div class="list-group-item-action">
+                        <a class="mb-0 ms-2" href="#" id="act_listchange" data-value="all">List All Sessions</a>
+                        <a class="mb-0 ms-2" href="#" id="act_reloadTable">Refresh Session List</a>
+                        <a class="mb-0 ms-2" href="./add.html">Add session</a>
+                        <div id="loadingStatus">
+                            <span class="spinner-border" role="status" id="loadingSpinners"></span>
+                            <span class="" id="loadingTableText">Loading data...</span>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="card-body">
+                    <h5 class="card-title fw-semibold mb-4">List of Sessions</h5>
+                    <p class="mb-0"><table class="table">
+                    <thead class="thead-light">
+                    <tr>
+                        <th scope="col">Session ID</th>
+                        <th scope="col">Start Time</th>
+                        <th scope="col">End Time</th>
+                        <th scope="col">Setup Time</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                    </thead>
+                    <tfoot>
+                    <tr>
+                        <th scope="col">Session ID</th>
+                        <th scope="col">Start Time</th>
+                        <th scope="col">End Time</th>
+                        <th scope="col">Setup Time</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                    </tfoot>
+                    <tbody id="activeTBody">
+                    </tbody>
+                </table> </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script> window.$ = window.jQuery = require('jquery');</script>
+<script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../assets/js/sidebarmenu.js"></script>
+<script src="../../assets/js/app.min.js"></script>
+<script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
+</body>
+
+</html>

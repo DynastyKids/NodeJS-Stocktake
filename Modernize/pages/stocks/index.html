@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Stocks - Warehouse Electron (N) </title>
+    <link rel="shortcut icon" type="image/png" href="../../assets/images/logos/favicon.png"/>
+    <link rel="stylesheet" href="../../assets/css/styles.min.css"/>
+</head>
+
+<body><!--  Body Wrapper -->
+<div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+     data-sidebar-position="fixed" data-header-position="fixed"><!-- Sidebar Start -->
+    <aside class="left-sidebar"><!-- Sidebar scroll-->
+        <script>
+            const sidebarContent = document.querySelector("#main-wrapper aside")
+            fetch('../../layout/sidebar.html')
+                .then(response => response.text())
+                .then(data => {
+                    sidebarContent.innerHTML = data
+                })
+        </script>
+    </aside>
+
+    <div class="body-wrapper">
+        <div id="navbarAnchor"></div> <!-- Navbar Header from fetch-->
+        <script>
+            const navbarContent = document.querySelector("#navbarAnchor")
+            fetch('../../layout/navbar.html')
+                .then(response => response.text())
+                .then(data => {
+                    navbarContent.innerHTML = data
+                })
+        </script>
+
+        <div class="container-fluid">
+            <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+                <div class="card-body px-4 py-3">
+                    <div class="row align-items-center">
+                        <div class="col-12">
+                            <h4 class="fw-semibold mb-8">Stocks</h4>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../home/index.html">Home</a>
+                                    </li>
+                                    <li class="breadcrumb-item" aria-current="page">Stocks</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title fw-semibold mb-4">Actions</h5>
+
+                    <div class="list-group-item-action">
+                        <div class="row mb-0 ms-2">
+                            <div class="col-6" id="switchDiv">
+                                <input class="form-check-input" type="checkbox" id="switchCheck">
+                                <span>Show History Stocks</span>
+                            </div>
+                            <div class="col-6" style="display: flex">
+                                <span id="labelForFilterdate" for="filterdate">Filter records after Date:</span>
+                                <input type="date" id="filterdate" name="filterdate" class="form-control form-control-sm">
+                            </div>
+                            <span class="toggleRefreshText" style="float: left;">Auto Refresh in: <span id="toggleTimes"></span></span><span class="toggleRefreshText"></span>
+                        </div>
+                        <a class="mb-0 ms-2" href="#" id="act_reloadTable">Reload Table</a>
+                        <a class="mb-0 ms-2" href="./add.html">Add Stock</a>
+                        <a class="mb-0 ms-2" href="./printview.html">Print</a>
+                        <a class="mb-0 ms-2" href="#" id="act_pause">Pause Timer</a>
+                    </div>
+                </div>
+                <div card="card-body" id="loadingStatus">
+                    <span class="spinner-border" role="status" id="loadingSpinners"></span>
+                    <span class="" id="loadingTableText">Loading data...</span>
+                </div>
+                <div class="card-body" id="div_datatable">
+                    <table class="table table-responsive" id="table">
+                        <thead>
+                        <tr>
+                            <th scope="col">Code</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Best before</th>
+                            <th scope="col">Location</th>
+                            <th scope="col">Stock ID<br><small>Add Time</small></th>
+                            <th scope="col">Action</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <th scope="col">Code</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Best before</th>
+                            <th scope="col">Location</th>
+                            <th scope="col">Stock ID<br><small>Add Time</small></th>
+                            <th scope="col">Action</th>
+                        </tr>
+                        </tfoot>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeModalLabel">Remove Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure to REMOVE Item from shelf?
+                <form><input type="text" class="form-control" id="modalInputLabelid" hidden value=""></form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="removeModalYes">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="revertModal" tabindex="-1" aria-labelledby="revertModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="revertModalLabel">Add Item?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure to put back Item from shelf?
+                <form>
+                    <input type="text" class="form-control" id="revertLabelid" hidden value="">
+                    <div class="col-12">
+                        <label for="modalInputLabelid" class="form-label">Shelf Location:</label>
+                        <input type="text" class="form-control col-6" id="revertLocation" value="">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="revertModalYes">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade modal-lg" data-bs-backdrop="static" id="editModal" tabindex="-1"
+     aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Item:</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="row">
+                        <h6>Product Information:</h6>
+                        <input type="text" class="form-control col-6" id="modalEditLabelid" hidden value="">
+                        <div class="col-6 col-md-4">
+                            <label for="modalInputLabelid" class="form-label">Product Quantity:</label>
+                            <input type="number" class="form-control col-6" id="modalEditQuantity" value="">
+                        </div>
+                        <div class="col-6  col-md-4">
+                            <label for="modalEditUnit" class="form-label">Product Unit:</label>
+                            <input type="text" class="form-control col-6" id="modalEditUnit" value="">
+                        </div>
+                        <div class="col-6  col-md-4">
+                            <label for="modalEditBestbefore" class="form-label">Best Before:</label>
+                            <input type="date" class="form-control col-6" id="modalEditBestbefore" value="">
+                        </div>
+                        <div class="col-6  col-md-4">
+                            <label for="modelEditLocation" class="form-label">Location:</label>
+                            <input type="text" class="form-control col-6" id="modelEditLocation" value="">
+                        </div>
+                        <div class="col-6  col-md-4">
+                            <label for="modelEditUnitprice" class="form-label">Unit Price:</label>
+                            <input type="text" class="form-control col-6" id="modelEditUnitprice" value="">
+                        </div>
+                        <div class="col-6  col-md-4">
+                            <label for="modelEditPOIP" class="form-label">Purchase OrderID:</label>
+                            <input type="text" class="form-control col-6" id="modelEditPOIP" value="">
+                        </div>
+                        <div class="col-6">
+                            <label for="modelEditLoggingTime" class="form-label">Initial Log Time:</label>
+                            <input type="datetime-local" class="form-control col-6" id="modelEditLoggingTime" value="">
+                        </div>
+                        <div class="col-12">
+                            <div style="display: inline-block">
+                                <label class="form-label">Product Info:</label>
+                                <span id="productInfoText"></span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div style="display: inline">
+                                <label class="form-label">Label ID:</label>
+                                <span id="labelIDText"></span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="col-6">
+                                <input type="checkbox" class="form-check-input" id="modelCheckboxConsumed">
+                                <label class="form-label">Product has been removed?</label>
+                            </div>
+                            <div class="col-6" id="group_consumeTime" style="display: none">
+                                <label for="modelEditConsumeTime" class="form-label">Consume Time:</label>
+                                <input type="datetime-local" class="form-control col-6" id="modelEditConsumeTime" value="">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="editModalSubmitBtn" disabled>Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script> window.$ = window.jQuery = require('jquery');</script>
+<script src="../../assets/js/sidebarmenu.js"></script>
+<script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
+<script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="../../assets/js/app.min.js"></script>
+<script src="../../assets/js/app-style-switcher.js"></script>
+<script src="../../../node_modules/prismjs/prism.js"></script>
+<script src="./index.js"></script>
+</body>
+
+</html>

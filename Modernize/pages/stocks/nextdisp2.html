@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="180">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src * data:">
+    <link rel="stylesheet" href="../../../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../../node_modules/flatpickr/dist/flatpickr.min.css">
+    <title>Next Dispatch (View) - Warehouse Electron (N)</title>
+</head>
+<body>
+<div class="container-fluid" id="topMenu">
+    <h1 class="m-2" id="sessionTitle">Next Dispatch Large Screen View</h1>
+    <div class="container">
+        <a href="../home/index.html" style="margin: 2em 2em 2em 2em">Return Homepage</a>
+        <a href="../stocks/nextdisp.html" style="margin: 2em 2em 2em 2em">Exit large-screen view</a>
+        <div id="refreshCountdown" style="float: left;">
+            <span class="toggleRefreshText" style="float: left;">Auto Refresh: </span>
+            <span id="toggleTimes"></span><span class="toggleRefreshText"></span>
+        </div>
+    </div>
+
+</div>
+<br>
+<div class="container-fluid">
+    <div id="fill-div">
+        <table id="table-header">
+            <thead style="font-size: x-large; text-align: center">
+            <tr>
+                <td scope="col" style="width:35%" rowspan="2">Product</td>
+                <td scope="col" style="width:25%">1st<br>Location / Date</td>
+                <td scope="col" style="width:20%">2nd<br>Location / Date</td>
+                <td scope="col" style="width:20%">3rd<br>Location / Date</td>
+            </tr>
+            </thead>
+        </table>
+        <div id="table-body-container">
+            <table id="table-body">
+                <tr>
+                    <td class="tableItemName">Loading Product</td>
+                    <td class="tableNext1">Location 1<br>Exp Date 1</td>
+                    <td class="tableNext2">Location 2<br>Exp Date 2</td>
+                    <td class="tableNext2">Location 3<br>Exp Date 3</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../../node_modules/flatpickr/dist/flatpickr.min.js"></script>
+<script src="./nextdisp2.js"></script>
+</body>
+<style>
+    #fill-div {
+        overflow: hidden;
+        /*position: relative;*/
+    }
+
+    #table-header,
+    #scrolling-tbody {
+        width: 100%;
+    }
+
+    #table-body-container {
+        overflow: hidden;
+        /*position: absolute;*/
+        /*position: relative;*/
+        top: 0;
+        left: 0;
+        width: 100%;
+    }
+
+    .dataTable thead tr {
+        font-size: x-large;
+    }
+
+    .dataTable tbody {
+        font-size: xxx-large;
+    }
+
+    #dataTableBody {
+        overflow: hidden;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    .tableItemName {
+        text-align: left;
+        font-size: xx-large;
+        vertical-align: center;
+        width: 35%;
+        font-weight: bold;
+    }
+
+    .tableNext1 {
+        font-family: 'Courier New', Courier, monospace;
+        text-align: center;
+        font-size: xxx-large;
+        font-stretch: expanded;
+        width: 25%;
+        font-weight: bold;
+    }
+
+    .tableNext2 {
+        font-family: 'Courier New', Courier, monospace;
+        text-align: center;
+        font-size: xxx-large;
+        width: 20%;
+        font-weight: bold;
+    }
+
+    table {
+        width: 100%;
+        border: 2px solid black;
+    }
+
+    tr {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+
+    td, th {
+        border: 1px dashed grey;
+        padding: 3px;
+    }
+</style>
+</html>
