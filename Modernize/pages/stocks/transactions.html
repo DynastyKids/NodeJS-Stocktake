@@ -36,10 +36,84 @@
 
         <!--  Header End -->
         <div class="container-fluid">
+            <div id="alertAnchor"></div>
+            <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+                <div class="card-body px-4 py-3">
+                    <h4 class="card-title fw-semibold mb-4">Transactions</h4>
+                    <div class="row align-items-center">
+                        <div class="col-12">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../home/index.html">Home</a>
+                                    </li>
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../stocks/index.html">Stocks</a>
+                                    </li>
+                                    <li class="breadcrumb-item" aria-current="page">History Transactions</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title fw-semibold mb-4">Sample Page</h5>
-                    <p class="mb-0">This is a sample page </p>
+                    <div class="row">
+                        <div class="col-6 col-sm-2 mb-2">
+                            <label for="inpt_startDate">Filter direction</label>
+                            <select class="form-select" aria-label="Default select example" id="inpt_direction">
+                                <option value="ALL" selected>All Transactions</option>
+                                <option value="IN">Inbound</option>
+                                <option value="OUT">Outbound</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-sm-4 mb-2">
+                            <label for="inpt_startDate">Start Date</label>
+                            <input class="form-control" id="inpt_startDate" placeholder="" value="" type="date">
+                        </div>
+                        <div class="col-6 col-sm-4 mb-2">
+                            <label for="inpt_endDate">End Date</label>
+                            <input class="form-control" id="inpt_endDate" placeholder="" value="" type="date">
+                        </div>
+                        <div class="col-12 col-sm-2 mb-2">
+                            <button class="btn btn-primary rounded-pill px-4 mt-3" type="submit" id="btn_filter">Filter</button>
+                        </div>
+                    </div>
+                    <nav>
+                        <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                            <button class="nav-link active" id="nav-all-tab" data-bs-toggle="tab" data-bs-target="#nav-all" type="button" role="tab" aria-controls="nav-all" aria-selected="true">Show All</button>
+                        </div>
+                    </nav>
+                    <div class="tab-content" id="nav-tabContent">
+                        <div class="tab-pane fade show active" id="nav-all" role="tabpanel" aria-labelledby="nav-all-tab">
+                            <table class="table table-responsive" id="table">
+                                <thead>
+                                <tr>
+                                    <th scope="col">Direction</th>
+                                    <th scope="col">Record Time</th>
+                                    <th scope="col">Product</th>
+                                    <th scope="col">Quantity</th>
+                                    <th scope="col">Best before</th>
+                                    <th scope="col">Location</th>
+                                </tr>
+                                </thead>
+                                <tfoot>
+                                <tr>
+                                    <th scope="col">Direction</th>
+                                    <th scope="col">Record Time</th>
+                                    <th scope="col">Product</th>
+                                    <th scope="col">Quantity</th>
+                                    <th scope="col">Best before</th>
+                                    <th scope="col">Location</th>
+                                </tr>
+                                </tfoot>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+<!--                        <div class="tab-pane fade" id="nav-inbound" role="tabpanel" aria-labelledby="nav-inbound-tab">Inbound Only</div>-->
+<!--                        <div class="tab-pane fade" id="nav-outbound" role="tabpanel" aria-labelledby="nav-outbound-tab">Outbound Only</div>-->
+                    </div>
                 </div>
             </div>
         </div>
@@ -50,6 +124,8 @@
 <script src="../../assets/js/sidebarmenu.js"></script>
 <script src="../../assets/js/app.min.js"></script>
 <script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
+
+<script src="./transactions.js"></script>
 </body>
 
 </html>

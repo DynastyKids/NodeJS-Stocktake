@@ -24,8 +24,14 @@ document.addEventListener("DOMContentLoaded",async () => {
     stockRecords = await getAllStockRecords();
     productsList = await getProductsList();
 
-    console.log(stockRecords)
-    console.log(productsList)
+    if (stockRecords.length <=0 && productsList.length <=0 ){
+    //     如果两者均小于0，则提示用户检查数据库链接是否正确
+        var alert = document.createElement("div");
+        alert.className = "alert alert-danger alert-dismissible fade show";
+        alert.setAttribute("role", "alert");
+        alert.innerHTML = `<div>No product data or item information available in database, please check database connection details are correct.</div>` +
+            `<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`
+    }
 
     // 预先转换所有Carton单位到最小单位，避免后续二次转换出错
     for (let i = 0; i < stockRecords.length; i++) {
@@ -63,6 +69,7 @@ document.addEventListener("DOMContentLoaded",async () => {
     document.querySelector("#apex_quarterlyBreakup .card-title").textContent = "Quarterly Sale Breakup"
     document.querySelector("#apex_quarterlyBreakup h4").textContent = `A$ ${new Intl.NumberFormat('en-AU').format(quarterDatas[0])}`
     let posResult = !!(100 - Math.round(quarterDatas[0] / quarterDatas[1] * 100))//Positive growth ?
+    console.log(100 - Math.round(quarterDatas[0] / quarterDatas[1] * 100))
     if (posResult){
         document.querySelector("#diffWithLastYear span").className = "me-1 rounded-circle bg-light-success round-20 d-flex align-items-center justify-content-center"
         document.querySelector("#diffWithLastYear span").innerHTML = `<i class="ti ti-arrow-up-right text-success"></i>`
@@ -74,6 +81,9 @@ document.addEventListener("DOMContentLoaded",async () => {
     document.querySelector("#diffWithLastYear").append()
     document.querySelector("#diffWithLastYear p").innerHTML = `${ posResult ? "+":"-"}${Math.abs(100-Math.round(quarterDatas[0]/quarterDatas[1]*100))}% than ${last4Qtrs[1]}`
 
+    if (isNaN(100 - Math.round(quarterDatas[0] / quarterDatas[1] * 100))){
+        document.querySelector("#diffWithLastYear").innerHTML = `<p>Data not available</p>`
+    }
 
     // Yearly Breakup Charts
     // 按照季度计算整托盘产品的出货数量，1个托盘记为1件/或可以用货值替代，需要记录出货时候的货值
@@ -92,7 +102,7 @@ document.addEventListener("DOMContentLoaded",async () => {
             pie: {
                 startAngle: 0,
                 endAngle: 360,
-                donut: {size: '75%',},
+                donut: {size: '75%'},
             },
         },
         stroke: {show: false,},
@@ -117,89 +127,93 @@ document.addEventListener("DOMContentLoaded",async () => {
 
     // Apex Chart 2  Stock Turnover Time
     // Stock Turnover部分仅整托盘计算(出库时间-入库时间)/总托盘数量
-    let stockTurnOverArray = calcStockTurnover(stockRecords)  // Stock Turnover time will be calculated in days/hours
-    if (stockTurnOverArray.length>0){
-        let avgTime = 0
-        stockTurnOverArray.forEach(eachItem=>{
-            avgTime += eachItem.timediff
-        })
-        avgTime = Math.round(avgTime/stockTurnOverArray.length)
-
-        let lastMonthTurnoverRate = calcStockTurnover(stockRecords,25000,new Date(new Date().getFullYear(),new Date().getMonth(),0))  // Stock
-        let lastmonthAvg = 0
-        if (lastMonthTurnoverRate.length>0) {
-            lastMonthTurnoverRate.forEach(eachItem => {
-                lastmonthAvg += eachItem.timediff
+    if (stockRecords.length > 0) {
+        let stockTurnOverArray = calcStockTurnover(stockRecords)  // Stock Turnover time will be calculated in days/hours
+        if (stockTurnOverArray.length > 0) {
+            let avgTime = 0
+            stockTurnOverArray.forEach(eachItem => {
+                avgTime += eachItem.timediff
             })
-            lastmonthAvg = Math.round(lastmonthAvg / stockTurnOverArray.length)
+            avgTime = Math.round(avgTime / stockTurnOverArray.length)
+
+            let lastMonthTurnoverRate = calcStockTurnover(stockRecords, 25000, new Date(new Date().getFullYear(), new Date().getMonth(), 0))  // Stock
+            let lastmonthAvg = 0
+            if (lastMonthTurnoverRate.length > 0) {
+                lastMonthTurnoverRate.forEach(eachItem => {
+                    lastmonthAvg += eachItem.timediff
+                })
+                lastmonthAvg = Math.round(lastmonthAvg / stockTurnOverArray.length)
+            }
+
+            document.querySelector("#apex_turnoverChart h5").textContent = `Stock Turnover Time`
+            document.querySelector("#apex_turnoverChart h4").textContent = `${(avgTime / 60 / 60 / 24).toFixed(1)} days*`
+            if (avgTime / lastmonthAvg - 1 > 0) {
+                document.querySelector("#apex_turnoverChart .col-12 span").className = "me-2 rounded-circle bg-light-danger round-20 d-flex align-items-center justify-content-center"
+                document.querySelector("#apex_turnoverChart .col-12 span").innerHTML = `<i class="ti ti-arrow-down-right text-danger"></i>`
+            } else {
+                document.querySelector("#apex_turnoverChart .col-12 span").className = "me-2 rounded-circle bg-light-success round-20 d-flex align-items-center justify-content-center"
+                document.querySelector("#apex_turnoverChart .col-12 span").innerHTML = `<i class="ti ti-arrow-up-right text-success"></i>`
+            }
+            document.querySelector("#apex_turnoverChart .col-12 p")
+            document.querySelector("#apex_turnoverChart .col-12 p").textContent = `${(avgTime / lastmonthAvg - 1) > 0 ? "+" : "-"}${Math.abs(Math.round((avgTime / lastmonthAvg - 1) * 100))}% days compared on last month`
         }
 
-        document.querySelector("#apex_turnoverChart h5").textContent = `Stock Turnover Time`
-        document.querySelector("#apex_turnoverChart h4").textContent = `${(avgTime/60/60/24).toFixed(1)} days*`
-        if(avgTime/lastmonthAvg-1 >0){
-            document.querySelector("#apex_turnoverChart .col-12 span").className = "me-2 rounded-circle bg-light-danger round-20 d-flex align-items-center justify-content-center"
-            document.querySelector("#apex_turnoverChart .col-12 span").innerHTML = `<i class="ti ti-arrow-down-right text-danger"></i>`
-        } else {
-            document.querySelector("#apex_turnoverChart .col-12 span").className = "me-2 rounded-circle bg-light-success round-20 d-flex align-items-center justify-content-center"
-            document.querySelector("#apex_turnoverChart .col-12 span").innerHTML = `<i class="ti ti-arrow-up-right text-success"></i>`
-        }
-        document.querySelector("#apex_turnoverChart .col-12 p")
-        document.querySelector("#apex_turnoverChart .col-12 p").textContent = `${(avgTime/lastmonthAvg-1) >0 ?  "+": "-"}${Math.abs(Math.round((avgTime/lastmonthAvg-1)*100))}% days compared on last month`
-    }
-
-    let turnOverChartData = RecentWeeksRemoveCount();
-    var turnOvers= {
-        chart: {
-            id: "sparkline3",
-            type: "area",
-            height: 75,
-            sparkline: {
-                enabled: true,
-            },
-            group: "sparklines",
-            fontFamily: "Plus Jakarta Sans', sans-serif",
-            foreColor: "#adb0bb",
-        },
-        series: [
-            {
-                name: "Pallets Out",
-                color: "#49BEFF",
+        let turnOverChartData = RecentWeeksRemoveCount();
+        var turnOvers = {
+            chart: {
+                id: "sparkline3",
                 type: "area",
-                data: turnOverChartData.pallets.reverse(),
+                height: 75,
+                sparkline: {
+                    enabled: true,
+                },
+                group: "sparklines",
+                fontFamily: "Plus Jakarta Sans', sans-serif",
+                foreColor: "#adb0bb",
             },
-            {
-                name: "$ Value",
-                color: "#3200FF",
-                type: "line",
-                data: turnOverChartData.value.reverse(),
+            series: [
+                {
+                    name: "Pallets Out",
+                    color: "#49BEFF",
+                    type: "area",
+                    data: turnOverChartData.pallets.reverse(),
+                },
+                {
+                    name: "$ Value",
+                    color: "#3200FF",
+                    type: "line",
+                    data: turnOverChartData.value.reverse(),
+                },
+            ],
+            stroke: {
+                curve: "smooth",
+                width: 1,
             },
-        ],
-        stroke: {
-            curve: "smooth",
-            width: 1,
-        },
-        fill: {
-            colors: ["#f3feff"],
-            type: "solid",
-            opacity: [0.05,1],
-        },
-        yaxis:[
-            {title:{text:"Outbound pallets"}},
-            {opposite: true,title:{text:"Value"}}
-        ],
-        markers: {size: 0,},
-        tooltip: {
-            theme: "light",
-            intersect: false,
-            fixed: {
-                enabled: true,
-                position: "right",
+            fill: {
+                colors: ["#f3feff"],
+                type: "solid",
+                opacity: [0.05, 1],
             },
-            x: {show: false},
-            y: {show: false}
-        },
-    };
-    new ApexCharts(document.querySelector("#turnovers"), turnOvers).render();
+            yaxis: [
+                {title: {text: "Outbound pallets"}},
+                {opposite: true, title: {text: "Value"}}
+            ],
+            markers: {size: 0,},
+            tooltip: {
+                theme: "light",
+                intersect: false,
+                fixed: {
+                    enabled: true,
+                    position: "right",
+                },
+                x: {show: false},
+                y: {show: false}
+            },
+        };
+        new ApexCharts(document.querySelector("#turnovers"), turnOvers).render();
+    } else {
+        document.querySelector("#apex_turnoverChart h5").textContent = `No stock information available for calculate turnover data`
+    }
 
 
     // Card 3: Best Seller page
@@ -330,7 +344,7 @@ document.addEventListener("DOMContentLoaded",async () => {
         let itemElement = document.createElement("div")
         itemElement.className = "timeline-item fw-semibold fs-3 text-dark mt-n1"
         itemElement.innerHTML = `${recentTransList[i].productCode} - ${recentTransList[i].productName} ` +
-            ` Action: ${recentTransList[i].direction === "in"? '<i class="ti ti-transfer-in"></i>': '<i class="ti ti-transfer-out"></i>'}`
+            ` ${recentTransList[i].direction === "in"? '<i class="ti ti-transfer-in"></i>': '<i class="ti ti-transfer-out"></i>'}`
 
         let itemElementSmallText = document.createElement("div")
         itemElementSmallText.className = "timeline-desc d-block fw-normal"
@@ -365,7 +379,7 @@ document.addEventListener("DOMContentLoaded",async () => {
         let itemElement = document.createElement("div")
         itemElement.className = "timeline-item fw-semibold fs-3 text-dark mt-n1"
         itemElement.innerHTML = `${recentTransList[i].productCode} - ${recentTransList[i].productName} ` +
-            ` Action: ${recentTransList[i].direction === "in"? '<i class="ti ti-transfer-in"></i>': '<i class="ti ti-transfer-out"></i>'}`
+            ` ${recentTransList[i].direction === "in"? '<i class="ti ti-transfer-in"></i>': '<i class="ti ti-transfer-out"></i>'}`
 
         let itemElementSmallText = document.createElement("div")
         itemElementSmallText.className = "timeline-desc d-block fw-normal"
@@ -405,19 +419,21 @@ async function fetchInventoryGraphData(yearoption = new Date().getFullYear()){
     }
 
     let values = {import: [0,0,0,0,0,0,0,0,0,0,0,0,0], export:[0,0,0,0,0,0,0,0,0,0,0,0,0]}
-    result.forEach(eachData=>{
-        if(eachData.hasOwnProperty("loggingTime") && eachData.hasOwnProperty("unitPrice")){
-            values.import[new Date(eachData.loggingTime).getMonth()] += eachData.quantity * eachData.unitPrice
-        }
-        if(eachData.hasOwnProperty("consumedTime") && eachData.hasOwnProperty("unitPrice")){
-            values.export[new Date(eachData.consumedTime).getMonth()] -= eachData.quantity * eachData.unitPrice
-        }
-    })
+    if (result.length > 0) {
+        result.forEach(eachData => {
+            if (eachData.hasOwnProperty("loggingTime") && eachData.hasOwnProperty("unitPrice")) {
+                values.import[new Date(eachData.loggingTime).getMonth()] += eachData.quantity * eachData.unitPrice
+            }
+            if (eachData.hasOwnProperty("consumedTime") && eachData.hasOwnProperty("unitPrice")) {
+                values.export[new Date(eachData.consumedTime).getMonth()] -= eachData.quantity * eachData.unitPrice
+            }
+        })
 
-    for (let i = 0; i < values.import.length; i++) {
-        values.import[i] = Math.round(values.import[i])
-        values.export[i] = Math.round(values.export[i])
+        for (let i = 0; i < values.import.length; i++) {
+            values.import[i] = Math.round(values.import[i])
+            values.export[i] = Math.round(values.export[i])
 
+        }
     }
     console.log(values)
     return values
@@ -439,17 +455,17 @@ async function getEarliestTransactionLog() {
             version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true
         }
     });
+    let result = []
     try {
         await client.connect()
         let session = await client.db(dbname).collection("pollinglog");
-        return await session.find({loggingTime: {$exists: true, $ne: null}}).sort({loggingTime: 1}).limit(1).toArray()
+        result = await session.find({loggingTime: {$exists: true, $ne: null}}).sort({loggingTime: 1}).limit(1).toArray()
     } catch (e) {
         console.error(`Error on CheckDBConnection: ${e}`)
-        return false;
     } finally {
         await client.close()
     }
-    return []
+    return result
 }
 
 function getProductbyCode(productCodeIn) {
@@ -549,7 +565,6 @@ function calculateInstockValue(stockRecords){
 
 function isSameYearmonth(date = new Date(), date2 = new Date()){
     return date.getMonth() === date2.getMonth() && date.getFullYear() === date2.getFullYear();
-
 }
 
 function getTopSeller(stockRecords, productList) { // 默认选择x位的top seller
@@ -589,8 +604,10 @@ function getTopSeller(stockRecords, productList) { // 默认选择x位的top sel
             })
         }
     }
+    if (stockList.length > 1){
+        stockList.sort((a, b) => b.value - a.value)
+    }
 
-    stockList.sort((a, b) => b.value - a.value)
     return stockList
 }
 
@@ -747,7 +764,6 @@ async function getAllStockRecords(limit = 50000){
         }
     } catch (e) {
         console.error(`Error on CheckDBConnection: ${e}`)
-        return result
     } finally {
         await client.close()
     }
@@ -765,9 +781,9 @@ async function getProductsList(){
         await client.connect()
         let collections = client.db(dbname).collection("products");
         result = await collections.find().sort({"productCode":1}).toArray()
+
     } catch (e) {
         console.error(`Error on CheckDBConnection: ${e}`)
-        return result
     } finally {
         await client.close()
     }

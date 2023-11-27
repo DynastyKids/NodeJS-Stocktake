@@ -234,7 +234,7 @@ revertModal.querySelector("#revertModalYes").addEventListener("click", async fun
     }
 })
 
-document.querySelector("#areloadTable").addEventListener("click",function (ev) {
+document.querySelector("#act_reloadTable").addEventListener("click",(ev) =>{
     if (document.querySelector("#switchCheck").checked){
         document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
         loadStockInfoToTable(true)
@@ -328,10 +328,6 @@ async function getAllStockItems(getAll) {
     }
     return result
 }
-
-document.querySelector("#printlink").addEventListener("click",(ev)=>{
-    ipcRenderer.send('print');
-});
 
 document.querySelector("#filterdate").addEventListener("change", (ev)=>{
     if (document.querySelector("#switchCheck").checked){

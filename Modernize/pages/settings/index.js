@@ -9,6 +9,8 @@ const newStorage = new Storage();
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
+const Bootstrap = require("bootstrap")
+
 document.querySelector('#settings-form').addEventListener('submit', async (event) => {
     event.preventDefault()
     // 获取用户的输入
@@ -82,12 +84,12 @@ function createAlert(status, text, time = 5000){
     }
     alertElement.append(svgImage)
     alertElement.append(text)
+    alertAnchor.append(alertElement)
     setTimeout(function () {
         if (alertElement){
             alertElement.style.display = 'none'
         }
-    }, isNaN(time) ? 5000 : time)
-    alertAnchor.append(alertElement)
+    }, isNaN(time) ? 3000 : time)
 }
 
 async function connectionVerify(dburi, dbname) {
