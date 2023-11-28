@@ -145,6 +145,15 @@ document.querySelector("#modelCheckboxConsumed").addEventListener("change",(ev)=
     }
 })
 
+document.querySelector("#removeModal_check").addEventListener("change",(ev)=>{
+    if (ev.target.checked) {
+        document.querySelector("#removeModal_time").style = ""
+        document.querySelector("#removeModal_datetime").value = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
+    } else {
+        document.querySelector("#removeModal_time").style = "display:none"
+    }
+})
+
 let removeModal = document.querySelector("#removeModal")
 removeModal.addEventListener("show.bs.modal", function (ev) {
     var lableID = ev.relatedTarget.getAttribute("data-bs-itemId")
@@ -155,10 +164,24 @@ removeModal.addEventListener("show.bs.modal", function (ev) {
 })
 
 removeModal.querySelector("#removeModalYes").addEventListener("click", async function (ev) {
+    // 收到用户的确认请求，移除该库存
     ev.preventDefault()
     let labelId = removeModal.querySelector("#removeModal_labelid").value
     let model = bootstrap.Modal.getInstance(document.querySelector("#removeModal"));
+    document.querySelector("#removeModalYes").disabled = true
+    document.querySelector("#removeModalYes").textContent = "Updating"
+
     let localTime = moment(new Date()).tz("Australia/Sydney");
+    if (document.querySelector("#removeModal_check").checked){ // 检查用户是否自定义了时间
+        try {
+            localTime = new Date(document.querySelector("#removeModal_datetime").value)
+        } catch (e) {
+            // User provide incorrect data of date-time values, revert to default
+            console.error("RemoveModal Error: Datetime not recognizable",e)
+            localTime = moment(new Date()).tz("Australia/Sydney");
+        }
+    }
+
     let client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
@@ -166,13 +189,14 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
             useUnifiedTopology: true
         }
     });
-
-    document.querySelector("#removeModalYes").disabled = true
-    document.querySelector("#removeModalYes").textContent = "Updating"
     try {
         await client.connect();
         const session = client.db(targetDB).collection("pollinglog");
-        let result = await session.updateMany({productLabel: labelId, removed: 0} , {$set: {removed: 1, removeTime: localTime.format("YYYY-MM-DD HH:mm:ss")}},{upsert: false})
+        let result = await session.updateMany(
+            {productLabel: labelId, removed: 0} ,
+            {$set: {removed: 1, removeTime: new Date(localTime)}},
+            {upsert: false}
+        )
         if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
             //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
             console.log("Successfully update status for: ",labelId)
@@ -279,7 +303,8 @@ function loadStockInfoToTable(fetchAll) {
                     (element.bestbefore ? element.bestbefore : ""),
                     // (element.bestbefore ? moment(element.bestbefore).format("l") : ""),
                     (element.shelfLocation ? element.shelfLocation : ""),
-                    `<p>${(element.productLabel ? element.productLabel : "")}</p><p style="font-size: xx-small">${( element.loggingTime ? moment(element.loggingTime).format("lll") : "")}</p>`,
+                    `<p>${(element.productLabel ? element.productLabel : "")}</p>`+
+                    `<p style="font-size: x-small">${( element.hasOwnProperty("createTime") ? "Added on "+moment(element.createTime).format("lll") : "")}</p>`,
                     `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>` +
                     (element.removed < 1 ? `
@@ -287,8 +312,7 @@ function loadStockInfoToTable(fetchAll) {
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>
                     ` : `<a href="#" class="table_actions table_action_revert" data-bs-toggle="modal" data-bs-target="#revertModal" 
                         data-bs-itemId="${element.productLabel}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}" style="margin: 0 2px 0 2px">Revert</a>
-                        <p class="table_action_removed" style="font-size: xx-small;">${(element.removeTime ? "Removed on " +
-                        element.removeTime.split(" ")[0]: "")}</p>`)
+                        <p class="table_action_removed" style="font-size: x-small;">${(element.removeTime ? "Removed on " + moment(element.removeTime).format("ll") : "")}</p>`)
                 ]).draw(false);
             }
         }
