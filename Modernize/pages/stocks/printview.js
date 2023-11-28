@@ -100,7 +100,7 @@ function loadStockInfoToTable(fetchAll) {
                     (element.bestbefore ? element.bestbefore : ""),
                     (element.shelfLocation ? element.shelfLocation : ""),
                     `<small>${(element.productLabel ? element.productLabel : "")}</small>`,
-                    (element.consumed < 1 ? `` : `<small class="table_action_removed">${(element.consumedTime ? "Removed on " + element.consumedTime.split(" ")[0]: "")}</small>`)
+                    (element.removed < 1 ? `` : `<small class="table_action_removed">${(element.removeTime ? "Removed on " + element.removeTime.split(" ")[0]: "")}</small>`)
                 ]).draw(false);
             }
         }
@@ -126,7 +126,7 @@ async function getAllStockItems(getAll) {
         if (getAll){
             cursor = await sessions.find({}, options)
         } else {
-            cursor = await sessions.find({consumed: 0}, options)
+            cursor = await sessions.find({removed: 0}, options)
         }
         result.acknowledged = true
         result.resultSet = await cursor.toArray()

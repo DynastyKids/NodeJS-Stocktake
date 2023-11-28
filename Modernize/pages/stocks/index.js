@@ -99,8 +99,8 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
             document.querySelector("#modelEditPOIP").value = (fullResultSet[i].POIPnumber ? fullResultSet[i].POIPnumber : "")
             document.querySelector("#modelEditUnitprice").value = (fullResultSet[i].unitPrice ? fullResultSet[i].unitPrice : "")
             document.querySelector("#modelEditLoggingTime").value = (fullResultSet[i].loggingTime ? fullResultSet[i].loggingTime : "")
-            document.querySelector("#modelCheckboxConsumed").checked = (fullResultSet[i].consumed === 1)
-            document.querySelector("#modelEditConsumeTime").value = (fullResultSet[i].consumedTime ? fullResultSet[i].consumedTime : "")
+            document.querySelector("#modelCheckboxConsumed").checked = (fullResultSet[i].removed === 1)
+            document.querySelector("#modelEditConsumeTime").value = (fullResultSet[i].removeTime ? fullResultSet[i].removeTime : "")
             document.querySelector("#editModalSubmitBtn").disabled = false
             break;
         }
@@ -148,7 +148,7 @@ document.querySelector("#modelCheckboxConsumed").addEventListener("change",(ev)=
 let removeModal = document.querySelector("#removeModal")
 removeModal.addEventListener("show.bs.modal", function (ev) {
     var lableID = ev.relatedTarget.getAttribute("data-bs-itemId")
-    let hiddenInput = removeModal.querySelector("#modalInputLabelid")
+    let hiddenInput = removeModal.querySelector("#removeModal_labelid")
     hiddenInput.value = lableID
     document.querySelector("#removeModalYes").disabled = false
     document.querySelector("#removeModalYes").textContent = "Confirm"
@@ -156,7 +156,7 @@ removeModal.addEventListener("show.bs.modal", function (ev) {
 
 removeModal.querySelector("#removeModalYes").addEventListener("click", async function (ev) {
     ev.preventDefault()
-    let labelId = removeModal.querySelector("#modalInputLabelid").value
+    let labelId = removeModal.querySelector("#removeModal_labelid").value
     let model = bootstrap.Modal.getInstance(document.querySelector("#removeModal"));
     let localTime = moment(new Date()).tz("Australia/Sydney");
     let client = new MongoClient(uri, {
@@ -172,7 +172,7 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
     try {
         await client.connect();
         const session = client.db(targetDB).collection("pollinglog");
-        let result = await session.updateMany({productLabel: labelId, consumed: 0} , {$set: {consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")}},{upsert: false})
+        let result = await session.updateMany({productLabel: labelId, removed: 0} , {$set: {removed: 1, removeTime: localTime.format("YYYY-MM-DD HH:mm:ss")}},{upsert: false})
         if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
             //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
             console.log("Successfully update status for: ",labelId)
@@ -214,8 +214,8 @@ revertModal.querySelector("#revertModalYes").addEventListener("click", async fun
     try {
         await client.connect();
         const session = client.db(targetDB).collection("pollinglog");
-        let result = await session.updateMany({productLabel: labelId, consumed: 1} ,
-            {$set: {consumed: 0}, $unset: {"consumedTime":""}},{upsert: false})
+        let result = await session.updateMany({productLabel: labelId, removed: 1} ,
+            {$set: {removed: 0}, $unset: {"removeTime":""}},{upsert: false})
         if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
             //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
             console.log("Successfully reverted status for: ",labelId)
@@ -282,13 +282,13 @@ function loadStockInfoToTable(fetchAll) {
                     `<p>${(element.productLabel ? element.productLabel : "")}</p><p style="font-size: xx-small">${( element.loggingTime ? moment(element.loggingTime).format("lll") : "")}</p>`,
                     `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>` +
-                    (element.consumed < 1 ? `
+                    (element.removed < 1 ? `
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>
                     ` : `<a href="#" class="table_actions table_action_revert" data-bs-toggle="modal" data-bs-target="#revertModal" 
                         data-bs-itemId="${element.productLabel}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}" style="margin: 0 2px 0 2px">Revert</a>
-                        <p class="table_action_removed" style="font-size: xx-small;">${(element.consumedTime ? "Removed on " +
-                        element.consumedTime.split(" ")[0]: "")}</p>`)
+                        <p class="table_action_removed" style="font-size: xx-small;">${(element.removeTime ? "Removed on " +
+                        element.removeTime.split(" ")[0]: "")}</p>`)
                 ]).draw(false);
             }
         }
@@ -314,7 +314,7 @@ async function getAllStockItems(getAll) {
         if (getAll){
             cursor = await sessions.find({}, options)
         } else {
-            cursor = await sessions.find({consumed: 0}, options)
+            cursor = await sessions.find({removed: 0}, options)
         }
         result.acknowledged = true
         result.resultSet = await cursor.toArray()

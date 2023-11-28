@@ -88,9 +88,9 @@ function inflateTable(productsArray, productlogsArray, direction="ALL"){
                 pushElement.compareDirection = "IN"
                 fullCompareArray.push(pushElement)
             }
-            if (eachProductlog.hasOwnProperty("consumedTime") && (direction === "ALL" || direction === "OUT")){
+            if (eachProductlog.hasOwnProperty("removeTime") && (direction === "ALL" || direction === "OUT")){
                 var pushElement = eachProductlog
-                pushElement.compareTime = pushElement.consumedTime
+                pushElement.compareTime = pushElement.removeTime
                 pushElement.compareDirection = "OUT"
                 fullCompareArray.push(pushElement)
             }
@@ -127,7 +127,7 @@ async function getRecords(limit = 100000, startDate = null, endDate = new Date()
     try {
         await client.connect()
         let products = await client.db(targetDB).collection("products").find({}).sort({"productCode":1}).toArray();
-        let productLogs = await client.db(targetDB).collection("pollinglog").find({}).sort({"consumedTime":-1,"loggingTime":-1}).limit(limit).toArray();
+        let productLogs = await client.db(targetDB).collection("pollinglog").find({}).sort({"removeTime":-1,"loggingTime":-1}).limit(limit).toArray();
         result = {"products":products,"productlogs":productLogs}
     } catch (e) {
         console.error(`Error on CheckDBConnection: ${e}`)
@@ -155,9 +155,9 @@ function getRecentTransactions(recordsArray, limit = 500, direction = "both"){
         }
         if (direction=== "both" || direction === "out") {
             for (let i = 0; i < recordsArray.length; i++) {
-                if (recordsArray[i].hasOwnProperty("consumedTime")) {
+                if (recordsArray[i].hasOwnProperty("removeTime")) {
                     let pushElement = recordsArray[i]
-                    pushElement.compTime = recordsArray[i].consumedTime
+                    pushElement.compTime = recordsArray[i].removeTime
                     pushElement.direction = "out"
                     reorderedDupArray.push(pushElement)
                 }

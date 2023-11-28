@@ -531,7 +531,7 @@ function calculateMonthStockMovementValue(stockRecords,date = new Date()){
                     monthlyImport.value += (monthlyImport.value+eachRecord.unitPrice*eachRecord.quantity).toFixed(2)
                 }
             }
-            if (eachRecord.hasOwnProperty("consumed") && eachRecord.consumed === 1 &&
+            if (eachRecord.hasOwnProperty("removed") && eachRecord.removed === 1 &&
                 eachRecord.hasOwnProperty("consumedTime") && isSameYearmonth(new Date(eachRecord.consumedTime),date)){
                 monthlyExport.count += 1;
                 if (eachRecord.hasOwnProperty("unitPrice") && eachRecord.hasOwnProperty("quantity")){
@@ -621,7 +621,7 @@ function calcStockTurnover(stockData, limit = 25000, compareDate = new Date()){ 
                 if(new Date(eachItem.consumedTime) > compareDate){
                     continue;
                 }
-                if (eachItem.hasOwnProperty("consumed") && eachItem.consumed === 1 && eachItem.hasOwnProperty("loggingTime")){
+                if (eachItem.hasOwnProperty("removed") && eachItem.removed === 1 && eachItem.hasOwnProperty("loggingTime")){
                     let logTime = new Date(eachItem.loggingTime);
                     let removeTime = new Date(eachItem.consumedTime);
                     turnOverArrayDiff.push({productCode:eachItem.productCode, consumedTime: eachItem.consumedTime, timediff: Math.floor(Math.abs(removeTime-logTime)/1000)})

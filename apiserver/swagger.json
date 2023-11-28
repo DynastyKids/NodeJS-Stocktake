@@ -411,7 +411,7 @@
             }
           },
           {
-            "name": "consumed",
+            "name": "removed",
             "in": "query",
             "description": "Optional, 0 for in-stock products only(default), 1 for including all history products  | 可选参数，是否需要从已使用的产品中查找，默认为0(仅查找现有库存)，1为包括所有历史参数",
             "required": false,
@@ -620,7 +620,7 @@
                       "productLabel": {
                         "type": "string"
                       },
-                      "consumedTime": {
+                      "removeTime": {
                         "type": "string",
                         "format": "date-time"
                       }
@@ -914,12 +914,12 @@
             "format": "date-time",
             "description": "Date Format must be YYYY-MM-DD HH:mm:ss"
           },
-          "consumed": {
+          "removed": {
             "type": "integer",
             "format": "int32",
             "description": "Flag used to identify whether product has been removed from DB"
           },
-          "consumedTime": {
+          "removeTime": {
             "type": "string",
             "format": "date-time",
             "description": "Date Format must be YYYY-MM-DD HH:mm:ss"
@@ -988,12 +988,12 @@
             "format": "date-time",
             "description": "Date Format must be YYYY-MM-DD HH:mm:ss"
           },
-          "consumed": {
+          "removed": {
             "type": "integer",
             "format": "int32",
             "description": "Flag used to identify whether product has been removed from DB"
           },
-          "consumedTime": {
+          "removeTime": {
             "type": "string",
             "format": "date-time",
             "description": "Date Format must be YYYY-MM-DD HH:mm:ss"

@@ -112,13 +112,14 @@ document.querySelector("#form_product").addEventListener("submit",(ev)=>{
     object.session =  document.querySelector("#inpt_sessionid").value ? document.querySelector("#inpt_sessionid").value : ``
     object.shelfLocation =  document.querySelector("#inpt_shelflocation").value ? document.querySelector("#inpt_shelflocation").value : ``
     object.unitPrice =  document.querySelector("#inpt_unitprice").value ? document.querySelector("#inpt_unitprice").value : ``
-    object.loggingTime =  (document.querySelector("#check_manualTime").checked && document.querySelector("#inpt_loggingTime").value ?
-        document.querySelector("#inpt_loggingTime").value : Moment.format('YYYY-MM-DD HH:mm:ss'))
+    object.createTime =  (document.querySelector("#check_manualTime").checked && document.querySelector("#inpt_createTime").value ?
+        new Date(document.querySelector("#inpt_createTime").value) : new Date())
+    object.loggingTime =  new Date()
     if (document.querySelector("#check_manualTime").checked && document.querySelector("#inpt_consumeTime").value){
-        object.loggingTime = 1;
-        object.consumedTime =  (document.querySelector("#inpt_consumeTime").value ? document.querySelector("#inpt_consumeTime").value : Moment.format('YYYY-MM-DD HH:mm:ss'))
+        object.removed = 1;
+        object.removeTime =  (document.querySelector("#inpt_consumeTime").value ? document.querySelector("#inpt_consumeTime").value : new Date())
     } else {
-        object.consumedTime = 0;
+        object.removeTime = 0;
     }
 })
 

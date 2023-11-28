@@ -123,7 +123,7 @@ async function getSessionItems(sessionCode) {
                     `${x.shelfLocation ? x.shelfLocation : ""}`,
                     `${x.quantity ? x.quantity + (x.quantityUnit ? " "+x.quantityUnit: ""): ""}`,
                     `${x.bestbefore ? x.bestbefore : ""}`,
-                    (x.consumed === 1 ? "√" : ""),
+                    (x.removed === 1 ? "√" : ""),
                     "<a href='#'>Edit</a>"
                 ]).draw(false);
             }
