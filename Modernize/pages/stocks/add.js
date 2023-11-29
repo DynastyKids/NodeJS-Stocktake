@@ -9,6 +9,7 @@ const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb:/
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
 const jsQR = require("jsqr")
+const moment = require("moment-timezone");
 
 document.querySelector("#act_reset").addEventListener("click",(ev)=>{
     document.querySelectorAll("#div_datatable input").forEach(eachinput=>{
@@ -96,9 +97,34 @@ async function fetchProductList() {
     return results;
 }
 
+function createAlert(type = "info", context=""){
+//     type: info, success, danger, warning
+    let alertElement = document.createElement("div")
+    alertElement.setAttribute("role","alert")
+    if (type === "success"){
+        alertElement.className = "alert alert-success alert-dismissible bg-success text-white border-0 fade show"
+    } else if (type === "danger"){
+        alertElement.className = "alert alert-info alert-dismissible bg-info text-red border-0 fade show"
+    } else if (type === "warning"){
+        alertElement.className = "alert alert-warning alert-dismissible bg-warning text-yellow border-0 fade show"
+    } else {
+        alertElement.className = "alert alert-info alert-dismissible bg-info text-black border-0 fade show"
+    }
+    alertElement.innerHTML = <button type="button" className="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+    let alertText = document.createElement("span")
+    alertText.innerText = context
+    alertElement.append(alertText)
+
+    return alertElement
+}
+
 document.querySelector("#form_product").addEventListener("submit",(ev)=>{
     ev.preventDefault()
-    console.log(ev.target)
+    var infoAlert = createAlert("info","Processing Insert Data")
+    document.querySelector("#alertAnchor").append(infoAlert)
+    setTimeout(function(){
+        infoAlert.style = "display: none"
+    },3000)
 
     let object = {}
     object.labelBuild = 3
@@ -112,16 +138,69 @@ document.querySelector("#form_product").addEventListener("submit",(ev)=>{
     object.session =  document.querySelector("#inpt_sessionid").value ? document.querySelector("#inpt_sessionid").value : ``
     object.shelfLocation =  document.querySelector("#inpt_shelflocation").value ? document.querySelector("#inpt_shelflocation").value : ``
     object.unitPrice =  document.querySelector("#inpt_unitprice").value ? document.querySelector("#inpt_unitprice").value : ``
-    object.createTime =  (document.querySelector("#check_manualTime").checked && document.querySelector("#inpt_createTime").value ?
-        new Date(document.querySelector("#inpt_createTime").value) : new Date())
     object.loggingTime =  new Date()
-    if (document.querySelector("#check_manualTime").checked && document.querySelector("#inpt_consumeTime").value){
-        object.removed = 1;
-        object.removeTime =  (document.querySelector("#inpt_consumeTime").value ? document.querySelector("#inpt_consumeTime").value : new Date())
-    } else {
-        object.removeTime = 0;
+    object.createTime = new Date()
+    object.removed = 0;
+    object.removeTime = new Date()
+    if (document.querySelector("#check_manualTime").checked){
+        object.createTime =  (document.querySelector("#inpt_createTime").value ? new Date(document.querySelector("#inpt_createTime").value) : new Date())
+        if (document.querySelector("#inpt_consumeTime").value) {
+            object.removed = 1;
+            object.removeTime = (document.querySelector("#inpt_consumeTime").value ? new Date(document.querySelector("#inpt_consumeTime").value) : new Date())
+        }
+    }
+    // 检查必要字段
+    if (object.productLabel.length > 0){
+        insertProductLog(object)
     }
 })
+
+async function insertProductLog(productObject, override = false) {
+    let client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        }
+    });
+    let nowTime = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
+    const sessions = client.db(targetDB).collection("pollinglog");
+    let result = {acknowledged: false, resultSet: [], message: ""}
+    let searchResult = []
+    try {
+        const options = {sort: {bestbefore: -1},}
+        await client.connect();
+        let findResult = await sessions.find({"productLabel": productObject.productLabel}).toArray()
+
+        if (findResult.length > 0){
+            var infoAlert = createAlert("warning","Found duplicate item in database, ")
+            document.querySelector("#alertAnchor").append(infoAlert)
+            setTimeout(function(){
+                infoAlert.style = "display: none"
+            },3000)
+        } else { // Can insert
+            result = await sessions.insertOne(productObject)
+            var infoAlert = createAlert("success","Data insert successfully ")
+            document.querySelector("#alertAnchor").append(infoAlert)
+            setTimeout(function(){
+                infoAlert.style = "display: none"
+                window.location.replace(`${window.location.hostname}/stocks/index.html`)
+            },3000)
+        }
+    // 使用UpdateOne，如果数据存在则提示保留或覆盖，如果不存在则使用upsert插入
+    } catch (err) {
+        console.error(err)
+        var infoAlert = createAlert("danger","Error when processing database request: ", err)
+        document.querySelector("#alertAnchor").append(infoAlert)
+        setTimeout(function(){
+            infoAlert.style = "display: none"
+        },3000)
+        result['message'] = err
+    } finally {
+        await client.close()
+    }
+    return result
+}
 
 document.querySelector("#btn_scanqrcode").addEventListener("click",function(){
     document.querySelector("#videobox").style = ""
@@ -180,6 +259,10 @@ function cameraFillinblank(data){
             document.querySelector("#inpt_bestbefore").value = decodedData.bestbefore ? decodedData.bestbefore : ""
             document.querySelector("#inpt_labelid").value = decodedData.productLabel ? decodedData.productLabel : ""
             document.querySelector("#inpt_sessionid").value = decodedData.session ? decodedData.session : "STOCK"
+            if (decodedData.shelfLocation){
+                document.querySelector("#inpt_sessionid").value = decodedData.shelfLocation
+            }
+
 
             document.querySelector("#inpt_unit").value = decodedData.quantityUnit ? unitAbbrvLookup(decodedData.quantityUnit) : ""
 
