@@ -77,7 +77,7 @@ document.querySelector("#scannerinput").addEventListener("input", (ev) => {
                     inputfield[3].value = `${result.data[0].productLabel ?result.data[0].productLabel : ""}`
                     inputfield[4].value = `${result.data[0].shelfLocation ? result.data[0].shelfLocation : ""}`
                     document.querySelector("#actionstd").innerHTML =`
-                    <button id="btnconsume" class="btn btn-danger">Consume (5)</button>
+                    <button id="btnremove" class="btn btn-danger">Remove (5)</button>
                     <button id="btnloading" class="btn btn-info">Loading</button>
                     <button id="btn move" class="btn btn-warning">Move</button>`
                 } else if (result.status) { //状态为真，代表商品未入库，则改成使用

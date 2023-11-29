@@ -271,7 +271,7 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
     try {
         await client.connect();
         const session = client.db(targetDB).collection("preloadlog");
-        let result = await session.remove({productLabel: labelId, consumed: 0} , {$set: {consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")}},{upsert: false})
+        let result = await session.remove({productLabel: labelId, removed: 0} , {$set: {removed: 1, removeTime: localTime.format("YYYY-MM-DD HH:mm:ss")}},{upsert: false})
         if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
             //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
             console.log("Successfully update status for: ",labelId)
@@ -342,7 +342,7 @@ async function getAllStockItems(getAll) {
         if (getAll){
             cursor = await sessions.find({}, options)
         } else {
-            cursor = await sessions.find({consumed: 0}, options)
+            cursor = await sessions.find({removed: 0}, options)
         }
         result.acknowledged = true
         result.resultSet = await cursor.toArray()

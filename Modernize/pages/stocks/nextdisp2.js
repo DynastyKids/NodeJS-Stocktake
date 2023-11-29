@@ -45,7 +45,7 @@ async function fetchProducts() {
     try {
         await client.connect();
         const sessions = client.db(targetDB).collection("pollinglog");
-        const query = {consumed: 0};
+        const query = {removed: 0};
         const options = {'productCode': 1, 'bestbefore': 1, 'productLabel': 1};
         const cursor = sessions.find(query).sort(options);
         if ((await sessions.countDocuments({})) === 0) {
@@ -54,7 +54,7 @@ async function fetchProducts() {
 
         const seenProducts = new Set();
         await cursor.forEach(product => {
-            if (product.consumed === 0) {
+            if (product.removed === 0) {
                 seenProducts.add(product);
             }
         });
@@ -100,7 +100,7 @@ function build2DProductArray(productList) {
                 delete productArray[productArray.length - 1].session;
                 delete productArray[productArray.length - 1]._id;
                 delete productArray[productArray.length - 1].POIPnumber;
-                delete productArray[productArray.length - 1].consumed;
+                delete productArray[productArray.length - 1].removed;
                 delete productArray[productArray.length - 1].loggingTime;
             }
         } else {
@@ -110,7 +110,7 @@ function build2DProductArray(productList) {
             delete productArray[productArray.length - 1].session;
             delete productArray[productArray.length - 1]._id;
             delete productArray[productArray.length - 1].POIPnumber;
-            delete productArray[productArray.length - 1].consumed;
+            delete productArray[productArray.length - 1].removed;
             delete productArray[productArray.length - 1].loggingTime;
         }
     })

@@ -242,7 +242,7 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
     try {
         await client.connect();
         const session = client.db(targetDB).collection("pollinglog");
-        let result = await session.updateMany({productLabel: labelId, consumed: 0} , {$set: {consumed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")}},{upsert: false})
+        let result = await session.updateMany({productLabel: labelId, removed: 0} , {$set: {removed: 1, consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")}},{upsert: false})
         if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
             //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
             console.log("Successfully update status for: ",labelId)
@@ -284,8 +284,8 @@ revertModal.querySelector("#revertModalYes").addEventListener("click", async fun
     try {
         await client.connect();
         const session = client.db(targetDB).collection("pollinglog");
-        let result = await session.updateMany({productLabel: labelId, consumed: 1} ,
-            {$set: {consumed: 0}, $unset: {"consumedTime":""}},{upsert: false})
+        let result = await session.updateMany({productLabel: labelId, removed: 1} ,
+            {$set: {removed: 0}, $unset: {"consumedTime":""}},{upsert: false})
         if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
             //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
             console.log("Successfully reverted status for: ",labelId)
@@ -350,7 +350,7 @@ function loadStockInfoToTable(fetchAll) {
                     (element.shelfLocation ? element.shelfLocation : ""),
                     `<small>${(element.productLabel ? element.productLabel : "")}</small>`,
                     `<small>${(element.POIPnumber ? element.POIPnumber : "")}</small>`,
-                    (element.consumed < 1 ? `
+                    (element.removed < 1 ? `
                     <a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_edit")}</a>
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
@@ -383,7 +383,7 @@ async function getAllStockItems(getAll) {
         if (getAll){
             cursor = await sessions.find({}, options)
         } else {
-            cursor = await sessions.find({consumed: 0}, options)
+            cursor = await sessions.find({removed: 0}, options)
         }
         result.acknowledged = true
         result.resultSet = await cursor.toArray()
