@@ -247,6 +247,11 @@ revertModal.querySelector("#revertModalYes").addEventListener("click", async fun
         const session = client.db(targetDB).collection("pollinglog");
         let result = await session.updateMany({productLabel: labelId, removed: 1} ,
             {$set: {removed: 0}, $unset: {"removeTime":""}},{upsert: false})
+        // 如果用户设定了返回的地点，则一并写入
+        if (String(document.querySelector("#revertLocation").value).length > 0){
+            result = await session.updateMany({productLabel: labelId} ,
+                {$set: {removed: 0, shelfLocation: document.querySelector("#revertLocation").value}},{upsert: false})
+        }
         if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
             //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
             console.log("Successfully reverted status for: ",labelId)
