@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Stock Aggregate- Warehouse Electron (N) </title>
+    <link rel="shortcut icon" type="image/png" href="../../assets/images/logos/favicon.png"/>
+    <link rel="stylesheet" href="../../assets/css/styles.min.css"/>
+    <link rel="stylesheet" href="../../../node_modules/datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css"/>
+</head>
+
+<body><!--  Body Wrapper -->
+<div class="container-fluid">
+    <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-1">
+        <div class="card-body px-4 py-3">
+            <div class="row align-items-center">
+                <div class="col-12">
+                    <h4 class="fw-semibold mb-0">Stock List - Aggregrated</h4>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="list-group-item-action">
+                    <a class="fw-semibold mb-0">Actions:</a>
+                    <a class="mb-0 ms-2" href="./index.html">Exit Print View</a>
+                    <a class="mb-0 ms-2" href="#" id="act_reload">Reload Table</a>
+                    <a class="mb-0 ms-2" href="#" id="act_print">Print</a>
+                </div>
+                <div id="loadingStatus">
+                    <span class="spinner-border" role="status" id="loadingSpinners"></span>
+                    <span class="" id="loadingTableText">Loading data...</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body" id="div_datatable">
+            <table class="table table-responsive" id="table">
+                <thead>
+                <tr>
+                    <th scope="col">Product</th>
+                    <th scope="col">Quantity</th>
+                </tr>
+                </thead>
+                <tfoot>
+                <tr>
+                    <th scope="col">Product</th>
+                    <th scope="col">Quantity</th>
+                </tr>
+                </tfoot>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script> window.$ = window.jQuery = require('jquery');</script>
+<script src="../../assets/js/sidebarmenu.js"></script>
+<script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
+<script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="../../assets/js/app.min.js"></script>
+<script src="../../assets/js/app-style-switcher.js"></script>
+<script src="../../../node_modules/prismjs/prism.js"></script>
+<script src="./aggregate_print.js"></script>
+</body>
+<style>
+    @media print{
+        html, body{
+            /*A4 Standard size*/
+            width: 210mm;
+            height: 297mm;
+        }
+    }
+</style>
+
+</html>
