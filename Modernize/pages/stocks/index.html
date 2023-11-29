@@ -72,6 +72,7 @@
                         <a class="mb-0 ms-2" href="#" id="act_reloadTable">Reload Table</a>
                         <a class="mb-0 ms-2" href="./add.html">Add Stock</a>
                         <a class="mb-0 ms-2" href="./printview.html">Print</a>
+                        <a class="mb-0 ms-2" href="aggregate_print.html">Aggregate View</a>
                         <a class="mb-0 ms-2" href="#" id="act_pause">Pause Timer</a>
                     </div>
                 </div>
@@ -86,6 +87,7 @@
                             <th scope="col">Code</th>
                             <th scope="col">Quantity</th>
                             <th scope="col">Best before</th>
+                            <th scope="col">Best before</th>
                             <th scope="col">Location</th>
                             <th scope="col">Stock ID<br><small>Add Time</small></th>
                             <th scope="col">Action</th>
@@ -95,6 +97,7 @@
                         <tr>
                             <th scope="col">Code</th>
                             <th scope="col">Quantity</th>
+                            <th scope="col">Best before</th>
                             <th scope="col">Best before</th>
                             <th scope="col">Location</th>
                             <th scope="col">Stock ID<br><small>Add Time</small></th>
@@ -117,8 +120,27 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                Are you sure to REMOVE Item from shelf?
-                <form><input type="text" class="form-control" id="modalInputLabelid" hidden value=""></form>
+                <p class="mb-2">Are you sure to REMOVE Item from shelf?</p>
+                <form>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="removeModal_check">
+                                <label class="form-check-label" for="removeModal_check">
+                                    Set remove time manually
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12" id="removeModal_time" style="display: none">
+                            <label>Remove Time</label>
+                            <input type="datetime-local" class="form-control" id="removeModal_datetime" value="">
+                        </div>
+                        <div class="col-12" style="display: none">
+                            <label>Label ID</label>
+                            <input type="text" class="form-control" id="removeModal_labelid" hidden value="">
+                        </div>
+                    </div>
+                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -139,7 +161,7 @@
                 <form>
                     <input type="text" class="form-control" id="revertLabelid" hidden value="">
                     <div class="col-12">
-                        <label for="modalInputLabelid" class="form-label">Shelf Location:</label>
+                        <label for="revertLocation" class="form-label">Shelf Location:</label>
                         <input type="text" class="form-control col-6" id="revertLocation" value="">
                     </div>
                 </form>

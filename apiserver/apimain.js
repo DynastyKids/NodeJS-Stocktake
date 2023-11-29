@@ -414,11 +414,11 @@ router.get("/v1/stocks", async (req, res) => {
         response.data = filteredResult
 
         // 根据Query筛选
-        if (req.query.consumed) {
+        if (req.query.removed) {
             //
         } else {
             response.data.forEach(eachitem => {
-                if (eachitem.consumed === 0) {
+                if (eachitem.removed === 0) {
                     filteredResult.push(eachitem)
                 }
             })
@@ -523,8 +523,8 @@ router.post("/v1/stocks", async (req, res) => {
                 actionsAllowed[actionsAllowed.indexOf(req.body.action)] === "consume") {
                 updateObject = {
                     $set: {
-                        consumed: 1, loggingTime: moment(new Date()).tz("Australia/Sydney")
-                        , consumedTime: moment(new Date()).tz("Australia/Sydney")
+                        removed: 1, loggingTime: moment(new Date()).tz("Australia/Sydney")
+                        , removeTime: moment(new Date()).tz("Australia/Sydney")
                     }
                 } // 仅标注使用字段
             }
@@ -533,7 +533,7 @@ router.post("/v1/stocks", async (req, res) => {
                 // 检查各种字段中是否由需要的对应参数，如果没有则补齐
                 // 每当切换新版本后，均需要按照新版本参数补齐
                 let updateItems = req.body.item
-                updateItems.consumed = 0
+                updateItems.removed = 0
                 updateItems.createTime = moment(new Date()).tz("Australia/Sydney")
                 updateItems.loggingTime = moment(new Date()).tz("Australia/Sydney")
                 updateObject = {$set: updateItems}
@@ -594,9 +594,9 @@ router.post("/v1/stocks/update", async (req, res) => {
                 : moment(new Date()).tz("Australia/Sydney")
             updateItems.loggingTime = updateItems.hasOwnProperty("loggingTime") ? moment(new Date(updateItems.loggingTime)).tz("Australia/Sydney")
                 : moment(new Date()).tz("Australia/Sydney")
-            updateItems.consumed = updateItems.hasOwnProperty("consumed") ? updateItems.consumed : 0 // 默认设定为未使用
-            if (updateItems.consumed === 1){
-                updateItems.consumedTime = updateItems.hasOwnProperty("consumedTime") ? moment(new Date(updateItems.consumedTime)).tz("Australia/Sydney")
+            updateItems.removed = updateItems.hasOwnProperty("removed") ? updateItems.removed : 0 // 默认设定为未使用
+            if (updateItems.removed === 1){
+                updateItems.removeTime = updateItems.hasOwnProperty("removeTime") ? moment(new Date(updateItems.removeTime)).tz("Australia/Sydney")
                     : moment(new Date()).tz("Australia/Sydney") 
             }
             updateObject = {$set: updateItems}
@@ -683,8 +683,8 @@ router.post("/v1/stocks/remove", async (req, res) => {
     });
     if (req.body && req.body.hasOwnProperty("item") && req.body.item.hasOwnProperty("productLabel")) {
         let filter = {productLabel: req.body.item.productLabel}
-        let updateTime = req.body.item.hasOwnProperty("consumedTime") ? req.body.item.consumedTime : localMoment
-        let updateObject = {$set: {consumed: 1, consumedTime: updateTime}}
+        let updateTime = req.body.item.hasOwnProperty("removeTime") ? req.body.item.removeTime : localMoment
+        let updateObject = {$set: {removed: 1, removeTime: updateTime}}
         try {
             await dbclient.connect()
             const session = dbclient.db(targetDB).collection("pollinglog");
@@ -729,11 +729,11 @@ router.get("/v1/preload", async (req, res) => {
         response.data = filteredResult
 
         // 根据Query筛选
-        if (req.query.consumed) {
+        if (req.query.removed) {
             //
         } else {
             response.data.forEach(eachitem => {
-                if (eachitem.consumed === 0) {
+                if (eachitem.removed === 0) {
                     filteredResult.push(eachitem)
                 }
             })
@@ -794,7 +794,7 @@ router.post("/v1/preload/update", async (req, res) => {
     if (Array.isArray(bodyContent) && req.body.hasOwnProperty("item")) {
         let bodyContent = req.body.item
         bodyContent.forEach(eachItem => {
-            eachItem.consumed = 0
+            eachItem.removed = 0
             eachItem.loggingTime = moment(new Date()).tz("Australia/Sydney")
             eachItem.createTime = moment(new Date()).tz("Australia/Sydney"); // MongoDB Time Series
         })
@@ -860,7 +860,7 @@ function createLogObject(sessioncode, iteminfo) {
         productLabel: "",
         productName: "",
         labelBuild: 2,
-        consumed: 0,
+        removed: 0,
         loggingTime: moment(new Date()).tz("Australia/Sydney"),
         createTime: moment(new Date()).tz("Australia/Sydney")
     }
@@ -922,7 +922,7 @@ function createLogObject(sessioncode, iteminfo) {
 //         const session = sessionClient.db(targetDB).collection("pollinglog")
 //         var result = await session.updateMany({
 //             productLabel: labelId,
-//             consumed: 0
+//             removed: 0
 //         }, {$set: {shelfLocation: location}}, {upsert: false})
 //         if (result !== null) {
 //             returnResult = result
@@ -951,9 +951,9 @@ router.get("/v1/stocks/get", async (req, res) => {
     try {
         let findingQuery = {}
         if (productLabel && productLabel.length > 0) {
-            findingQuery = {itemcode: productLabel, consumed: 0}
+            findingQuery = {itemcode: productLabel, removed: 0}
         } else if (productLocation && productLocation.length > 0) {
-            findingQuery = {shelfLocation: productLocation, consumed: 0}
+            findingQuery = {shelfLocation: productLocation, removed: 0}
         }
         let result = await sessions.find(findingQuery, {projection: {"_id": 0}})
         if ((await sessions.countDocuments({})) >= 0) {
@@ -987,7 +987,7 @@ router.post("/v1/stocks/get", async (req, res) => {
             var object = JSON.parse(contents.input)
             console.log(contents.input)
             if (object.itemcode) {
-                findingQuery = {itemcode: productLabel, consumed: 0}
+                findingQuery = {itemcode: productLabel, removed: 0}
                 result = await sessions.find(findingQuery, queryOptions)
                 if ((await sessions.countDocuments({})) >= 0) {
                     response.acknowledged = true
@@ -1009,7 +1009,7 @@ router.post("/v1/stocks/get", async (req, res) => {
 })
 
 /*
- * Stock中的consume方法，当某个板位被使用后需要标注所有的该id信息为consumed
+ * Stock中的consume方法，当某个板位被使用后需要标注所有的该id信息为removed
  */
 router.get("/v1/stocks/consume", async (req, res) => {
     let localTime = moment(new Date()).tz("Australia/Sydney");
@@ -1018,9 +1018,9 @@ router.get("/v1/stocks/consume", async (req, res) => {
     const productLocation = req.query.shelf
     if (productLabel && productLabel.length > 0) {
         try {
-            let result = await findAndUpdateLogs({itemcode: productLabel, consumed: 0}, {
-                consumed: 1,
-                consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")
+            let result = await findAndUpdateLogs({itemcode: productLabel, removed: 0}, {
+                removed: 1,
+                removeTime: localTime.format("YYYY-MM-DD HH:mm:ss")
             })
             if (result.modifiedCount > 0 && result.matchedCount == result.modifiedCount) {
                 response.acknowledged = true
@@ -1031,9 +1031,9 @@ router.get("/v1/stocks/consume", async (req, res) => {
         }
     } else if (productLocation && productLocation.length > 0) {
         try {
-            let result = await findAndUpdateLogs({shelfLocation: productLocation, consumed: 0}, {
-                consumed: 1,
-                consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")
+            let result = await findAndUpdateLogs({shelfLocation: productLocation, removed: 0}, {
+                removed: 1,
+                removeTime: localTime.format("YYYY-MM-DD HH:mm:ss")
             })
             if (result.modifiedCount > 0 && result.matchedCount == result.modifiedCount) {
                 response.acknowledged = true
@@ -1052,9 +1052,9 @@ router.post("api/v1/stocks/consume", async (req, res) => {
     const {productLabel} = req.body
     if (productLabel !== undefined && productLabel.length > 0) {
         try {
-            let result = await findAndUpdateLogs({itemcode: productLabel, consumed: 0}, {
-                consumed: 1,
-                consumedTime: localTime.format("YYYY-MM-DD HH:mm:ss")
+            let result = await findAndUpdateLogs({itemcode: productLabel, removed: 0}, {
+                removed: 1,
+                removeTime: localTime.format("YYYY-MM-DD HH:mm:ss")
             })
             if (result.modifiedCount > 0 && result.matchedCount > 0) {
                 response.acknowledged = true
@@ -1126,7 +1126,7 @@ async function findLastPollionglog(labelId) {
             quantity: 1,
             quantityUnit: 1,
             shelfLocation: 1,
-            consumed: 1,
+            removed: 1,
             POIPnumber: 1,
             productName: 1,
             bestbefore: 1,

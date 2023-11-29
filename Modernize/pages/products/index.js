@@ -70,7 +70,7 @@ async function fetchUnusedStocks(conditionObject) {
     });
     try {
         await client.connect();
-        stocks = await client.db(targetDB).collection("pollinglog").find({consumed: 0}, {sort: {productCode: 1}}).toArray();
+        stocks = await client.db(targetDB).collection("pollinglog").find({removed: 0}, {sort: {productCode: 1}}).toArray();
         products = await client.db(targetDB).collection("products").find({active: 1}).toArray();
     } catch (e) {
         console.error("Fetching error:", e)

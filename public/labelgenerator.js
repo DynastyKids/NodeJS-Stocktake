@@ -94,7 +94,7 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
                 quantityUnit: "",
                 bestbefore: "",
                 productLabel: (new Date()).toISOString().replaceAll("-", "").split("T")[0] + getRandomXHexdigits(7),
-                consumed: 0
+                removed: 0
             }
             
             // 验证输入的productName是否在库中, 替换rowInput[0].value中的名称为产品Code，通过搜索原datalist的列表

@@ -258,7 +258,7 @@ document.querySelector("#addMovementForm").addEventListener("submit", async func
             const session = client.db(targetDB).collection("pollinglog");
             if (formAction === "consume") {
                 result = await session.updateMany(productInfo, {
-                    consumed: 1,
+                    removed: 1,
                     loggingTime: moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
                 }, {upsert: false})
             }
@@ -290,7 +290,7 @@ async function inputSearchLabel(labelid) {
     try {
         await client.connect();
         const logsessions = client.db(targetDB).collection("pollinglog");
-        const query = {productLabel: labelid, consumed: 0}
+        const query = {productLabel: labelid, removed: 0}
         const options = {
             sort: {loggingTime: -1},
             projection: {
@@ -325,7 +325,7 @@ async function inputSearchShelf(shelfString) {
     try {
         await client.connect();
         const logsessions = client.db(targetDB).collection("pollinglog");
-        const query = {shelfLocation: shelfString, consumed: 0}
+        const query = {shelfLocation: shelfString, removed: 0}
         const options = {
             sort: {loggingTime: -1},
             projection: {
