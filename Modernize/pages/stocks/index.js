@@ -23,8 +23,15 @@ let table = new DataTable('#table', {
     responsive: true,
     pageLength: 25,
     lengthMenu:[10,15,25,50,100],
-    columns: [{"width": "25%"}, {"width": "15%"}, {"width": "15%"}, {"width": "10%"}, {"width": "20%"}, null],
-    order: [[2, 'asc']]
+    columns: [{"width": "25%"}, {"width": "15%"},null, {"width": "15%"}, {"width": "10%"}, {"width": "20%"}, null],
+    order: [[2, 'asc']],
+    columnDefs: [
+        {
+            target: 2,
+            visible: false,
+            searchable: false
+        },
+    ]
 });
 let shouldRefresh = true;
 const countdownFrom = 60;
@@ -301,7 +308,7 @@ function loadStockInfoToTable(fetchAll) {
                     `${element.productCode} - ${element.productName}`,
                     `${element.quantity} ${element.quantityUnit}`,
                     (element.bestbefore ? element.bestbefore : ""),
-                    // (element.bestbefore ? moment(element.bestbefore).format("l") : ""),
+                    (element.bestbefore ? moment(element.bestbefore).format("l") : ""),
                     (element.shelfLocation ? element.shelfLocation : ""),
                     `<p>${(element.productLabel ? element.productLabel : "")}</p>`+
                     `<p style="font-size: x-small">${( element.hasOwnProperty("createTime") ? "Added on "+moment(element.createTime).format("lll") : "")}</p>`,
@@ -319,7 +326,7 @@ function loadStockInfoToTable(fetchAll) {
     })
 }
 
-async function getAllStockItems(getAll) {
+async function getAllStockItems(findall = false) {
     document.querySelector("#loadingStatus").style.removeProperty("display")
     let client = new MongoClient(uri, {
         serverApi: {
@@ -335,7 +342,7 @@ async function getAllStockItems(getAll) {
     try {
         const options = {sort: {bestbefore: -1},}
         await client.connect();
-        if (getAll){
+        if (findall){
             cursor = await sessions.find({}, options)
         } else {
             cursor = await sessions.find({removed: 0}, options)

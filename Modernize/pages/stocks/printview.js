@@ -13,9 +13,7 @@ var DataTable = require('datatables.net-responsive-bs5')(window, $);
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
-
 const {setInterval} = require('timers');
-const i18next = require("i18next");
 
 let fullResultSet = [];
 let table = new DataTable('#table', {

@@ -56,11 +56,11 @@ document.addEventListener("DOMContentLoaded",async () => {
         quarterlyBreakupFootnote[i].innerText = last4Qtrs[i]
     }
 
-    //// 获取季度数据
+    // 获取季度数据
     let quarterDatas= [0,0,0,0]
     for (let i = 0; i < stockRecords.length; i++) {
         for (let j = 0; j < last4Qtrs.length; j++) {
-            if (last4Qtrs[j] === getFiscalQuarter(stockRecords[i].consumedTime) && stockRecords[i].hasOwnProperty("unitPrice")){
+            if (last4Qtrs[j] === getFiscalQuarter(stockRecords[i].removeTime) && stockRecords[i].hasOwnProperty("unitPrice")){
                 quarterDatas[j] += Math.round(parseInt(stockRecords[i].quantity) * parseFloat(stockRecords[i].unitPrice))
             }
         }
@@ -68,6 +68,7 @@ document.addEventListener("DOMContentLoaded",async () => {
 
     document.querySelector("#apex_quarterlyBreakup .card-title").textContent = "Quarterly Sale Breakup"
     document.querySelector("#apex_quarterlyBreakup h4").textContent = `A$ ${new Intl.NumberFormat('en-AU').format(quarterDatas[0])}`
+    
     let posResult = !!(100 - Math.round(quarterDatas[0] / quarterDatas[1] * 100))//Positive growth ?
     console.log(100 - Math.round(quarterDatas[0] / quarterDatas[1] * 100))
     if (posResult){
@@ -339,7 +340,7 @@ document.addEventListener("DOMContentLoaded",async () => {
         timeElement.className = "timeline-time text-dark flex-shrink-0 text-end"
         timeElement.textContent = (recentTransList[i].direction === "in" ?
             moment(recentTransList[i].loggingTime).format("MMM DD HH:mm") :
-            moment(recentTransList[i].consumedTime).format("MMM DD HH:mm"))
+            moment(recentTransList[i].removeTime).format("MMM DD HH:mm"))
 
         let itemElement = document.createElement("div")
         itemElement.className = "timeline-item fw-semibold fs-3 text-dark mt-n1"
@@ -374,7 +375,7 @@ document.addEventListener("DOMContentLoaded",async () => {
         timeElement.className = "timeline-time text-dark flex-shrink-0 text-end"
         timeElement.textContent = (recentTransList[i].direction === "in" ?
             moment(recentTransList[i].loggingTime).format("MMM DD HH:mm") :
-            moment(recentTransList[i].consumedTime).format("MMM DD HH:mm"))
+            moment(recentTransList[i].removeTime).format("MMM DD HH:mm"))
 
         let itemElement = document.createElement("div")
         itemElement.className = "timeline-item fw-semibold fs-3 text-dark mt-n1"
@@ -424,8 +425,8 @@ async function fetchInventoryGraphData(yearoption = new Date().getFullYear()){
             if (eachData.hasOwnProperty("loggingTime") && eachData.hasOwnProperty("unitPrice")) {
                 values.import[new Date(eachData.loggingTime).getMonth()] += eachData.quantity * eachData.unitPrice
             }
-            if (eachData.hasOwnProperty("consumedTime") && eachData.hasOwnProperty("unitPrice")) {
-                values.export[new Date(eachData.consumedTime).getMonth()] -= eachData.quantity * eachData.unitPrice
+            if (eachData.hasOwnProperty("removeTime") && eachData.hasOwnProperty("unitPrice")) {
+                values.export[new Date(eachData.removeTime).getMonth()] -= eachData.quantity * eachData.unitPrice
             }
         })
 
@@ -506,9 +507,9 @@ function getRecentTransactions(recordsArray, limit = 500, direction = "both"){
         }
         if (direction=== "both" || direction === "out") {
             for (let i = 0; i < recordsArray.length; i++) {
-                if (recordsArray[i].hasOwnProperty("consumedTime")) {
+                if (recordsArray[i].hasOwnProperty("removeTime")) {
                     let pushElement = recordsArray[i]
-                    pushElement.compTime = recordsArray[i].consumedTime
+                    pushElement.compTime = recordsArray[i].removeTime
                     pushElement.direction = "out"
                     reorderedDupArray.push(pushElement)
                 }
@@ -532,7 +533,7 @@ function calculateMonthStockMovementValue(stockRecords,date = new Date()){
                 }
             }
             if (eachRecord.hasOwnProperty("removed") && eachRecord.removed === 1 &&
-                eachRecord.hasOwnProperty("consumedTime") && isSameYearmonth(new Date(eachRecord.consumedTime),date)){
+                eachRecord.hasOwnProperty("removeTime") && isSameYearmonth(new Date(eachRecord.removeTime),date)){
                 monthlyExport.count += 1;
                 if (eachRecord.hasOwnProperty("unitPrice") && eachRecord.hasOwnProperty("quantity")){
                     monthlyImport.value += (monthlyImport.value+eachRecord.unitPrice*eachRecord.quantity).toFixed(2)
@@ -553,7 +554,7 @@ function calculateInstockValue(stockRecords){
                 currentInstockvalue += eachRecord.quantity * eachRecord.quantity
                 if (eachRecord.hasOwnProperty("loggingTime") && isSameYearmonth(new Date(eachRecord.loggingTime))){
                     thisMonthImportVal += eachRecord.quantity * eachRecord.quantity
-                    if (eachRecord.hasOwnProperty("consumedTime") && isSameYearmonth(new Date(eachRecord.consumedTime))){
+                    if (eachRecord.hasOwnProperty("removeTime") && isSameYearmonth(new Date(eachRecord.removeTime))){
                         thisMonthExportVal += eachRecord.quantity * eachRecord.quantity
                     }
                 }
@@ -578,7 +579,7 @@ function getTopSeller(stockRecords, productList) { // 默认选择x位的top sel
             }
         }
 
-        if (new Date(new Date() - new Date(stockRecords[i].consumedTime)).getUTCMonth() > 3){
+        if (new Date(new Date() - new Date(stockRecords[i].removeTime)).getUTCMonth() > 3){
             continue; //时间不在范围内，跳过
         } //时间在范围内可继续计算
 
@@ -617,14 +618,14 @@ function calcStockTurnover(stockData, limit = 25000, compareDate = new Date()){ 
     if (Array.isArray(stockData)){
         for (let i = 0; i < stockData.length && i< limit; i++) {
             const eachItem = stockData[i]
-            if (eachItem.hasOwnProperty("consumedTime")){
-                if(new Date(eachItem.consumedTime) > compareDate){
+            if (eachItem.hasOwnProperty("removeTime")){
+                if(new Date(eachItem.removeTime) > compareDate){
                     continue;
                 }
                 if (eachItem.hasOwnProperty("removed") && eachItem.removed === 1 && eachItem.hasOwnProperty("loggingTime")){
                     let logTime = new Date(eachItem.loggingTime);
-                    let removeTime = new Date(eachItem.consumedTime);
-                    turnOverArrayDiff.push({productCode:eachItem.productCode, consumedTime: eachItem.consumedTime, timediff: Math.floor(Math.abs(removeTime-logTime)/1000)})
+                    let removeTime = new Date(eachItem.removeTime);
+                    turnOverArrayDiff.push({productCode:eachItem.productCode, removeTime: eachItem.removeTime, timediff: Math.floor(Math.abs(removeTime-logTime)/1000)})
                 }
             }
         }
@@ -703,10 +704,10 @@ function RecentWeeksRemoveCount(weeks = 12) {// 计算最近连续的X个周的�
     }
     turnOverValueArrays.week[weeks-1] = weekNumberYearSun(turnOverValueArrays.week[weeks-1])
     for (let i = 0; i < stockRecords.length && i < 25000; i++) {
-        if (stockRecords[i].hasOwnProperty("consumedTime")) {
+        if (stockRecords[i].hasOwnProperty("removeTime")) {
             for (let j = 0; j < turnOverValueArrays.week.length; j++) {
-                if (turnOverValueArrays.week[j].week === weekNumberYearSun(stockRecords[i]["consumedTime"]).week &&
-                    turnOverValueArrays.week[j].year === weekNumberYearSun(stockRecords[i]["consumedTime"]).year) {
+                if (turnOverValueArrays.week[j].week === weekNumberYearSun(stockRecords[i]["removeTime"]).week &&
+                    turnOverValueArrays.week[j].year === weekNumberYearSun(stockRecords[i]["removeTime"]).year) {
                     for (let k = 0; k < productsList.length; k++) {
                         if (productsList[k].productCode === stockRecords[i]['productCode'] && productsList[k].hasOwnProperty('cartonQty')&&
                             (stockRecords[i]['quantityUnit'].toLowerCase().includes("carton") || stockRecords[i]['quantityUnit'].toLowerCase().includes("ctn"))){
@@ -758,9 +759,9 @@ async function getAllStockRecords(limit = 50000){
         await client.connect()
         let collections = client.db(dbname).collection("pollinglog");
         if (limit < 0){
-            result = await collections.find({}).sort({"consumedTime":-1,"loggingTime":1}).toArray()
+            result = await collections.find({}).sort({"removeTime":-1,"loggingTime":1}).toArray()
         } else {
-            result = await collections.find({}).sort({"consumedTime":-1,"loggingTime":1}).limit(limit).toArray()
+            result = await collections.find({}).sort({"removeTime":-1,"loggingTime":1}).limit(limit).toArray()
         }
     } catch (e) {
         console.error(`Error on CheckDBConnection: ${e}`)

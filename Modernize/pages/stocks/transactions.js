@@ -74,7 +74,14 @@ let table = new DataTable('#table', {
     responsive: true,
     pageLength: 25,
     lengthMenu:[10,15,25,50,100,-1],
-    order: [[1, 'desc']]
+    order: [[1, 'desc']],
+    columnDefs: [
+        {
+            target: 1,
+            visible: false,
+            searchable: false
+        },
+    ]
 });
 function inflateTable(productsArray, productlogsArray, direction="ALL"){
     if (Array.isArray(productlogsArray) && Array.isArray(productsArray)){
@@ -101,6 +108,7 @@ function inflateTable(productsArray, productlogsArray, direction="ALL"){
             table.row.add([
                 `${element.hasOwnProperty("compareDirection") ? element.compareDirection : ""}`,
                 `${element.hasOwnProperty("compareTime") ? element.compareTime : ""}`,
+                `${element.hasOwnProperty("compareTime") ? moment(element.compareTime).tz("Australia/Sydney").format("lll") : ""}`,
                 `${element.hasOwnProperty("productCode") ? element.productCode : ""} - ${element.hasOwnProperty("productName") ? element.productName : ""}`,
                 `${element.hasOwnProperty("quantity") ? element.quantity : ""} ${element.hasOwnProperty("quantityUnit") ? element.quantityUnit : ""}`,
                 `${element.hasOwnProperty("bestbefore") ? element.bestbefore : ""}`,
