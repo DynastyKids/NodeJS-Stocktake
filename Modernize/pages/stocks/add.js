@@ -1,7 +1,6 @@
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion, ObjectId} = require('mongodb');
 const path = require('path');
-const Moment = require('moment-timezone');
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
@@ -189,7 +188,6 @@ async function insertProductLog(productObject, override = false) {
             useUnifiedTopology: true
         }
     });
-    let nowTime = Moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
     const sessions = client.db(targetDB).collection("pollinglog");
     let result = {acknowledged: false, resultSet: [], message: ""}
     let searchResult = []

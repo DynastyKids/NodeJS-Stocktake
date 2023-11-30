@@ -1,7 +1,6 @@
 const { ipcRenderer } = require('electron');
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
-const moment = require('moment-timezone')
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
@@ -114,7 +113,6 @@ async function getAllStockItems(getAll) {
             useUnifiedTopology: true
         }
     });
-    let nowTime = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
     const sessions = client.db(targetDB).collection("pollinglog");
     let cursor;
     let result = {acknowledged: false, resultSet: [], message: ""}
