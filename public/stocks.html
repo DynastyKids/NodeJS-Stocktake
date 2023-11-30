@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Warehouse Electron</title>
+    <title>Stocks - Warehouse Electron</title>
     <link href="/library/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="/library/tabler/tabler-icons.min.css">
+    <link href="/library/dataTables/datatables.css" rel="stylesheet">
+    <script src="/library/dataTables/datatables.js"></script>
 </head>
 <body>
 <div class="container-fluid">
@@ -42,20 +44,39 @@
         </div>
     </nav>
     <div class="container-fluid">
-        <h1>Welcome to Warehouse Electron</h1>
+        <h1>Stocks Index</h1>
         <br>
         <div class="container-fluid" id="maincontent">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item active" aria-current="page">Home</li>
+                    <li class="breadcrumb-item"><a href="/">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Stocks</li>
                 </ol>
             </nav>
 
-            Select an action from following:
-            <ul>
-                <li class="httpsLink"><a href="labelgenerator.html"><i class="ti ti-tag"></i>Generate Labels</a></li>
-                <li class="httpLink"><a data-bs-toggle="modal" data-bs-target="#httpsModal"><i class="ti ti-tag"></i>Generate Labels</a></li>
-            </ul>
+            <table id="table" class="table " style="width: 100%">
+                <thead class="thead-light">
+                <tr>
+                    <th>Code / Product</th>
+                    <th>Quantity</th>
+                    <th>Best Before</th><th>Best Before</th>
+                    <th>Location</th>
+                    <th>Stock ID<br>Adding Time</th>
+<!--                    <th></th>-->
+                </tr>
+                </thead>
+                <tfoot class="tfoot-light">
+                <tr>
+                    <th>Code / Product</th>
+                    <th>Quantity</th>
+                    <th>Best Before</th><th>Best Before</th>
+                    <th>Location</th>
+                    <th>Stock ID<br>Adding Time</th>
+                    <!--                    <th></th>-->
+                </tr>
+                </tfoot>
+                <tbody></tbody>
+            </table>
         </div>
     </div>
     <div class="modal fade" id="httpsModal" tabindex="-1" aria-labelledby="httpsModalLabel" aria-hidden="true">
@@ -83,30 +104,45 @@
 <script src="/library/jquery-3.7.1.min.js"></script>
 <script src="/library/bootstrap.bundle.min.js"></script>
 <script>
+    let table = new DataTable('#table',{
+        responsive: true,
+        pageLength: 25,
+        lengthMenu:[10,15,25,50,100],
+        order: [[2, 'asc']],
+        columnDefs: [
+            {
+                target: 2,
+                visible: false,
+                searchable: false
+            },
+        ]
+    });
+
     document.addEventListener("DOMContentLoaded", function() {
-        if (window.location.protocol === "http:") {
-            const hostname = window.location.hostname;
-            const redirectUrl = "https://" + hostname + ":3001";
-            document.querySelector("#warning-message").style.display = "block";
-            document.querySelector("#redirectip").innerText = hostname;
-            document.querySelector("#https_desc_link").href = redirectUrl;
-
-            document.querySelector("#maincontent").style.display = "none";
-            document.querySelectorAll(".nav-item").forEach(eachItem=>{
-                eachItem.style.display ="none"
-            })
-        }
-
-        if (window.location.protocol.includes("http:")) {
-            document.querySelectorAll(".httpsLink").forEach(eachLinkItem =>{
-                eachLinkItem.style.display = "none"
-            })
-        }
-        if (window.location.protocol.includes("https:")) {
-            document.querySelectorAll(".httpLink").forEach(eachLinkItem =>{
-                eachLinkItem.style.display = "none"
-            })
-        }
+        fetch("/api/v1/stocks")
+            .then(respsonse=>{
+                if (!respsonse.ok){
+                    throw new Error("API Request failed")
+                }
+                return respsonse.json()
+            }). then(data=>{
+                console.log(data)
+                if (Array.isArray(data.data)){
+                    table.clear().draw()
+                    data.data.forEach(eachRow=>{
+                        table.row.add([
+                            `${eachRow.productCode ? eachRow.productCode : ''} ${eachRow.productName ? eachRow.productName : ''}`,
+                            `${eachRow.quantity ? eachRow.quantity + (eachRow.quantityUnit ? ' '+ eachRow.quantityUnit : '') : ''}`,
+                            `${eachRow.bestbefore ? eachRow.bestbefore : ''}`,
+                            `${eachRow.bestbefore ? new Date(eachRow.bestbefore).toLocaleDateString('en-AU') : ''}`,
+                            `${eachRow.shelfLocation ? eachRow.shelfLocation : ''}`,
+                            `${eachRow.productLabel ? eachRow.productLabel : ''}`,
+                        ]).draw(false)
+                    })
+                }
+            }). catch(err=>{
+                console.error("Error after fetching data: ", err)
+        })
     });
 </script>
 </body>

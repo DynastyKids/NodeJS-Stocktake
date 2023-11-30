@@ -414,58 +414,29 @@ router.get("/v1/stocks", async (req, res) => {
         response.data = filteredResult
 
         // 根据Query筛选
-        if (req.query.removed) {
-            //
-        } else {
-            response.data.forEach(eachitem => {
-                if (eachitem.removed === 0) {
-                    filteredResult.push(eachitem)
-                }
-            })
-            response.data = filteredResult
+        if (!req.query.hasOwnProperty("removed")) {
+            mongodbFilter["$contains"]["removed"] = 0
         }
 
-        if (req.query.session && req.query.session.length >= 3) { // Session
-            console.log("session in")
-            filteredResult.forEach(eachitem => {
-                if (eachitem.session.toLowerCase().includes(String(req.query.session).toLowerCase())) {
-                    filteredResult.push(eachitem)
-                }
-            })
-            response.data = filteredResult
+        if (req.query.hasOwnProperty("session") && req.query.session.length >= 3) { // Session
+            mongodbFilter["$contains"]["session"] = req.query.session
         }
 
-        if (req.query && req.query.product && req.query.product.length >= 3) { //Product
-            let filteredResult = []
-            response.data.forEach(eachitem => {
-                if (eachitem.productCode.toLowerCase().includes(String(req.query.product).toLowerCase())) {
-                    filteredResult.push(eachitem)
-                }
-            })
-            response.data = filteredResult
+        if (req.query.hasOwnProperty("product") && req.query.product.length >= 3) { //Product
+            mongodbFilter["$contains"]["productName"] = req.query.product
         }
 
-        if (req.query && req.query.location && req.query.location.length >= 2) { // Location
-            let filteredResult = []
-            response.data.forEach(eachitem => {
-                if (eachitem.shelfLocation.toLowerCase().includes(String(req.query.location).toLowerCase())) {
-                    filteredResult.push(eachitem)
-                }
-            })
-            response.data = filteredResult
+        if (req.query.hasOwnProperty("location")&& req.query.location.length >= 2) { // Location
+            mongodbFilter["$contains"]["shelfLocation"] = req.query.location
         }
 
-        if (req.query && req.query.label && req.query.label.length >= 3) { // Label
-            let filteredResult = []
-            response.data.forEach(eachitem => {
-                if (eachitem.productLabel.toLowerCase().includes(String(req.query.label).toLowerCase())) {
-                    filteredResult.push(eachitem)
-                }
-            })
-            response.data = filteredResult
+        if (req.query.hasOwnProperty("label") && req.query.label.length >= 3) { // Label
+            mongodbFilter["$contains"]["productLabel"] = req.query.label
         }
 
-        console.log(`GetStocks: Result length: ${result.length}; Filtered Length:${response.length}`)
+        console.log(mongodbFilter)
+        response = await session.find(mongodbFilter, options).toArray()
+        console.log(`GetStocks: Result length: ${response.length}; Filtered Length:${response.length}`)
     } catch (e) {
         response.message = e
     } finally {
