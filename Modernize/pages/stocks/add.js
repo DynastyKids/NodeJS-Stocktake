@@ -1,7 +1,6 @@
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion, ObjectId} = require('mongodb');
 const path = require('path');
-const Moment = require('moment-timezone');
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
@@ -9,7 +8,6 @@ const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb:/
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
 const jsQR = require("jsqr")
-const moment = require("moment-timezone");
 
 document.querySelector("#act_reset").addEventListener("click",(ev)=>{
     document.querySelectorAll("#div_datatable input").forEach(eachinput=>{
@@ -62,21 +60,32 @@ document.addEventListener("DOMContentLoaded",async () => {
             })
         })
     }
-    
-    console.log(productList)
+
     document.querySelector(".container-fluid").append(datalistElements)
     document.querySelector("#inpt_prodCode").setAttribute("list","productsList")
     document.querySelector("#btn_submit").removeAttribute("disabled")
 })
 
 document.querySelector("#check_manualTime").addEventListener("change", (ev)=>{
-    console.log(ev.target.checked)
     if (ev.target.checked){//     当用户勾选时候允许用户自定义设置时间
-        document.querySelector("#group_loggingTime").style = ""
-        document.querySelector("#group_consumeTime").style = ""
+        document.querySelector("#group_createTime").style = ""
+        if (document.querySelector("#check_itemRemoved").checked){
+            document.querySelector("#group_removeTime").style = ""
+        } else {
+            document.querySelector("#group_removeTime").style = "display: none"
+        }
     } else { // 如果用户未勾选则隐藏，用户提交时候二次检查，如果未勾选，则修改时间值为默认值
-        document.querySelector("#group_loggingTime").style = "display: none"
-        document.querySelector("#group_consumeTime").style = "display: none"
+        document.querySelector("#group_createTime").style = "display: none"
+        document.querySelector("#group_consugroup_removeTimeeTime").style = "display: none"
+    }
+})
+
+document.querySelector("#check_itemRemoved").addEventListener("change", (ev)=>{
+    document.querySelector("#group_createTime").style = ""
+    if (document.querySelector("#check_itemRemoved").checked && document.querySelector("#check_manualTime").checked){
+        document.querySelector("#group_removeTime").style = ""
+    } else {
+        document.querySelector("#group_removeTime").style = "display: none"
     }
 })
 
@@ -110,7 +119,7 @@ function createAlert(type = "info", context=""){
     } else {
         alertElement.className = "alert alert-info alert-dismissible bg-info text-black border-0 fade show"
     }
-    alertElement.innerHTML = <button type="button" className="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+    alertElement.innerHTML = `<button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>`
     let alertText = document.createElement("span")
     alertText.innerText = context
     alertElement.append(alertText)
@@ -128,28 +137,44 @@ document.querySelector("#form_product").addEventListener("submit",(ev)=>{
 
     let object = {}
     object.labelBuild = 3
-    object.productCode = document.querySelector("#inpt_prodCode").value ? document.querySelector("#inpt_prodCode").value : ``
-    object.productName = document.querySelector("#inpt_prodName").value ? document.querySelector("#inpt_prodName").value : ``
-    object.quantity = document.querySelector("#inpt_quantity").value ? document.querySelector("#inpt_quantity").value : ``
-    object.quantityUnit = document.querySelector("#inpt_unit").value ? document.querySelector("#inpt_unit").value : ``
-    object.POIPnumber = document.querySelector("#inpt_purchaseorder").value ? document.querySelector("#inpt_purchaseorder").value : ``
-    object.bestbefore = document.querySelector("#inpt_bestbefore").value ? document.querySelector("#inpt_bestbefore").value : ``
-    object.productLabel = document.querySelector("#inpt_labelid").value ? document.querySelector("#inpt_labelid").value : ``
-    object.session =  document.querySelector("#inpt_sessionid").value ? document.querySelector("#inpt_sessionid").value : ``
-    object.shelfLocation =  document.querySelector("#inpt_shelflocation").value ? document.querySelector("#inpt_shelflocation").value : ``
-    object.unitPrice =  document.querySelector("#inpt_unitprice").value ? document.querySelector("#inpt_unitprice").value : ``
+    if (document.querySelector("#inpt_prodCode").value){
+        object.productCode = document.querySelector("#inpt_prodCode").value
+    }
+    if (document.querySelector("#inpt_prodName").value){
+        object.productName = document.querySelector("#inpt_prodName").value
+    }
+    if (document.querySelector("#inpt_quantity").value){
+        object.quantity = document.querySelector("#inpt_quantity").value
+    }
+    if (document.querySelector("#inpt_unit").value){
+        object.quantityUnit = document.querySelector("#inpt_unit").value
+    }
+    if (document.querySelector("#inpt_purchaseorder").value){
+        object.POIPnumber = document.querySelector("#inpt_purchaseorder").value
+    }
+    if (document.querySelector("#inpt_bestbefore").value){
+        object.bestbefore = document.querySelector("#inpt_bestbefore").value
+    }
+    if (document.querySelector("#inpt_labelid").value){
+        object.productLabel = document.querySelector("#inpt_labelid").value
+    }
+    if (document.querySelector("#inpt_shelflocation").value){
+        object.shelfLocation =  document.querySelector("#inpt_shelflocation").value
+    }
+    if (document.querySelector("#inpt_unitprice").value){
+        object.unitPrice = document.querySelector("#inpt_unitprice").value
+    }
+    object.session =  document.querySelector("#inpt_sessionid").value ? document.querySelector("#inpt_sessionid").value : `STOCK`
     object.loggingTime =  new Date()
     object.createTime = new Date()
-    object.removed = 0;
-    object.removeTime = new Date()
+    object.removed = document.querySelector("#check_itemRemoved").checked ? 1 : 0;
     if (document.querySelector("#check_manualTime").checked){
         object.createTime =  (document.querySelector("#inpt_createTime").value ? new Date(document.querySelector("#inpt_createTime").value) : new Date())
-        if (document.querySelector("#inpt_consumeTime").value) {
-            object.removed = 1;
-            object.removeTime = (document.querySelector("#inpt_consumeTime").value ? new Date(document.querySelector("#inpt_consumeTime").value) : new Date())
+        if (document.querySelector("#inpt_removeTime").value) {
+            object.removeTime = (document.querySelector("#inpt_removeTime").value ? new Date(document.querySelector("#inpt_removeTime").value) : new Date())
         }
     }
-    // 检查必要字段
+
     if (object.productLabel.length > 0){
         insertProductLog(object)
     }
@@ -163,7 +188,6 @@ async function insertProductLog(productObject, override = false) {
             useUnifiedTopology: true
         }
     });
-    let nowTime = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
     const sessions = client.db(targetDB).collection("pollinglog");
     let result = {acknowledged: false, resultSet: [], message: ""}
     let searchResult = []
@@ -184,7 +208,7 @@ async function insertProductLog(productObject, override = false) {
             document.querySelector("#alertAnchor").append(infoAlert)
             setTimeout(function(){
                 infoAlert.style = "display: none"
-                window.location.replace(`${window.location.hostname}/stocks/index.html`)
+                window.location.replace(`./index.html`)
             },3000)
         }
     // 使用UpdateOne，如果数据存在则提示保留或覆盖，如果不存在则使用upsert插入

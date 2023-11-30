@@ -1,8 +1,6 @@
 const { ipcRenderer } = require('electron');
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
-const moment = require('moment-timezone')
-moment.locale("en-AU")
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
@@ -155,7 +153,7 @@ document.querySelector("#modelCheckboxConsumed").addEventListener("change",(ev)=
 document.querySelector("#removeModal_check").addEventListener("change",(ev)=>{
     if (ev.target.checked) {
         document.querySelector("#removeModal_time").style = ""
-        document.querySelector("#removeModal_datetime").value = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
+        document.querySelector("#removeModal_datetime").value = new Date()
     } else {
         document.querySelector("#removeModal_time").style = "display:none"
     }
@@ -178,14 +176,14 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
     document.querySelector("#removeModalYes").disabled = true
     document.querySelector("#removeModalYes").textContent = "Updating"
 
-    let localTime = moment(new Date()).tz("Australia/Sydney");
+    let localTime = new Date();
     if (document.querySelector("#removeModal_check").checked){ // 检查用户是否自定义了时间
         try {
-            localTime = new Date(document.querySelector("#removeModal_datetime").value)
+            localTime = document.querySelector("#removeModal_datetime").value ? new Date(document.querySelector("#removeModal_datetime").value) : new Date()
         } catch (e) {
             // User provide incorrect data of date-time values, revert to default
             console.error("RemoveModal Error: Datetime not recognizable",e)
-            localTime = moment(new Date()).tz("Australia/Sydney");
+            localTime = new Date()
         }
     }
 
@@ -247,6 +245,11 @@ revertModal.querySelector("#revertModalYes").addEventListener("click", async fun
         const session = client.db(targetDB).collection("pollinglog");
         let result = await session.updateMany({productLabel: labelId, removed: 1} ,
             {$set: {removed: 0}, $unset: {"removeTime":""}},{upsert: false})
+        // 如果用户设定了返回的地点，则一并写入
+        if (String(document.querySelector("#revertLocation").value).length > 0){
+            result = await session.updateMany({productLabel: labelId} ,
+                {$set: {removed: 0, shelfLocation: document.querySelector("#revertLocation").value}},{upsert: false})
+        }
         if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
             //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
             console.log("Successfully reverted status for: ",labelId)
@@ -308,10 +311,10 @@ function loadStockInfoToTable(fetchAll) {
                     `${element.productCode} - ${element.productName}`,
                     `${element.quantity} ${element.quantityUnit}`,
                     (element.bestbefore ? element.bestbefore : ""),
-                    (element.bestbefore ? moment(element.bestbefore).format("l") : ""),
+                    (element.bestbefore ? new Date(element.bestbefore).toLocaleDateString('en-AU') : ""),
                     (element.shelfLocation ? element.shelfLocation : ""),
                     `<p>${(element.productLabel ? element.productLabel : "")}</p>`+
-                    `<p style="font-size: x-small">${( element.hasOwnProperty("createTime") ? "Added on "+moment(element.createTime).format("lll") : "")}</p>`,
+                    `<p style="font-size: x-small">${( element.hasOwnProperty("createTime") ? "Added on "+new Date(element.createTime).toLocaleString('en-AU',{ timeZone: 'Australia/Sydney' }) : "")}</p>`,
                     `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>` +
                     (element.removed < 1 ? `
@@ -319,7 +322,7 @@ function loadStockInfoToTable(fetchAll) {
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>
                     ` : `<a href="#" class="table_actions table_action_revert" data-bs-toggle="modal" data-bs-target="#revertModal" 
                         data-bs-itemId="${element.productLabel}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}" style="margin: 0 2px 0 2px">Revert</a>
-                        <p class="table_action_removed" style="font-size: x-small;">${(element.removeTime ? "Removed on " + moment(element.removeTime).format("ll") : "")}</p>`)
+                        <p class="table_action_removed" style="font-size: x-small;">${(element.removeTime ? "Removed on " + new Date(element.removeTime).toLocaleDateString("en-AU") : "")}</p>`)
                 ]).draw(false);
             }
         }
@@ -335,7 +338,6 @@ async function getAllStockItems(findall = false) {
             useUnifiedTopology: true
         }
     });
-    let nowTime = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
     const sessions = client.db(targetDB).collection("pollinglog");
     let cursor;
     let result = {acknowledged: false, resultSet: [], message: ""}

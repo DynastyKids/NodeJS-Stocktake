@@ -1,8 +1,6 @@
 const { ipcRenderer } = require('electron');
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
-const moment = require('moment-timezone')
-moment.locale("en-AU")
 
 const Storage = require("electron-store");
 const newStorage = new Storage();

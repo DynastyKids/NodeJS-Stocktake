@@ -7,7 +7,7 @@ const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb:/
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
 var $ = require('jquery');
-const moment = require("moment-timezone");
+const Moment = require("moment-timezone");
 const {update} = require("lodash");
 var DataTable = require('datatables.net-responsive-bs5')(window, $);
 
@@ -108,7 +108,7 @@ function inflateTable(productsArray, productlogsArray, direction="ALL"){
             table.row.add([
                 `${element.hasOwnProperty("compareDirection") ? element.compareDirection : ""}`,
                 `${element.hasOwnProperty("compareTime") ? element.compareTime : ""}`,
-                `${element.hasOwnProperty("compareTime") ? moment(element.compareTime).tz("Australia/Sydney").format("lll") : ""}`,
+                `${element.hasOwnProperty("compareTime") ? Moment(element.compareTime).tz("Australia/Sydney").format("lll") : ""}`,
                 `${element.hasOwnProperty("productCode") ? element.productCode : ""} - ${element.hasOwnProperty("productName") ? element.productName : ""}`,
                 `${element.hasOwnProperty("quantity") ? element.quantity : ""} ${element.hasOwnProperty("quantityUnit") ? element.quantityUnit : ""}`,
                 `${element.hasOwnProperty("bestbefore") ? element.bestbefore : ""}`,
