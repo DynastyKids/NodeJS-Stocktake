@@ -70,7 +70,6 @@ document.addEventListener("DOMContentLoaded",async () => {
     document.querySelector("#apex_quarterlyBreakup h4").textContent = `A$ ${new Intl.NumberFormat('en-AU').format(quarterDatas[0])}`
     
     let posResult = !!(100 - Math.round(quarterDatas[0] / quarterDatas[1] * 100))//Positive growth ?
-    console.log(100 - Math.round(quarterDatas[0] / quarterDatas[1] * 100))
     if (posResult){
         document.querySelector("#diffWithLastYear span").className = "me-1 rounded-circle bg-light-success round-20 d-flex align-items-center justify-content-center"
         document.querySelector("#diffWithLastYear span").innerHTML = `<i class="ti ti-arrow-up-right text-success"></i>`
@@ -155,8 +154,8 @@ document.addEventListener("DOMContentLoaded",async () => {
                 document.querySelector("#apex_turnoverChart .col-12 span").className = "me-2 rounded-circle bg-light-success round-20 d-flex align-items-center justify-content-center"
                 document.querySelector("#apex_turnoverChart .col-12 span").innerHTML = `<i class="ti ti-arrow-up-right text-success"></i>`
             }
-            document.querySelector("#apex_turnoverChart .col-12 p")
-            document.querySelector("#apex_turnoverChart .col-12 p").textContent = `${(avgTime / lastmonthAvg - 1) > 0 ? "+" : "-"}${Math.abs(Math.round((avgTime / lastmonthAvg - 1) * 100))}% days compared on last month`
+            document.querySelector("#apex_turnoverChart .col-12 p").textContent =
+                `${(avgTime / lastmonthAvg - 1) > 0 ? "+" : "-"}${Math.abs(Math.round((avgTime / lastmonthAvg - 1) * 100))}% days compared on last month`
         }
 
         let turnOverChartData = RecentWeeksRemoveCount();
@@ -247,6 +246,7 @@ document.addEventListener("DOMContentLoaded",async () => {
     }
 
     let fetchInventoryData = await fetchInventoryGraphData()
+    console.log(fetchInventoryData)
     let maxy = 0
     for (let i = 0; i < fetchInventoryData.import.length; i++) {
         maxy = (fetchInventoryData.import[i] > maxy ? fetchInventoryData.import[i] : maxy )
@@ -254,6 +254,7 @@ document.addEventListener("DOMContentLoaded",async () => {
     }
     maxy = Math.ceil(maxy/1000)*1000
 
+    console.log(fetchInventoryData)
     var inventoryStatChart = {
         series: [
             {
@@ -319,12 +320,11 @@ document.addEventListener("DOMContentLoaded",async () => {
         tooltip: { theme: "light" },
     };
 
-    new ApexCharts(document.querySelector("#inventoryOverviewChart"), inventoryStatChart).render();
     document.querySelector("#inventoryOverviews h5").textContent = "Inventory Overview"
     document.querySelector("#inventoryOverviews #stockValue").textContent = `$ ${new Intl.NumberFormat('en-AU').format(calculateInstockValue(stockRecords)[0])}`
     document.querySelector("#inventoryOverviews #inboundValue").textContent = `$ ${new Intl.NumberFormat('en-AU').format(calculateInstockValue(stockRecords)[1])}`
     document.querySelector("#inventoryOverviews #outboundValue").textContent = `$ ${new Intl.NumberFormat('en-AU').format(calculateInstockValue(stockRecords)[2])}`
-
+    new ApexCharts(document.querySelector("#inventoryOverviewChart"), inventoryStatChart).render();
 
     // Recent Transactions
     var recentTransList = getRecentTransactions(stockRecords, 200, "in");
@@ -412,7 +412,10 @@ async function fetchInventoryGraphData(yearoption = new Date().getFullYear()){
         await client.connect()
         let session = await client.db(dbname).collection("pollinglog");
         let regex = new RegExp("^"+yearoption)
-        result = await session.find({$or:[{"loggingTime":regex},{"loggingTime":regex}]}).toArray()
+        result = await session.find({$or:[
+            {createTime: {$gte: new Date(yearoption, 0, 1), $lte: new Date(yearoption, 11, 31,23,59,59)}},
+                {removeTime: {$gte: new Date(yearoption, 0, 1), $lte: new Date(yearoption, 11, 31,23,59,59)}}
+            ]}).toArray()
     } catch (e) {           
         console.error(`Error on CheckDBConnection: ${e}`)
     } finally {
@@ -422,8 +425,8 @@ async function fetchInventoryGraphData(yearoption = new Date().getFullYear()){
     let values = {import: [0,0,0,0,0,0,0,0,0,0,0,0,0], export:[0,0,0,0,0,0,0,0,0,0,0,0,0]}
     if (result.length > 0) {
         result.forEach(eachData => {
-            if (eachData.hasOwnProperty("loggingTime") && eachData.hasOwnProperty("unitPrice")) {
-                values.import[new Date(eachData.loggingTime).getMonth()] += eachData.quantity * eachData.unitPrice
+            if (eachData.hasOwnProperty("createTime") && eachData.hasOwnProperty("unitPrice")) {
+                values.import[new Date(eachData.createTime).getMonth()] += eachData.quantity * eachData.unitPrice
             }
             if (eachData.hasOwnProperty("removeTime") && eachData.hasOwnProperty("unitPrice")) {
                 values.export[new Date(eachData.removeTime).getMonth()] -= eachData.quantity * eachData.unitPrice
@@ -545,7 +548,7 @@ function calculateMonthStockMovementValue(stockRecords,date = new Date()){
 }
 
 function calculateInstockValue(stockRecords){
-    let currentInstockvalue=0;
+    let currentInstockvalue= 0;
     let thisMonthImportVal = 0;
     let thisMonthExportVal = 0
     if (Array.isArray(stockRecords)){
@@ -554,9 +557,9 @@ function calculateInstockValue(stockRecords){
                 currentInstockvalue += eachRecord.quantity * eachRecord.quantity
                 if (eachRecord.hasOwnProperty("loggingTime") && isSameYearmonth(new Date(eachRecord.loggingTime))){
                     thisMonthImportVal += eachRecord.quantity * eachRecord.quantity
-                    if (eachRecord.hasOwnProperty("removeTime") && isSameYearmonth(new Date(eachRecord.removeTime))){
-                        thisMonthExportVal += eachRecord.quantity * eachRecord.quantity
-                    }
+                }
+                if (eachRecord.hasOwnProperty("removeTime") && isSameYearmonth(new Date(eachRecord.removeTime))){
+                    thisMonthExportVal += eachRecord.quantity * eachRecord.quantity
                 }
             }
         })
