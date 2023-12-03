@@ -91,12 +91,12 @@ function build2DProductArray(productList) {
         if (productArray.length > 0 && item.productCode !== "") {
             console.log(productArray[productArray.length - 1])
             if (productArray[productArray.length - 1].productCode === item.productCode) {
-                productArray[productArray.length - 1]["bestbeforeArray"].push(item.bestbefore.replaceAll("-", ""))
-                productArray[productArray.length - 1]["LocationArray"].push(item.shelfLocation)
+                productArray[productArray.length - 1]["bestbeforeArray"].push(item.bestbefore ? item.bestbefore.replaceAll("-", ""): "")
+                productArray[productArray.length - 1]["LocationArray"].push(item.shelfLocation ? item.shelfLocation : "")
             } else {
                 productArray.push(item)
-                productArray[productArray.length - 1]["bestbeforeArray"] = [item.bestbefore.replaceAll("-", "")]
-                productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation]
+                productArray[productArray.length - 1]["bestbeforeArray"] = [item.bestbefore ? item.bestbefore.replaceAll("-", ""): ""]
+                productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation ? item.shelfLocation : ""]
                 delete productArray[productArray.length - 1].session;
                 delete productArray[productArray.length - 1]._id;
                 delete productArray[productArray.length - 1].POIPnumber;
@@ -105,8 +105,8 @@ function build2DProductArray(productList) {
             }
         } else {
             productArray.push(item)
-            productArray[productArray.length - 1]["bestbeforeArray"] = [item.bestbefore.replaceAll("-", "")]
-            productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation]
+            productArray[productArray.length - 1]["bestbeforeArray"] = [item.bestbefore ? item.bestbefore.replaceAll("-", ""): ""]
+            productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation ? item.shelfLocation : ""]
             delete productArray[productArray.length - 1].session;
             delete productArray[productArray.length - 1]._id;
             delete productArray[productArray.length - 1].POIPnumber;

@@ -137,6 +137,8 @@ document.querySelector("#form_product").addEventListener("submit",(ev)=>{
 
     let object = {}
     object.labelBuild = 3
+    object.locationRecords = []
+    object.sessions = [(document.querySelector("#inpt_sessionid").value ? document.querySelector("#inpt_sessionid").value : "STOCKS")]
     if (document.querySelector("#inpt_prodCode").value){
         object.productCode = document.querySelector("#inpt_prodCode").value
     }
@@ -150,7 +152,7 @@ document.querySelector("#form_product").addEventListener("submit",(ev)=>{
         object.quantityUnit = document.querySelector("#inpt_unit").value
     }
     if (document.querySelector("#inpt_purchaseorder").value){
-        object.POIPnumber = document.querySelector("#inpt_purchaseorder").value
+        object.POnumber = document.querySelector("#inpt_purchaseorder").value
     }
     if (document.querySelector("#inpt_bestbefore").value){
         object.bestbefore = document.querySelector("#inpt_bestbefore").value
@@ -160,11 +162,11 @@ document.querySelector("#form_product").addEventListener("submit",(ev)=>{
     }
     if (document.querySelector("#inpt_shelflocation").value){
         object.shelfLocation =  document.querySelector("#inpt_shelflocation").value
+        object.locationRecords =  [{location:document.querySelector("#inpt_shelflocation").value, datetime: new Date()}]
     }
     if (document.querySelector("#inpt_unitprice").value){
         object.unitPrice = document.querySelector("#inpt_unitprice").value
     }
-    object.session =  document.querySelector("#inpt_sessionid").value ? document.querySelector("#inpt_sessionid").value : `STOCK`
     object.loggingTime =  new Date()
     object.createTime = new Date()
     object.removed = document.querySelector("#check_itemRemoved").checked ? 1 : 0;
@@ -279,7 +281,7 @@ function cameraFillinblank(data){
             document.querySelector("#inpt_prodCode").value = decodedData.productCode ? decodedData.productCode : ""
             document.querySelector("#inpt_prodName").value = decodedData.productName ? decodedData.productName : ""
             document.querySelector("#inpt_quantity").value = decodedData.quantity ? decodedData.quantity : ""
-            document.querySelector("#inpt_purchaseorder").value = decodedData.POIPnumber ? decodedData.POIPnumber : ""
+            document.querySelector("#inpt_purchaseorder").value = (decodedData.POnumber ? decodedData.POnumber : (decodedData.POIPnumber ? decodedData.POIPnumber : ""))
             document.querySelector("#inpt_bestbefore").value = decodedData.bestbefore ? decodedData.bestbefore : ""
             document.querySelector("#inpt_labelid").value = decodedData.productLabel ? decodedData.productLabel : ""
             document.querySelector("#inpt_sessionid").value = decodedData.session ? decodedData.session : "STOCK"
