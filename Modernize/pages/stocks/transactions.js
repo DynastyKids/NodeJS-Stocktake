@@ -7,8 +7,6 @@ const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb:/
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
 var $ = require('jquery');
-const Moment = require("moment-timezone");
-const {update} = require("lodash");
 var DataTable = require('datatables.net-responsive-bs5')(window, $);
 
 document.addEventListener("DOMContentLoaded",async function () {
@@ -74,14 +72,16 @@ let table = new DataTable('#table', {
     responsive: true,
     pageLength: 25,
     lengthMenu:[10,15,25,50,100,-1],
-    order: [[1, 'desc']],
     columnDefs: [
         {
             target: 1,
             visible: false,
-            searchable: false
+            render: function (data) {
+                return new Date(data).getTime()
+            }
         },
-    ]
+    ],
+    order: [[1, 'desc']],
 });
 function inflateTable(productsArray, productlogsArray, direction="ALL"){
     if (Array.isArray(productlogsArray) && Array.isArray(productsArray)){
@@ -89,26 +89,36 @@ function inflateTable(productsArray, productlogsArray, direction="ALL"){
         // 收到ProductLogsArray后添加一个field为对比时间，进出方向
         let fullCompareArray =[]
         productlogsArray.forEach(eachProductlog=>{
-            if (eachProductlog.hasOwnProperty("createTime") && (direction === "ALL" || direction === "IN")){
-                var pushElement = eachProductlog
-                pushElement.compareTime = pushElement.createTime
-                pushElement.compareDirection = "IN"
-                fullCompareArray.push(pushElement)
-            }
-            if (eachProductlog.hasOwnProperty("removeTime") && (direction === "ALL" || direction === "OUT")){
-                var pushElement = eachProductlog
+            var pushElement = eachProductlog
+            if (eachProductlog.hasOwnProperty("removeTime") && eachProductlog.removed === 1 && (direction === "ALL" || direction === "OUT")){
                 pushElement.compareTime = pushElement.removeTime
                 pushElement.compareDirection = "OUT"
                 fullCompareArray.push(pushElement)
             }
+            if (eachProductlog.hasOwnProperty("createTime") && (direction === "ALL" || direction === "IN")){
+                pushElement.compareTime = pushElement.createTime
+                pushElement.compareDirection = "IN"
+                fullCompareArray.push(pushElement)
+            }
+            if (eachProductlog.hasOwnProperty("locationRecords") && eachProductlog.locationRecords.length > 1 && (direction === "ALL" || direction === "MOVE")){
+                // 至少有超过1次的移动记录，出了需要添加本次记录，还需要修改上一条的IN记录
+                fullCompareArray[fullCompareArray.length - 1].shelfLocation = (eachProductlog.locationRecords[0].location ? eachProductlog.locationRecords[0].location : ``)
+                for (let i = 1; i < eachProductlog.locationRecords.length; i++) {
+                    var pushElement = eachProductlog
+                    pushElement.compareTime = eachProductlog.locationRecords[i].datetime
+                    pushElement.compareDirection = "MOVE"
+                    pushElement.shelfLocation = eachProductlog.locationRecords[i].location
+                    fullCompareArray.push(pushElement)
+                }
+            }
         })
-        fullCompareArray.sort((a,b)=>new Date(b.compareTime) - new Date(a.compareTime))
+        fullCompareArray.sort((a,b)=>new Date(b.compareTime).getTime() - new Date(a.compareTime).getTime())
         console.log(fullCompareArray)
         fullCompareArray.forEach(element =>{
             table.row.add([
                 `${element.hasOwnProperty("compareDirection") ? element.compareDirection : ""}`,
                 `${element.hasOwnProperty("compareTime") ? element.compareTime : ""}`,
-                `${element.hasOwnProperty("compareTime") ? Moment(element.compareTime).tz("Australia/Sydney").format("lll") : ""}`,
+                `${element.hasOwnProperty("compareTime") ? new Date(element.compareTime).toLocaleString('en-AU') : ""}`,
                 `${element.hasOwnProperty("productCode") ? element.productCode : ""} - ${element.hasOwnProperty("productName") ? element.productName : ""}`,
                 `${element.hasOwnProperty("quantity") ? element.quantity : ""} ${element.hasOwnProperty("quantityUnit") ? element.quantityUnit : ""}`,
                 `${element.hasOwnProperty("bestbefore") ? element.bestbefore : ""}`,
