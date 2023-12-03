@@ -58,8 +58,8 @@ function i18n_bodyContents() {
     tableRowActions.forEach(eachRow =>{ eachRow.textContent = i18next.t('tables.btn_view'); })
 }
 
-document.addEventListener("DOMContentLoaded", (event) => {
-    getAllSession()
+document.addEventListener("DOMContentLoaded", async (event) => {
+    await getAllSession()
 });
 
 async function getAllSession(){

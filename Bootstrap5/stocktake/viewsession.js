@@ -110,7 +110,7 @@ async function getSessionItems(sessionCode) {
     try {
         table.clear().draw()
         await client.connect();
-        cursor = await sessions.find({session: sessionCode}).toArray();
+        cursor = await sessions.find({sessions: sessionCode}).toArray();
         if (cursor.length === 0 ){
             console.log("[MongoDB] Nothing Found");
         }

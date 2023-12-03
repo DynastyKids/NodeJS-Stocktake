@@ -65,10 +65,8 @@ window.onload = () => {
     })
 
     document.getElementById("staticSessionCode").value = generateSessionHex()
-    document.getElementById("inputStartDate").value = moment(new Date()).tz("Australia/Sydney")
-        .format('YYYY-MM-DD') + " 00:00:00"
-    document.getElementById("inputEndDate").value = moment(new Date()).tz("Australia/Sydney")
-        .format('YYYY-MM-DD') + " 23:59:59"
+    document.getElementById("inputStartDate").value = new Date().toLocaleString()
+    document.getElementById("inputEndDate").value = new Date().toLocaleString()
 
     document.getElementById('newSessionForm').addEventListener('submit', (e) => {
         e.preventDefault();
@@ -77,7 +75,7 @@ window.onload = () => {
             session: document.getElementById("staticSessionCode").value,
             startDate: document.getElementById("inputStartDate").value,
             endDate: document.getElementById("inputEndDate").value,
-            logTime: moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:mm:ss')
+            logTime: new Date().toLocaleString()
         }
         console.log("Run Submit Form", data)
 

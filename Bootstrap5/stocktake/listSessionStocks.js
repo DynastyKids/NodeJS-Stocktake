@@ -14,8 +14,8 @@ const newStorage = new Storage();
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
-document.addEventListener("DOMContentLoaded", (ev) => {
-    getSessions()
+document.addEventListener("DOMContentLoaded", async (ev) => {
+    await getSessions()
 });
 
 i18next.use(Backend).init({
@@ -117,9 +117,9 @@ async function getSessions() {
     return htmlContent;
 }
 
-document.querySelector("#sessionSelector").addEventListener("change", () => {
+document.querySelector("#sessionSelector").addEventListener("change", async () => {
     document.querySelector("#activeTBody").innerHTML = ""
-    getAllItemsFromSession(document.querySelector("#sessionSelector").value)
+    await getAllItemsFromSession(document.querySelector("#sessionSelector").value)
 })
 
 async function getAllItemsFromSession(sessionCode) {
