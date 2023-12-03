@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async (event) => {
             `${moment(eachItem.startDate).format("lll")}`,
             `${moment(eachItem.endDate).format("lll")}`,
             `${eachItem.logTime}`,
-            ``
+            `<a href="../sessions/view.html?session=${eachItem.session}">View</a>`
         ]).draw(false);
     })
     document.querySelector("#loadingStatus").style = "display:none"
@@ -48,7 +48,6 @@ async function getAllSession(){
     const options = {sort: { startDate: -1 },};
     const sessions = client.db(targetDB).collection("pollingsession");
     let result;
-    let htmlContent=""
     try {
         await client.connect();
         result = await sessions.find({}, options).toArray();
@@ -104,9 +103,5 @@ document.querySelector("#addSessionModal").addEventListener("show.bs.modal", asy
 })
 
 document.querySelector("#addSessionModal_btnsubmit").addEventListener("click",(ev)=>{
-//     用户确认创建一个新Session
-//     Session创建后，添加Snapshot字段，获取当前pollinglog的产品ID，以便映射相关产品
-//     另外允许用户创建
-})
 
-document.querySelector("#")
+})
