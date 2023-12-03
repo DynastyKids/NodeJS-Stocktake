@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>List Sessions - Warehouse Electron (N)</title>
+    <title>View Sessions - Warehouse Electron (N)</title>
     <link rel="shortcut icon" type="image/png" href="../../assets/images/logos/favicon.png"/>
     <link rel="stylesheet" href="../../assets/css/styles.min.css"/>
 </head>
@@ -46,11 +46,22 @@
                                     <li class="breadcrumb-item">
                                         <a class="text-muted text-decoration-none" href="../home/index.html">Home</a>
                                     </li>
-                                    <li class="breadcrumb-item" aria-current="page">Sessions</li>
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../sessions/index.html">Sessions</a>
+                                    </li>
+                                    <li class="breadcrumb-item" aria-current="page" id="breadcrumb_viewSession">View Session</li>
                                 </ol>
                             </nav>
                         </div>
                     </div>
+                </div>
+            </div>
+            <div id="alertAnchor">
+                <div class="alert alert-success alert-dismissible bg-success text-white border-0 fade show" role="alert"
+                     style="display: none" id="div_successAlertblock">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <span id="alert_text"><strong>Success</strong> - Stock has been successfully added, redirect to
+                    stock-list now.</span>
                 </div>
             </div>
             <div class="card">
@@ -58,8 +69,6 @@
                     <h5 class="card-title fw-semibold mb-4">Actions</h5>
                     <div class="list-group-item-action">
                         <a class="mb-0 ms-2" href="#" id="act_listchange" data-value="all">List All Sessions</a>
-                        <a class="mb-0 ms-2" href="#" id="act_reloadTable">Refresh Session List</a>
-                        <a class="mb-0 ms-2" href="#" id="act_addSession" data-bs-toggle="modal" data-bs-target="#addSessionModal">Add session</a>
                         <div id="loadingStatus">
                             <span class="spinner-border" role="status" id="loadingSpinners"></span>
                             <span class="" id="loadingTableText">Loading data...</span>
@@ -69,28 +78,29 @@
                 <hr>
                 <div class="card-body">
                     <h5 class="card-title fw-semibold mb-4">List of Sessions</h5>
-                    <p class="mb-0"><table class="table" id="table">
-                    <thead class="thead-light">
-                    <tr>
-                        <th scope="col">Session ID</th>
-                        <th scope="col">Start Time</th>
-                        <th scope="col">End Time</th>
-                        <th scope="col">Setup Time</th>
-                        <th scope="col">Action</th>
-                    </tr>
-                    </thead>
-                    <tfoot>
-                    <tr>
-                        <th scope="col">Session ID</th>
-                        <th scope="col">Start Time</th>
-                        <th scope="col">End Time</th>
-                        <th scope="col">Setup Time</th>
-                        <th scope="col">Action</th>
-                    </tr>
-                    </tfoot>
-                    <tbody id="activeTBody">
-                    </tbody>
-                </table>
+                    <p class="mb-0">
+                    <table class="table" id="table">
+                        <thead class="thead-light">
+                        <tr>
+                            <th scope="col">Product</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Best before</th>
+                            <th scope="col">Location</th>
+                            <th scope="col">Stock ID</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <th scope="col">Product</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Best before</th>
+                            <th scope="col">Location</th>
+                            <th scope="col">Stock ID</th>
+                        </tr>
+                        </tfoot>
+                        <tbody id="activeTBody">
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -134,7 +144,7 @@
 <script src="../../assets/js/app.min.js"></script>
 <script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
 
-<script src="./index.js"></script>
+<script src="./view.js"></script>
 </body>
 
 </html>

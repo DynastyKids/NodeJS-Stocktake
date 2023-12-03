@@ -12,10 +12,9 @@ const MongoClient = require("mongodb").MongoClient;
 const {ServerApiVersion} = require("mongodb");
 
 const cors = require("cors")
-const moment = require("moment-timezone");
 
 const Storage = require("electron-store");
-const {unset} = require("lodash");
+
 const newStorage = new Storage();
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
@@ -62,8 +61,7 @@ router.get("/v1/sessions", async (req, res) => {
 
     if (!(req.query && req.query.all && req.query.all === '1')) {
         //修正data为返回当前有效的Sessions
-        let localMoment = moment(new Date()).tz("Australia/Sydney");
-        let localTime = (new Date(localMoment.format("YYYY-MM-DD HH:mm:ss"))).getTime()
+        let localTime = (new Date()).getTime()
         let inEffectSessions = []
         for (const eachSession of sessionResults.data) {
             var startDateint = (new Date(eachSession.startDate)).getTime()
@@ -84,8 +82,7 @@ router.get("/v1/sessions", async (req, res) => {
  */
 router.post("/v1/sessions/join", async (req, res) => {
     let response = {acknowledged: false, data: [], message: ""};
-    let localMoment = moment(new Date()).tz("Australia/Sydney");
-    let localTime = (new Date(localMoment.format("YYYY-MM-DD HH:mm:ss"))).getTime()
+    let localTime = (new Date()).getTime()
     let dbclient = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
@@ -130,7 +127,7 @@ router.post("/v1/sessions/join", async (req, res) => {
  */
 router.post("/v1/sessions/add", async (req, res) => {
     let response = {acknowledged: false, data: [], message: ""};
-    let localMoment = moment(new Date()).tz("Australia/Sydney");
+    let localMoment = new Date();
     let localTime = localMoment.format("YYYY-MM-DD HH:mm:ss")
     let dbclient = new MongoClient(uri, {
         serverApi: {
@@ -218,15 +215,15 @@ router.get("/v1/session/logs", async (req, res) => {
 router.post("/v1/sessionlog/add", async (req, res) => {
     const sessioncode = (req.body.session ? req.body.session : "");
     const iteminfo = req.body.item;
-    let localTime = moment(new Date()).tz("Australia/Sydney");
+    let localTime = new Date();
     var mongodata = {};
     let purposedRes = {acknowledged: false};
     if (isBase64String(iteminfo)) {
         mongodata = createLogObject(sessioncode, iteminfo);
         if (mongodata !== {}) {
             purposedRes.acknowledged = true
-            mongodata.loggingTime = moment(new Date()).tz("Australia/Sydney")
-            mongodata.createTime = moment(new Date()).tz("Australia/Sydney")
+            mongodata.loggingTime = new Date()
+            mongodata.createTime = new Date()
             let insertData = await insertOneToLog(mongodata);
             if ((await insertData).acknowledged) {
                 purposedRes = insertData;
@@ -241,13 +238,10 @@ router.post("/v1/sessionlog/add", async (req, res) => {
  * session/addlog POST方法 （新）
  * 替换了原有的sessionlog/add，须至少传入产品base64信息
  * 1. 会话ID （如果不提供则默认使用STOCK）
- * 2. 产品对象信息，可以直接使用Base64解码后的结果，如果期望传入base64，可以使用老接口/sessionlogs/itemadd
+ * 2. 
  */
 router.post("/v1/session/addlog", async (req, res) => {
-    const sessioncode = (req.body.session ? req.body.session : "STOCKS");
     let response = {acknowledged: false, data: [], message: ""};
-    let localMoment = moment(new Date()).tz("Australia/Sydney");
-    let localTime = localMoment.format("YYYY-MM-DD HH:mm:ss")
     let dbclient = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
@@ -255,25 +249,22 @@ router.post("/v1/session/addlog", async (req, res) => {
             useUnifiedTopology: true,
         },
     });
-
-    if (req.body.item) {
+    if (req.body.hasOwnProperty("session") && req.body.hasOwnProperty("item")) {
         try {
             await dbclient.connect();
             let session = dbclient.db(targetDB).collection("pollinglog");
             const filter = {
-                session: req.body.session,
-                productCode: req.body.item.productCode,
                 productLabel: req.body.item.productLabel,
             }
             let updateField = {
-                $set: req.body.item
+                $push: {"sessions": req.body.session},
             }
-            let result = await session.updateOne(filter, updateField, {upsert: true})
-            response.acknowledged = true
-            if (result.upsertedCount > 0) {
-                response.message = `Insert a new document, id: ${result.upsertedId._id}`
+            let result = await session.updateOne(filter, updateField)
+            if (result.matchedCount > 0) {
+                response.acknowledged = true
+                response.message = `${result.matchedCount} has matched, ${result.modifiedCount} has been updated`
             } else {
-                response.message = `Update on existing document.`
+                response.message = `No has matched, no updates has been taken`
             }
         } catch (e) {
             response.message = `Error on /v1/session/addlog: ${e}`
@@ -281,7 +272,7 @@ router.post("/v1/session/addlog", async (req, res) => {
             await dbclient.close()
         }
     } else {
-        response.message = "Missing Body parameter of base64(item)"
+        response.message = "Missing parameters, confirm you have body.session and body.item, refer to API document for correction"
     }
 
     res.json(response);
@@ -387,6 +378,85 @@ router.post("/v1/products", async (req, res) => {
 })
 
 /*
+* PRODUCTS
+* product/add POST方法， 新
+* 允许用户通过第三方渠道添加新产品
+*/
+router.post("/v1/product/add", async (req, res) => {
+    let response = {acknowledged: false, data: [], message: ""};
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+    try {
+        let session = dbclient.db(targetDB).collection("products");
+        await dbclient.connect()
+
+        if (req.hasOwnProperty("body") && req.body.hasOwnProperty("item") && req.body.item.hasOwnProperty("itemcode")) {
+            let filter = {itemcode: req.body.item.itemcode}
+            if (req.body.item.vendorCode) {
+                filter = {itemcode: req.body.item.itemcode, vendorCode: req.body.item.vendorCode}
+            }
+
+            const result = await session.updateOne(filter, {$set: req.body.item}, {upsert: true});
+            if (result.upsertedCount > 0) {
+                response.acknowledged = true
+                if (result.upsertedCount > 0) {
+                    response.data = {"upsertId": result.upsertedId}
+                }
+            }
+        } else {
+            response.message = `Missing body parameter(s), and itemcode is a mandatory field`
+        }
+    } catch (e) {
+        response.message = `Error on /v1/products: ${e}`
+    } finally {
+        await dbclient.close()
+    }
+
+    res.json(response)
+})
+
+router.post("/v1/products/update", async (req, res) => {
+    let response = {acknowledged: false, data: [], message: ""};
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+    try {
+        let session = dbclient.db(targetDB).collection("products");
+        await dbclient.connect()
+
+        if (req.hasOwnProperty("body") && req.body.hasOwnProperty("item") && req.body.item.hasOwnProperty("itemcode")) {
+            let filter = {itemcode: req.body.item.itemcode}
+            if (req.body.item.vendorCode) {
+                filter = {itemcode: req.body.item.itemcode, vendorCode: req.body.item.vendorCode}
+            }
+
+            const result = await session.updateOne(filter, {$set: req.body.item}, {upsert: false});
+            if (result.matchedCount === result.modifiedCount) {
+                response.acknowledged = true
+            }
+        } else {
+            response.message = `Missing parameter, body.item.itemcode is mandatory field`
+        }
+    } catch (e) {
+        response.message = `Error on /v1/products: ${e}`
+    } finally {
+        await dbclient.close()
+    }
+
+    res.json(response)
+})
+
+
+/*
  *  STOCKS
  *  GET 方法
  *
@@ -426,7 +496,7 @@ router.get("/v1/stocks", async (req, res) => {
             mongodbFilter["$contains"]["productName"] = req.query.product
         }
 
-        if (req.query.hasOwnProperty("location")&& req.query.location.length >= 2) { // Location
+        if (req.query.hasOwnProperty("location") && req.query.location.length >= 2) { // Location
             mongodbFilter["$contains"]["shelfLocation"] = req.query.location
         }
 
@@ -466,8 +536,6 @@ function filterDuplicate(fields, data) {
  *
  */
 router.post("/v1/stocks", async (req, res) => {
-    let localMoment = moment(new Date()).tz("Australia/Sydney");
-    let localTime = localMoment.format("YYYY-MM-DD HH:mm:ss");
     let response = {acknowledged: false, data: [], message: ""};
     let dbclient = new MongoClient(uri, {
         serverApi: {
@@ -492,12 +560,7 @@ router.post("/v1/stocks", async (req, res) => {
             updateObject = {$set: req.body.item}
             if (actionsAllowed[actionsAllowed.indexOf(req.body.action)] === "remove" ||
                 actionsAllowed[actionsAllowed.indexOf(req.body.action)] === "consume") {
-                updateObject = {
-                    $set: {
-                        removed: 1, loggingTime: moment(new Date()).tz("Australia/Sydney")
-                        , removeTime: moment(new Date()).tz("Australia/Sydney")
-                    }
-                } // 仅标注使用字段
+                updateObject = { $set: { removed: 1, loggingTime: new Date() , removeTime: new Date() } } // 仅标注使用字段
             }
             if (actionsAllowed[actionsAllowed.indexOf(req.body.action)] === "add") {
                 options.upsert = true;
@@ -505,8 +568,8 @@ router.post("/v1/stocks", async (req, res) => {
                 // 每当切换新版本后，均需要按照新版本参数补齐
                 let updateItems = req.body.item
                 updateItems.removed = 0
-                updateItems.createTime = moment(new Date()).tz("Australia/Sydney")
-                updateItems.loggingTime = moment(new Date()).tz("Australia/Sydney")
+                updateItems.createTime = new Date()
+                updateItems.loggingTime = new Date()
                 updateObject = {$set: updateItems}
             }
 
@@ -540,7 +603,6 @@ router.post("/v1/stocks", async (req, res) => {
  *
  */
 router.post("/v1/stocks/update", async (req, res) => {
-    let localMoment = moment(new Date()).tz("Australia/Sydney");
     let response = {acknowledged: false, data: [], message: ""};
     let dbclient = new MongoClient(uri, {
         serverApi: {
@@ -561,16 +623,18 @@ router.post("/v1/stocks/update", async (req, res) => {
             // 检查各种字段中是否由需要的对应参数，如果没有则补齐
             // 默认使用字段时间并转换为时间对象，如果字段未提供默认使用当前时间
             let updateItems = req.body.item
-            updateItems.createTime = updateItems.hasOwnProperty("createTime") ? moment(new Date(updateItems.createTime)).tz("Australia/Sydney")
-                : moment(new Date()).tz("Australia/Sydney")
-            updateItems.loggingTime = updateItems.hasOwnProperty("loggingTime") ? moment(new Date(updateItems.loggingTime)).tz("Australia/Sydney")
-                : moment(new Date()).tz("Australia/Sydney")
+            updateItems.createTime = updateItems.hasOwnProperty("createTime") ? new Date(updateItems.createTime) : new Date()
+            updateItems.loggingTime = updateItems.hasOwnProperty("loggingTime") ? new Date(updateItems.loggingTime) : new Date()
             updateItems.removed = updateItems.hasOwnProperty("removed") ? updateItems.removed : 0 // 默认设定为未使用
-            if (updateItems.removed === 1){
-                updateItems.removeTime = updateItems.hasOwnProperty("removeTime") ? moment(new Date(updateItems.removeTime)).tz("Australia/Sydney")
-                    : moment(new Date()).tz("Australia/Sydney") 
+
+            if (updateItems.removed === 1) {
+                updateItems.removeTime = updateItems.hasOwnProperty("removeTime") ?new Date(updateItems.removeTime) : new Date()
             }
             updateObject = {$set: updateItems}
+
+            if (updateItems.hasOwnProperty("shelfLocations")){
+                updateObject = {$set: updateItems, $push:{"locationRecords": {datetime: new Date(), location: updateItems.shelfLocations}}}
+            }
 
             try {
                 await dbclient.connect()
@@ -601,8 +665,6 @@ router.post("/v1/stocks/update", async (req, res) => {
  * 保持使用/v1/stocks的方法，但只使用记录中的productLabel和shelfLocation记录，同时用户需要传入newLocation参数
  */
 router.post("/v1/stocks/move", async (req, res) => {
-    let localMoment = moment(new Date()).tz("Australia/Sydney");
-    let localTime = localMoment.format("YYYY-MM-DD HH:mm:ss");
     let response = {acknowledged: false, data: [], message: ""};
     let dbclient = new MongoClient(uri, {
         serverApi: {
@@ -642,8 +704,6 @@ router.post("/v1/stocks/move", async (req, res) => {
 })
 
 router.post("/v1/stocks/remove", async (req, res) => {
-    let localMoment = moment(new Date()).tz("Australia/Sydney");
-    let localTime = localMoment.format("YYYY-MM-DD HH:mm:ss");
     let response = {acknowledged: false, data: [], message: ""};
     let dbclient = new MongoClient(uri, {
         serverApi: {
@@ -654,7 +714,7 @@ router.post("/v1/stocks/remove", async (req, res) => {
     });
     if (req.body && req.body.hasOwnProperty("item") && req.body.item.hasOwnProperty("productLabel")) {
         let filter = {productLabel: req.body.item.productLabel}
-        let updateTime = req.body.item.hasOwnProperty("removeTime") ? req.body.item.removeTime : localMoment
+        let updateTime = req.body.item.hasOwnProperty("removeTime") ? new Date(req.body.item.removeTime) : new Date()
         let updateObject = {$set: {removed: 1, removeTime: updateTime}}
         try {
             await dbclient.connect()
@@ -756,7 +816,6 @@ router.get("/v1/preload", async (req, res) => {
  * 允许用户预填充产品信息（由Chrome 插件或者WarehouseElectron前端）
  */
 router.post("/v1/preload/update", async (req, res) => {
-    let localMoment = moment(new Date()).tz("Australia/Sydney");
     let response = {acknowledged: false, data: [], message: ""};
     let dbclient = new MongoClient(uri, {
         serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true},
@@ -766,8 +825,8 @@ router.post("/v1/preload/update", async (req, res) => {
         let bodyContent = req.body.item
         bodyContent.forEach(eachItem => {
             eachItem.removed = 0
-            eachItem.loggingTime = moment(new Date()).tz("Australia/Sydney")
-            eachItem.createTime = moment(new Date()).tz("Australia/Sydney"); // MongoDB Time Series
+            eachItem.loggingTime = new Date()
+            eachItem.createTime = new Date() // MongoDB Time Series
         })
         try {
             await dbclient.connect()
@@ -789,7 +848,6 @@ router.post("/v1/preload/update", async (req, res) => {
 })
 
 router.post("/v1/preload/remove", async (req, res) => {
-    let localMoment = moment(new Date()).tz("Australia/Sydney");
     let response = {acknowledged: false, data: [], message: ""};
     let dbclient = new MongoClient(uri, {
         serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true},
@@ -797,12 +855,12 @@ router.post("/v1/preload/remove", async (req, res) => {
     let bodyContent = req.body.body
     if (Array.isArray(bodyContent) && req.body.hasOwnProperty("productLabel")) {
         // 如果用户提供了时间，按照用户提供的时间填写removeTime，否则默认为当前时间
-        let removeTime = req.body.hasOwnProperty("removeTime") ? moment(new Date(req.body.removeTime)).tz("Australia/Sydney") : localMoment
+        let removeTime = req.body.hasOwnProperty("removeTime") ? new Date(req.body.removeTime) : new Date()
         try {
             await dbclient.connect()
             const session = dbclient.db(targetDB).collection("preloadlog");
             let result = await session.updateMany({productLabel: req.body.productLabel},
-                {$set:{removed:1, removedTime: removeTime}}, {upsert: false})
+                {$set: {removed: 1, removedTime: removeTime}}, {upsert: false})
             if (result.acknowledged) {
                 response.acknowledged = true
                 response.data = result
@@ -820,20 +878,20 @@ router.post("/v1/preload/remove", async (req, res) => {
 
 function createLogObject(sessioncode, iteminfo) {
     var mongodata = {
-        session: sessioncode,
+        sessions: [sessioncode],
         productCode: "",
         quantity: 0,
         quantityUnit: "",
         shelfLocation: "",
-        POIPnumber: "",
+        POnumber: "",
         productName: "",
         bestbefore: "",
         productLabel: "",
-        productName: "",
-        labelBuild: 2,
+        labelBuild: 3,
         removed: 0,
-        loggingTime: moment(new Date()).tz("Australia/Sydney"),
-        createTime: moment(new Date()).tz("Australia/Sydney")
+        loggingTime: new Date(),
+        createTime: new Date(),
+        locationRecords:[]
     }
     try {
         if (isBase64String(iteminfo)) {
@@ -854,11 +912,14 @@ function createLogObject(sessioncode, iteminfo) {
                     mongodata.quantityUnit = "carton"
                 }
             }
-            if (productInfo.hasOwnProperty("POIP")) {
-                mongodata.POIPnumber = productInfo.POIP;
+            if (productInfo.hasOwnProperty("POnumber")) {
+                mongodata.POnumber = productInfo.POnumber;
+            }
+            if (productInfo.hasOwnProperty("POnumber2")) {
+                mongodata.POnumber2 = productInfo.POnumber2;
             }
             // V2 and before end at here
-            if (productInfo.hasOwnProperty("Build") && productInfo.Build == 3) {
+            if (productInfo.hasOwnProperty("Build") && productInfo.Build === 3) {
                 mongodata.labelBuild = 3;
                 // V3 or later, using all info provided
                 console.log("Item label is V3");
@@ -873,6 +934,7 @@ function createLogObject(sessioncode, iteminfo) {
             }
             if (productInfo.hasOwnProperty("shelfLocation")) {
                 mongodata.shelfLocation = productInfo.shelfLocation;
+                mongodata.locationRecords.push({datetime:new Date(), location: productInfo.shelfLocation})
             }
         }
     } catch (error) {
@@ -880,32 +942,6 @@ function createLogObject(sessioncode, iteminfo) {
     }
     return mongodata;
 }
-
-//
-// /*
-//  * 更新商品存放的库位信息，需要LabelID，新库位
-//  * 注：新库位上如果已经有其他东西存在，默认不会覆盖，而会选择并存
-//  */
-// async function editStockShelfLocation(labelId, location) {
-//     let returnResult = {acknowledged: false}
-//     try {
-//         await sessionClient.connect()
-//         const session = sessionClient.db(targetDB).collection("pollinglog")
-//         var result = await session.updateMany({
-//             productLabel: labelId,
-//             removed: 0
-//         }, {$set: {shelfLocation: location}}, {upsert: false})
-//         if (result !== null) {
-//             returnResult = result
-//         }
-//         if (result.hasOwnProperty("matchedCount") && result.hasOwnProperty("modifiedCount")) {
-//             returnResult.acknowledged = true
-//         }
-//     } catch (err) {
-//         console.error(err)
-//     }
-//     return returnResult
-// }
 
 /*
  * Stock中的fetch方法，用来获取产品的在某个位置上的库存信息
@@ -983,7 +1019,6 @@ router.post("/v1/stocks/get", async (req, res) => {
  * Stock中的consume方法，当某个板位被使用后需要标注所有的该id信息为removed
  */
 router.get("/v1/stocks/consume", async (req, res) => {
-    let localTime = moment(new Date()).tz("Australia/Sydney");
     let response = {acknowledged: false}
     const productLabel = req.query.label
     const productLocation = req.query.shelf
@@ -991,9 +1026,9 @@ router.get("/v1/stocks/consume", async (req, res) => {
         try {
             let result = await findAndUpdateLogs({itemcode: productLabel, removed: 0}, {
                 removed: 1,
-                removeTime: localTime.format("YYYY-MM-DD HH:mm:ss")
+                removeTime: new Date()
             })
-            if (result.modifiedCount > 0 && result.matchedCount == result.modifiedCount) {
+            if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
                 response.acknowledged = true
             }
         } catch (err) {
@@ -1004,9 +1039,9 @@ router.get("/v1/stocks/consume", async (req, res) => {
         try {
             let result = await findAndUpdateLogs({shelfLocation: productLocation, removed: 0}, {
                 removed: 1,
-                removeTime: localTime.format("YYYY-MM-DD HH:mm:ss")
+                removeTime: new Date()
             })
-            if (result.modifiedCount > 0 && result.matchedCount == result.modifiedCount) {
+            if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
                 response.acknowledged = true
             }
         } catch (err) {
@@ -1018,14 +1053,13 @@ router.get("/v1/stocks/consume", async (req, res) => {
 })
 
 router.post("api/v1/stocks/consume", async (req, res) => {
-    let localTime = moment(new Date()).tz("Australia/Sydney");
     let response = {acknowledged: false}
     const {productLabel} = req.body
     if (productLabel !== undefined && productLabel.length > 0) {
         try {
             let result = await findAndUpdateLogs({itemcode: productLabel, removed: 0}, {
                 removed: 1,
-                removeTime: localTime.format("YYYY-MM-DD HH:mm:ss")
+                removeTime: new Date()
             })
             if (result.modifiedCount > 0 && result.matchedCount > 0) {
                 response.acknowledged = true
@@ -1098,7 +1132,7 @@ async function findLastPollionglog(labelId) {
             quantityUnit: 1,
             shelfLocation: 1,
             removed: 1,
-            POIPnumber: 1,
+            POIPnumber: [],
             productName: 1,
             bestbefore: 1,
             productLabel: 1,
@@ -1117,7 +1151,6 @@ async function findLastPollionglog(labelId) {
 }
 
 async function insertOneLot(productInformationObject) {
-    let localTime = moment(new Date()).tz("Australia/Sydney");
     let returnResult = {acknowledged: false}
     try {
         if (productInformationObject.hasOwnProperty("productCode") && productInformationObject.hasOwnProperty("quantity") && productInformationObject.hasOwnProperty("quantityUnit") && productInformationObject.hasOwnProperty("shelfLocation") && productInformationObject.hasOwnProperty("productName") && productInformationObject.hasOwnProperty("productLabel")) {
@@ -1133,9 +1166,8 @@ async function insertOneLot(productInformationObject) {
 }
 
 async function updateOneLotByLabel(productLabelId, updateinfoObject) {
-    let localTime = moment(new Date()).tz("Australia/Sydney");
     var updateObject = updateinfoObject
-    updateObject['loggingTime'] = moment(new Date()).tz("Australia/Sydney")
+    updateObject['loggingTime'] = new Date()
     let returnResult = {acknowledged: false}
     try {
         await sessionClient.connect()

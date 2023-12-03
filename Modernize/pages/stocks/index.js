@@ -1,8 +1,6 @@
 const { ipcRenderer } = require('electron');
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
-const moment = require('moment-timezone')
-moment.locale("en-AU")
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
@@ -103,7 +101,7 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
             document.querySelector("#modalEditUnit").value = (fullResultSet[i].quantityUnit ? fullResultSet[i].quantityUnit : "")
             document.querySelector("#modalEditBestbefore").value = (fullResultSet[i].bestbefore ? fullResultSet[i].bestbefore : "")
             document.querySelector("#modelEditLocation").value = (fullResultSet[i].shelfLocation ? fullResultSet[i].shelfLocation : "")
-            document.querySelector("#modelEditPOIP").value = (fullResultSet[i].POIPnumber ? fullResultSet[i].POIPnumber : "")
+            document.querySelector("#modelEditPOnumber").value = (fullResultSet[i].POnumber ? fullResultSet[i].POnumber : "")
             document.querySelector("#modelEditUnitprice").value = (fullResultSet[i].unitPrice ? fullResultSet[i].unitPrice : "")
             document.querySelector("#modelEditLoggingTime").value = (fullResultSet[i].loggingTime ? fullResultSet[i].loggingTime : "")
             document.querySelector("#modelCheckboxConsumed").checked = (fullResultSet[i].removed === 1)
@@ -130,8 +128,12 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
                 quantityUnit: (document.querySelector("#modalEditUnit").value ? document.querySelector("#modalEditUnit").value : originProperty.quantityUnit ),
                 bestbefore : (document.querySelector("#modalEditBestbefore").value ? document.querySelector("#modalEditBestbefore").value : originProperty.bestbefore),
                 shelfLocation: (document.querySelector("#modelEditLocation").value ? document.querySelector("#modelEditLocation").value : originProperty.shelfLocation)
-            }
+            },
         })
+        if (originProperty.shelfLocation !== document.querySelector("#modelEditLocation").value) {
+            // 2023 DEC update: 添加了过往location的记录
+            await session.updateOne({"productLabel": requestLabelId}, {$push: {locationRecords: {datetime: new Date()}}})
+        }
         if (result.acknowledged){
             setTimeout(function(){
                 bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
@@ -155,7 +157,7 @@ document.querySelector("#modelCheckboxConsumed").addEventListener("change",(ev)=
 document.querySelector("#removeModal_check").addEventListener("change",(ev)=>{
     if (ev.target.checked) {
         document.querySelector("#removeModal_time").style = ""
-        document.querySelector("#removeModal_datetime").value = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
+        document.querySelector("#removeModal_datetime").value = new Date()
     } else {
         document.querySelector("#removeModal_time").style = "display:none"
     }
@@ -178,14 +180,14 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
     document.querySelector("#removeModalYes").disabled = true
     document.querySelector("#removeModalYes").textContent = "Updating"
 
-    let localTime = moment(new Date()).tz("Australia/Sydney");
+    let localTime = new Date();
     if (document.querySelector("#removeModal_check").checked){ // 检查用户是否自定义了时间
         try {
-            localTime = new Date(document.querySelector("#removeModal_datetime").value)
+            localTime = document.querySelector("#removeModal_datetime").value ? new Date(document.querySelector("#removeModal_datetime").value) : new Date()
         } catch (e) {
             // User provide incorrect data of date-time values, revert to default
             console.error("RemoveModal Error: Datetime not recognizable",e)
-            localTime = moment(new Date()).tz("Australia/Sydney");
+            localTime = new Date()
         }
     }
 
@@ -309,14 +311,21 @@ function loadStockInfoToTable(fetchAll) {
                         continue;
                     }
                 }
+
+                // Update 2023, using new location field
+                let shelfLocationField = (element.shelfLocation ? `${element.shelfLocation}` : "")
+                if (element.hasOwnProperty("locationRecords") && element.locationRecords.length > 1){
+                    shelfLocationField = element.locationRecords[element.locationRecords.length-1].location
+                }
+
                 table.row.add([
-                    `${element.productCode} - ${element.productName}`,
-                    `${element.quantity} ${element.quantityUnit}`,
+                    `${(element.hasOwnProperty("productCode") ? element.productCode : "")} - ${element.productName}`,
+                    `${element.hasOwnProperty("quantity") ? element.quantity + " " + (element.quantityUnit ? element.quantityUnit : "") : ""}`,
                     (element.bestbefore ? element.bestbefore : ""),
-                    (element.bestbefore ? moment(element.bestbefore).format("l") : ""),
-                    (element.shelfLocation ? element.shelfLocation : ""),
+                    (element.bestbefore ? new Date(element.bestbefore).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' }) : ""),
+                    (shelfLocationField ? `<a href=../stocks/location.html?location=${shelfLocationField}>${shelfLocationField}</a>`: ''),
                     `<p>${(element.productLabel ? element.productLabel : "")}</p>`+
-                    `<p style="font-size: x-small">${( element.hasOwnProperty("createTime") ? "Added on "+moment(element.createTime).format("lll") : "")}</p>`,
+                    `<p style="font-size: x-small">${( element.hasOwnProperty("createTime") ? "Added on "+new Date(element.createTime).toLocaleDateString('en-AU',{ timeZone: 'Australia/Sydney' }) : "")}</p>`,
                     `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>` +
                     (element.removed < 1 ? `
@@ -324,7 +333,7 @@ function loadStockInfoToTable(fetchAll) {
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>
                     ` : `<a href="#" class="table_actions table_action_revert" data-bs-toggle="modal" data-bs-target="#revertModal" 
                         data-bs-itemId="${element.productLabel}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}" style="margin: 0 2px 0 2px">Revert</a>
-                        <p class="table_action_removed" style="font-size: x-small;">${(element.removeTime ? "Removed on " + moment(element.removeTime).format("ll") : "")}</p>`)
+                        <p class="table_action_removed" style="font-size: x-small;">${(element.removeTime ? "Removed on " + new Date(element.removeTime).toLocaleDateString("en-AU") : "")}</p>`)
                 ]).draw(false);
             }
         }
@@ -340,20 +349,17 @@ async function getAllStockItems(findall = false) {
             useUnifiedTopology: true
         }
     });
-    let nowTime = moment(new Date()).tz("Australia/Sydney").format("YYYY-MM-DD HH:mm:ss")
     const sessions = client.db(targetDB).collection("pollinglog");
-    let cursor;
     let result = {acknowledged: false, resultSet: [], message: ""}
     try {
         const options = {sort: {bestbefore: -1},}
         await client.connect();
-        if (findall){
-            cursor = await sessions.find({}, options)
-        } else {
-            cursor = await sessions.find({removed: 0}, options)
-        }
         result.acknowledged = true
-        result.resultSet = await cursor.toArray()
+        if (findall){
+            result.resultSet = await sessions.find({}, options).toArray()
+        } else {
+            result.resultSet = await sessions.find({removed: 0}, options).toArray()
+        }
         console.log(result)
     } catch (err) {
         console.error(err)

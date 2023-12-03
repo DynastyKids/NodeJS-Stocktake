@@ -108,7 +108,7 @@
                             </div>
                             <div class="col-sm-6 col-6 mb-2">
                                 <label for="inpt_sessionid">Session ID</label>
-                                <input type="text" class="form-control" id="inpt_sessionid" placeholder="Session ID">
+                                <input type="text" class="form-control" id="inpt_sessionid" placeholder="Session ID" value="STOCK">
                             </div>
                             <div class="col-sm-6 col-6 mb-2">
                                 <label for="inpt_shelflocation">Location</label>
@@ -123,6 +123,10 @@
                         <hr>
                         <div class="form-group row">
                             <div class="form-check mr-sm-2 col-12">
+                                <input type="checkbox" class="form-check-input" id="check_itemRemoved">
+                                <label class="form-check-label" for="check_itemRemoved">Item has been Removed</label>
+                            </div>
+                            <div class="form-check mr-sm-2 col-12">
                                 <input type="checkbox" class="form-check-input" id="check_manualTime">
                                 <label class="form-check-label" for="check_manualTime">Set Log timestamp manually</label>
                             </div>
@@ -130,9 +134,9 @@
                                 <label for="inpt_createTime">Create Datetime</label>
                                 <input type="datetime-local" class="form-control" id="inpt_createTime" value="">
                             </div>
-                            <div class="col-sm-6 col-6 mb-2" id="group_consumeTime" style="display: none">
-                                <label for="inpt_consumeTime">Remove Datetime</label>
-                                <input type="datetime-local" class="form-control" id="inpt_consumeTime" value="">
+                            <div class="col-sm-6 col-6 mb-2" id="group_removeTime" style="display: none">
+                                <label for="inpt_removeTime">Remove Datetime</label>
+                                <input type="datetime-local" class="form-control" id="inpt_removeTime" value="">
                             </div>
                         </div>
                         <button class="btn btn-primary rounded-pill px-4 mt-3" type="submit" id="btn_submit"
