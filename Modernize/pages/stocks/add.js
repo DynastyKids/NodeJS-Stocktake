@@ -53,9 +53,10 @@ document.addEventListener("DOMContentLoaded",async () => {
         document.querySelector("#inpt_prodCode").addEventListener("change",(ev) => {
             productList.forEach(eachElement =>{
                 if (eachElement.productCode === ev.target.value){
-                    document.querySelector("#inpt_prodName").value = eachElement.labelname
-                    document.querySelector("#inpt_unit").value = eachElement.unit
+                    document.querySelector("#inpt_prodName").value = (eachElement.labelname ? eachElement.labelname : "")
+                    document.querySelector("#inpt_unit").value = (eachElement.unit ? eachElement.unit : "")
                     document.querySelector("#inpt_quantity").value = (eachElement.palletQty ? eachElement.palletQty : "")
+                    document.querySelector("#inpt_unitprice").value = (eachElement.unitPrice ? eachElement.unitPrice : "")
                 }
             })
         })
@@ -78,6 +79,11 @@ document.querySelector("#check_manualTime").addEventListener("change", (ev)=>{
         document.querySelector("#group_createTime").style = "display: none"
         document.querySelector("#group_consugroup_removeTimeeTime").style = "display: none"
     }
+})
+
+document.querySelector("#inpt_shelflocation").addEventListener("change",(ev) =>{
+    document.querySelector("#inpt_shelflocation").value =
+        document.querySelector("#inpt_shelflocation").value ? String(document.querySelector("#inpt_shelflocation").value).toUpperCase() : ""
 })
 
 document.querySelector("#check_itemRemoved").addEventListener("change", (ev)=>{
@@ -160,21 +166,20 @@ document.querySelector("#form_product").addEventListener("submit",(ev)=>{
     if (document.querySelector("#inpt_labelid").value){
         object.productLabel = document.querySelector("#inpt_labelid").value
     }
-    if (document.querySelector("#inpt_shelflocation").value){
-        object.shelfLocation =  document.querySelector("#inpt_shelflocation").value
-        object.locationRecords =  [{location:document.querySelector("#inpt_shelflocation").value, datetime: new Date()}]
-    }
     if (document.querySelector("#inpt_unitprice").value){
         object.unitPrice = document.querySelector("#inpt_unitprice").value
     }
     object.loggingTime =  new Date()
-    object.createTime = new Date()
+    object.createTime =  (document.querySelector("#check_manualTime").checked && document.querySelector("#inpt_createTime").value ?
+        new Date(document.querySelector("#inpt_createTime").value) : new Date())
     object.removed = document.querySelector("#check_itemRemoved").checked ? 1 : 0;
-    if (document.querySelector("#check_manualTime").checked){
-        object.createTime =  (document.querySelector("#inpt_createTime").value ? new Date(document.querySelector("#inpt_createTime").value) : new Date())
-        if (document.querySelector("#inpt_removeTime").value) {
-            object.removeTime = (document.querySelector("#inpt_removeTime").value ? new Date(document.querySelector("#inpt_removeTime").value) : new Date())
-        }
+    if (document.querySelector("#check_manualTime").checked && document.querySelector("#check_itemRemoved").checked){
+        object.removeTime = (document.querySelector("#inpt_removeTime").value ? new Date(document.querySelector("#inpt_removeTime").value) : new Date())
+    }
+
+    if (document.querySelector("#inpt_shelflocation").value){
+        object.shelfLocation =  document.querySelector("#inpt_shelflocation").value
+        object.locationRecords =  [{location:document.querySelector("#inpt_shelflocation").value, datetime: object.createTime}]
     }
 
     if (object.productLabel.length > 0){
@@ -228,10 +233,11 @@ async function insertProductLog(productObject, override = false) {
     return result
 }
 
-document.querySelector("#btn_scanqrcode").addEventListener("click",function(){
-    document.querySelector("#videobox").style = ""
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then(function(stream) {
+document.querySelector("#btn_scanqrcode").addEventListener("click",function (ev) {
+    ev.preventDefault()
+    document.querySelector("#videobox").style = "";
+    navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}})
+        .then(function (stream) {
             const video = document.querySelector('#video');
             video.srcObject = stream;
             video.setAttribute("playsinline", true);
@@ -270,32 +276,52 @@ function scanQRCode() {
     }
 }
 
-function cameraFillinblank(data){
+async function cameraFillinblank(data) {
     console.log(data)
-    let itemBase64 = data.search("item=") >=0 ? data.substring(data.search("item=")+5) : ""
+    let itemBase64 = data.search("item=") >= 0 ? data.substring(data.search("item=") + 5) : ""
     try {
-        if (itemBase64.length > 0){
+        if (itemBase64.length > 0) {
             let decodedData = JSON.parse(atob(itemBase64))
             console.log(decodedData)
-
             document.querySelector("#inpt_prodCode").value = decodedData.productCode ? decodedData.productCode : ""
-            document.querySelector("#inpt_prodName").value = decodedData.productName ? decodedData.productName : ""
-            document.querySelector("#inpt_quantity").value = decodedData.quantity ? decodedData.quantity : ""
-            document.querySelector("#inpt_purchaseorder").value = (decodedData.POnumber ? decodedData.POnumber : (decodedData.POIPnumber ? decodedData.POIPnumber : ""))
-            document.querySelector("#inpt_bestbefore").value = decodedData.bestbefore ? decodedData.bestbefore : ""
-            document.querySelector("#inpt_labelid").value = decodedData.productLabel ? decodedData.productLabel : ""
-            document.querySelector("#inpt_sessionid").value = decodedData.session ? decodedData.session : "STOCK"
-            if (decodedData.shelfLocation){
-                document.querySelector("#inpt_sessionid").value = decodedData.shelfLocation
-            }
 
-
-            document.querySelector("#inpt_unit").value = decodedData.quantityUnit ? unitAbbrvLookup(decodedData.quantityUnit) : ""
-
+            let productBackupInfo = await fetchProductInfos(decodedData.productCode)
+            document.querySelector("#inpt_prodName").value = decodedData.productName ? decodedData.productName :
+                (productBackupInfo.length > 0 && productBackupInfo[0].labelname ? productBackupInfo[0].labelname : "");
+            document.querySelector("#inpt_quantity").value = decodedData.quantity ? decodedData.quantity :
+                (productBackupInfo.length > 0 && productBackupInfo[0].palletQty ? productBackupInfo[0].palletQty : "");
+            document.querySelector("#inpt_unit").value = decodedData.quantityUnit ? unitAbbrvLookup(decodedData.quantityUnit) :
+                (productBackupInfo.length > 0 && productBackupInfo[0].unit ? productBackupInfo[0].unit : "") ;
+            document.querySelector("#inpt_purchaseorder").value = (decodedData.POnumber ? decodedData.POnumber : (decodedData.POIPnumber ? decodedData.POIPnumber : ""));
+            document.querySelector("#inpt_bestbefore").value = decodedData.bestbefore ? decodedData.bestbefore : "";
+            document.querySelector("#inpt_labelid").value = decodedData.productLabel ? decodedData.productLabel : "";
+            document.querySelector("#inpt_sessionid").value = decodedData.session ? decodedData.session : "STOCKS";
+            document.querySelector("#inpt_unitprice").value = decodedData.unitPrice ? decodedData.unitPrice :
+                (productBackupInfo.length > 0 && productBackupInfo[0].unitPrice ? productBackupInfo[0].unitPrice : "");
+            document.querySelector("#inpt_sessionid").value = decodedData.shelfLocation ? decodedData.shelfLocation : "";
         }
     } catch (e) {
-        console.log("Decode Failed: ",e)
+        console.log("Decode Failed: ", e)
     }
+}
+
+async function fetchProductInfos(productCode){
+    let client = new MongoClient(uri, {
+        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
+    let results = []
+    try {
+        await client.connect();
+        let session = await client.db(targetDB).collection("products")
+        if (productCode && productCode.length > 0){
+            results = await session.find({"productCode": productCode}).toArray();
+        }
+    } catch (e) {
+        console.error("Data upsert:", e)
+    } finally {
+        await client.close();
+    }
+    return results;
 }
 
 function unitAbbrvLookup(sourceText){
