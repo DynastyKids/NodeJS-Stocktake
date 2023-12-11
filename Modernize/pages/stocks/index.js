@@ -272,20 +272,16 @@ revertModal.querySelector("#revertModalYes").addEventListener("click", async fun
 
 document.querySelector("#act_reloadTable").addEventListener("click",(ev) =>{
     if (document.querySelector("#switchCheck").checked){
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
         loadStockInfoToTable(true)
     } else {
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
         loadStockInfoToTable(false)
     }
 })
 
 document.querySelector("#filterdate").addEventListener("change", (ev)=>{
     if (document.querySelector("#switchCheck").checked){
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
         loadStockInfoToTable(true)
     } else {
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
         loadStockInfoToTable(false)
     }
 });
@@ -380,10 +376,8 @@ async function getAllStockItems(findall = false) {
 
 document.querySelector("#filterdate").addEventListener("change", (ev)=>{
     if (document.querySelector("#switchCheck").checked){
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
         loadStockInfoToTable(true)
     } else {
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
         loadStockInfoToTable(false)
     }
 });

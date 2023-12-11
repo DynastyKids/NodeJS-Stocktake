@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prefill Stocks - Warehouse Electron (N)</title>
+    <link rel="shortcut icon" type="image/png" href="../../assets/images/logos/favicon.png"/>
+    <link rel="stylesheet" href="../../assets/css/styles.min.css"/>
+</head>
+
+<body><!--  Body Wrapper -->
+<div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+     data-sidebar-position="fixed" data-header-position="fixed"><!-- Sidebar Start -->
+    <aside class="left-sidebar"><!-- Sidebar scroll-->
+        <script>
+            const sidebarContent = document.querySelector("#main-wrapper aside")
+            fetch('../../layout/sidebar.html')
+                .then(response => response.text())
+                .then(data => {
+                    sidebarContent.innerHTML = data
+                })
+        </script>
+    </aside>
+
+    <div class="body-wrapper">
+        <div id="navbarAnchor"></div>
+        <script>
+            const navbarContent = document.querySelector("#navbarAnchor")
+            fetch('../../layout/navbar.html')
+                .then(response => response.text())
+                .then(data => {
+                    navbarContent.innerHTML = data
+                })
+        </script>
+
+        <!--  Header End -->
+        <div class="container-fluid">
+            <div id="alertAnchor"></div>
+            <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+                <div class="card-body px-4 py-3">
+                    <h4 class="card-title fw-semibold mb-4">Pre-filled Stock Info</h4>
+                    <div class="row align-items-center">
+                        <div class="col-12">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../home/index.html">Home</a>
+                                    </li>
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../stocks/index.html">Stocks</a>
+                                    </li>
+                                    <li class="breadcrumb-item" aria-current="page">Pre-filled Stock Info</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <h5 class="card-title fw-semibold mb-4">Action:</h5>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 mb-2" id="card_infotext">
+                            * Beta Testing:<br>
+                            <p>Pre-filled table is used by label generator to generate and pre-filling stock information to a standalone datatable.
+                                Which can be later used to complete the data when they fill into stock table.</p>
+                            <p>Pre-filled datatable is default has countdown within the database system,
+                                data has not been loaded to standard stock table will expire after certain periods (Default 90 days)</p>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade show active" id="nav-all" role="tabpanel" aria-labelledby="nav-all-tab">
+                        <table class="table table-responsive" id="table">
+                            <thead>
+                            <tr>
+                                <th scope="col">Code</th>
+                                <th scope="col">Quantity</th>
+                                <th scope="col">Best before</th>
+                                <th scope="col">Location</th>
+                                <th scope="col">Stock ID<br><small>Add Time</small></th>
+                                <th scope="col">Action</th>
+                            </tr>
+                            </thead>
+                            <tfoot>
+                            <tr>
+                                <th scope="col">Code</th>
+                                <th scope="col">Quantity</th>
+                                <th scope="col">Best before</th>
+                                <th scope="col">Location</th>
+                                <th scope="col">Stock ID<br><small>Add Time</small></th>
+                                <th scope="col">Action</th>
+                            </tr>
+                            </tfoot>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeModalLabel">Remove Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure to REMOVE prefilled item info? This action cannot be reverted.</p>
+                <form>
+                    <div class="row">
+                        <div class="col-12" style="display: none">
+<!--                            Label ID-->
+                            <input type="text" class="form-control" id="removeModal_labelid" hidden value="">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="removeModalYes">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade modal-lg" data-bs-backdrop="static" id="editModal" tabindex="-1"
+     aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Item:</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="row">
+                        <h6>Product Information:</h6>
+                        <input type="text" class="form-control col-6" id="modalEditLabelid" hidden value="">
+                        <div class="col-6 col-md-4">
+                            <label for="modalEditQuantity" class="form-label">Product Quantity:</label>
+                            <input type="number" class="form-control col-6" id="modalEditQuantity" value="">
+                        </div>
+                        <div class="col-6  col-md-4">
+                            <label for="modalEditUnit" class="form-label">Product Unit:</label>
+                            <input type="text" class="form-control col-6" id="modalEditUnit" value="">
+                        </div>
+                        <div class="col-6  col-md-4">
+                            <label for="modalEditBestbefore" class="form-label">Best Before:</label>
+                            <input type="date" class="form-control col-6" id="modalEditBestbefore" value="">
+                        </div>
+                        <div class="col-6  col-md-4">
+                            <label for="modelEditLocation" class="form-label">Location:</label>
+                            <input type="text" class="form-control col-6" id="modelEditLocation" value="">
+                        </div>
+                        <div class="col-6  col-md-4">
+                            <label for="modelEditUnitprice" class="form-label">Unit Price:</label>
+                            <input type="text" class="form-control col-6" id="modelEditUnitprice" value="">
+                        </div>
+                        <div class="col-6  col-md-4">
+                            <label for="modelEditPOnumber" class="form-label">Purchase OrderID:</label>
+                            <input type="text" class="form-control col-6" id="modelEditPOnumber" value="">
+                        </div>
+                        <div class="col-6">
+                            <label for="modelEditLoggingTime" class="form-label">Initial Log Time:</label>
+                            <input type="datetime-local" class="form-control col-6" id="modelEditLoggingTime" value="">
+                        </div>
+                        <div class="col-12">
+                            <div style="display: inline-block">
+                                <label class="form-label">Product Info:</label>
+                                <span id="productInfoText"></span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div style="display: inline">
+                                <label class="form-label">Label ID:</label>
+                                <span id="labelIDText"></span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="col-6">
+                                <input type="checkbox" class="form-check-input" id="modelCheckboxConsumed">
+                                <label class="form-label">Product has been removed?</label>
+                            </div>
+                            <div class="col-6" id="group_consumeTime" style="display: none">
+                                <label for="modelEditConsumeTime" class="form-label">Consume Time:</label>
+                                <input type="datetime-local" class="form-control col-6" id="modelEditConsumeTime" value="">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="editModalSubmitBtn" disabled>Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script> window.$ = window.jQuery = require('jquery');</script>
+<script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../assets/js/sidebarmenu.js"></script>
+<script src="../../assets/js/app.min.js"></script>
+<script src="../../assets/js/app-style-switcher.js"></script>
+<script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
+
+<script src="./prefill.js"></script>
+</body>
+
+</html>

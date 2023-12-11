@@ -109,11 +109,9 @@ async function fetchProducts() {
                 htmlContent += `<td class="tableNext2">${item.LocationArray[2]}<br>${item.bestbeforeArray[2]}</td>`
             }
             newRow.append(productLocationCol)
-
             tableBodyElement.append(newRow)
         }
     })
-    console.log(tableBodyElement)
     return tableBodyElement
 }
 
