@@ -7,7 +7,6 @@ const DataTable = require('datatables.net-responsive-bs5')(window, $);
 
 let table;
 let dataset = [];
-
 const Storage = require("electron-store");
 const i18next = require("i18next");
 const {initRenderer} = require("electron-store");
@@ -20,7 +19,7 @@ window.onload = async () => {
         responsive: true,
         pageLength: 15,
         lengthMenu: [10, 15, 25, 50, 75, 100],
-        columns: [null, {"width": "45%"}, null, null, null, null],
+        columns: [{"width": "40%"}, null, null, null, null],
         order: [0, 'asc'],
         data: await fetchTablesData()
     });
@@ -111,15 +110,57 @@ async function fetchUnusedStocks(conditionObject) {
     return mergedResult
 }
 
+async function fetchUsedStock(){
+    let stocks = []
+    let client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            strict: true,
+            deprecationErrors: true,
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        }
+    });
+    try {
+        await client.connect();
+        stocks = await client.db(targetDB).collection("pollinglog").find({removed: 1}).limit(100000).toArray();
+    } catch (e) {
+        console.error("Fetching error:", e)
+    } finally {
+        await client.close();
+    }
+    console.log (stocks)
+    return stocks
+}
+
+
 async function fetchTablesData() {
     let stocksLevel = await fetchUnusedStocks();
     let results = await fetchProducts();
+    let usedStocks = await fetchUsedStock();
     dataset = []
-    results.forEach(eachItem => {
+    for (const eachItem of results) {
+        let stockTurnoverRate = 0;
+        let stockCount = 0;
+        usedStocks.forEach(eachUsedRecord=>{
+            if (eachUsedRecord.productCode === eachItem.productCode){
+                console.log(eachUsedRecord.productCode , eachItem.productCode)
+                console.log(eachItem)
+               if (eachUsedRecord.hasOwnProperty("createTime") && eachUsedRecord.hasOwnProperty("removeTime")){
+                   stockTurnoverRate += parseInt(new Date(eachUsedRecord.removeTime).getTime() - new Date(eachUsedRecord.createTime).getTime())
+                   stockCount ++;
+               } else if (eachUsedRecord.hasOwnProperty("loggingTime") && eachUsedRecord.hasOwnProperty("removeTime")){
+                   stockTurnoverRate += parseInt(new Date(eachUsedRecord.removeTime).getTime() - new Date(eachUsedRecord.loggingTime).getTime())
+                   stockCount ++;
+               }
+            }
+        })
+        console.log(eachItem.productCode,stockTurnoverRate,stockCount)
         dataset.push([
-            (eachItem.productCode ? eachItem.productCode : ""),
-            `${eachItem.labelname ? eachItem.labelname : ""}<br><span>${eachItem.withBestbefore > 0 ? "<i class=\"ti ti-calendar-due\"></i>" : ""}</span>`,
-            `${stocksLevel[eachItem.productCode] ? stocksLevel[eachItem.productCode].quantity + " " + stocksLevel[eachItem.productCode].unit : ""}`,
+            `${(eachItem.productCode ? eachItem.productCode : "")}${(eachItem.labelname && eachItem.productCode ? " - ": "")}${(eachItem.labelname ? eachItem.labelname : "")}<br><span>${eachItem.withBestbefore > 0 ? "<i class=\"ti ti-calendar-due\"></i>" : ""}</span>`,
+            `${stockTurnoverRate > 0 && stockCount > 0 ?(stockTurnoverRate / stockCount / 86400000 ).toFixed(2): ""}`,
+            `${stocksLevel["eachItem.productCode"] && stocksLevel['eachItem.productCode'].hasOwnProperty("quantity") ?
+                stocksLevel[eachItem.productCode].quantity + (stocksLevel[eachItem.productCode].quantity > 0 ? " "+stocksLevel[eachItem.productCode].unit :"") : ""}`,
             `${(eachItem.cartonQty ? eachItem.cartonQty + (eachItem.unit ? " " + eachItem.unit : "") : " - ")}` +
             `<br><small ${eachItem.cartonQty && eachItem.palletQty ? "data-bs-toggle=\"tooltip\" data-bs-placement=\"top\" " +
                 "title=\" + eachItem.palletQty / eachItem.cartonQty +\" ctns" : null} >${(eachItem.palletQty ?
@@ -130,7 +171,7 @@ async function fetchTablesData() {
                 <a href="#" data-bs-toggle="modal" data-bs-target="#deleteRowModal" data-bs-productname="${eachItem.labelname}" data-bs-itemid="${eachItem._id.toHexString()}" data-bs-state="${eachItem.active}">${(eachItem.active ? "Remove" : "Revert (Add)")}</a>
             `
         ]);
-    })
+    }
     return dataset;
 }
 
