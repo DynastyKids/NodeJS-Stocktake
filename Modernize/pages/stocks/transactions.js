@@ -121,8 +121,8 @@ function inflateTable(productsArray, productlogsArray, direction="ALL"){
                 `${element.hasOwnProperty("compareTime") ? new Date(element.compareTime).toLocaleString('en-AU') : ""}`,
                 `${element.hasOwnProperty("productCode") ? element.productCode : ""} - ${element.hasOwnProperty("productName") ? element.productName : ""}`,
                 `${element.hasOwnProperty("quantity") ? element.quantity : ""} ${element.hasOwnProperty("quantityUnit") ? element.quantityUnit : ""}`,
-                `${element.hasOwnProperty("bestbefore") ? element.bestbefore : ""}`,
-                `${element.hasOwnProperty("shelfLocation") ? element.shelfLocation : ""}`
+                `${element.hasOwnProperty("bestbefore") && element.bestbefore? element.bestbefore : ""}`,
+                `${element.hasOwnProperty("shelfLocation") && element.shelfLocation ? element.shelfLocation : ""}`
             ]).draw(false);
         })
     } else {

@@ -21,7 +21,7 @@ let table = new DataTable('#table', {
     responsive: true,
     pageLength: 25,
     lengthMenu:[10,15,25,50,100],
-    columns: [{"width": "25%"}, {"width": "15%"},null, {"width": "15%"}, {"width": "10%"}, {"width": "20%"}, null],
+    columns: [{"width": "25%"}, {"width": "10%"},null, {"width": "15%"}, null, null, {"width": "20%"}, null],
     order: [[2, 'asc']],
     columnDefs: [
         {
@@ -101,7 +101,7 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
             document.querySelector("#modalEditUnit").value = (fullResultSet[i].quantityUnit ? fullResultSet[i].quantityUnit : "")
             document.querySelector("#modalEditBestbefore").value = (fullResultSet[i].bestbefore ? fullResultSet[i].bestbefore : "")
             document.querySelector("#modelEditLocation").value = (fullResultSet[i].shelfLocation ? fullResultSet[i].shelfLocation : "")
-            document.querySelector("#modelEditPOnumber").value = (fullResultSet[i].POnumber ? fullResultSet[i].POnumber : "")
+            document.querySelector("#modelEditPOnumber").value = (fullResultSet[i].POnumber ? fullResultSet[i].POnumber : (fullResultSet[i].POIPnumber ? fullResultSet[i].POIPnumber : ""))
             document.querySelector("#modelEditUnitprice").value = (fullResultSet[i].unitPrice ? fullResultSet[i].unitPrice : "")
             document.querySelector("#modelEditLoggingTime").value = (fullResultSet[i].loggingTime ? fullResultSet[i].loggingTime : "")
             document.querySelector("#modelCheckboxConsumed").checked = (fullResultSet[i].removed === 1)
@@ -127,7 +127,8 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
                 quantity: (document.querySelector("#modalEditQuantity").value ? document.querySelector("#modalEditQuantity").value : originProperty.quantity ),
                 quantityUnit: (document.querySelector("#modalEditUnit").value ? document.querySelector("#modalEditUnit").value : originProperty.quantityUnit ),
                 bestbefore : (document.querySelector("#modalEditBestbefore").value ? document.querySelector("#modalEditBestbefore").value : originProperty.bestbefore),
-                shelfLocation: (document.querySelector("#modelEditLocation").value ? document.querySelector("#modelEditLocation").value : originProperty.shelfLocation)
+                shelfLocation: (document.querySelector("#modelEditLocation").value ? document.querySelector("#modelEditLocation").value : originProperty.shelfLocation),
+                POnumber: (document.querySelector("#modelEditPOnumber").value ? document.querySelector("#modelEditPOnumber").value : (originProperty.POnumber ? originProperty.POnumber : ""))
             },
         })
         if (originProperty.shelfLocation !== document.querySelector("#modelEditLocation").value) {
@@ -209,13 +210,12 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
         if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
             //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
             console.log("Successfully update status for: ",labelId)
-            document.querySelector("#alert_success").style.display = 'flex'
+            createAlert("success",`Successfully update status for ${labelId}`,3000)
         } else if (result.matchedCount === 0) { //未找到符合条件的数据但成功执行了
             console.log(`Label ID: ${labelId} Not Found`)
-            document.querySelector("#alert_warning").style.display = 'flex'
+            createAlert("warning",`Not found item with label ID: ${labelId}`,5000)
         }
     } catch (e) {
-        document.querySelector("#alert_error").style.display = 'flex'
         console.error(`Remove Stock Error when process: ${labelId};`,e)
     } finally {
         loadStockInfoToTable()
@@ -256,10 +256,8 @@ revertModal.querySelector("#revertModalYes").addEventListener("click", async fun
         }
         if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
             //找到符合条件的数据且成功修改了，清空筛选条件，重新加载表格
-            console.log("Successfully reverted status for: ",labelId)
             document.querySelector("#alert_success").style.display = 'flex'
         } else if (result.matchedCount === 0) { //未找到符合条件的数据但成功执行了
-            console.log(`Label ID: ${labelId} Not Found`)
             document.querySelector("#alert_warning").style.display = 'flex'
         }
     } catch (e) {
@@ -274,20 +272,16 @@ revertModal.querySelector("#revertModalYes").addEventListener("click", async fun
 
 document.querySelector("#act_reloadTable").addEventListener("click",(ev) =>{
     if (document.querySelector("#switchCheck").checked){
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
         loadStockInfoToTable(true)
     } else {
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
         loadStockInfoToTable(false)
     }
 })
 
 document.querySelector("#filterdate").addEventListener("change", (ev)=>{
     if (document.querySelector("#switchCheck").checked){
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
         loadStockInfoToTable(true)
     } else {
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
         loadStockInfoToTable(false)
     }
 });
@@ -321,22 +315,31 @@ function loadStockInfoToTable(fetchAll) {
                 table.row.add([
                     `${(element.hasOwnProperty("productCode") ? element.productCode : "")} - ${element.productName}`,
                     `${element.hasOwnProperty("quantity") ? element.quantity + " " + (element.quantityUnit ? element.quantityUnit : "") : ""}`,
-                    (element.bestbefore ? element.bestbefore : ""),
+                    (element.bestbefore ? new Date(element.bestbefore).getTime() : ""),
                     (element.bestbefore ? new Date(element.bestbefore).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' }) : ""),
-                    (shelfLocationField ? `<a href=../stocks/location.html?location=${shelfLocationField}>${shelfLocationField}</a>`: ''),
-                    `<p>${(element.productLabel ? element.productLabel : "")}</p>`+
-                    `<p style="font-size: x-small">${( element.hasOwnProperty("createTime") ? "Added on "+new Date(element.createTime).toLocaleDateString('en-AU',{ timeZone: 'Australia/Sydney' }) : "")}</p>`,
+                    (shelfLocationField ? `<a href=../stocks/location.html?location=${shelfLocationField}>${shelfLocationField}</a>`: '') ,
+                    `<small>${(element.hasOwnProperty("createTime") ? "A:"+new Date(element.createTime).toLocaleDateString('en-AU',{ timeZone: 'Australia/Sydney' }) : "")}</small>`+
+                    `<small>${(element.hasOwnProperty("removeTime") && element.removed === 1 ? "<br>R:"+new Date(element.removeTime).toLocaleDateString('en-AU',{ timeZone: 'Australia/Sydney' }) : "")}</small>`,
+                    `<small>${(element.productLabel ? element.productLabel : "")}</small>`+
+                    `<small><a href="#" data-bs-ponumber="${(element.POnumber ? element.POnumber : (element.POIPnumber ? element.POIPnumber : ""))}" class="table_action_search">
+                        ${(element.POnumber ? "<br>"+element.POnumber : (element.POIPnumber ? "<br>"+element.POIPnumber : ""))}</a></small>`,
                     `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>` +
                     (element.removed < 1 ? `
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>
                     ` : `<a href="#" class="table_actions table_action_revert" data-bs-toggle="modal" data-bs-target="#revertModal" 
-                        data-bs-itemId="${element.productLabel}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}" style="margin: 0 2px 0 2px">Revert</a>
-                        <p class="table_action_removed" style="font-size: x-small;">${(element.removeTime ? "Removed on " + new Date(element.removeTime).toLocaleDateString("en-AU") : "")}</p>`)
+                        data-bs-itemId="${element.productLabel}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}" style="margin: 0 2px 0 2px">Revert</a>`)
                 ]).draw(false);
             }
         }
+    }).then(function(){
+        document.querySelectorAll(".table_action_search").forEach(eachPO=>{
+            eachPO.addEventListener("click",function(ev){
+                ev.preventDefault()
+                table.search(eachPO.getAttribute("data-bs-ponumber")).draw()
+            })
+        })
     })
 }
 
@@ -373,10 +376,46 @@ async function getAllStockItems(findall = false) {
 
 document.querySelector("#filterdate").addEventListener("change", (ev)=>{
     if (document.querySelector("#switchCheck").checked){
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.0')
         loadStockInfoToTable(true)
     } else {
-        document.querySelector("#switchCheckLabel").textContent = i18next.t('liststocks.switchCheck.1')
         loadStockInfoToTable(false)
     }
 });
+
+function createAlert(status, text, time = 5000){
+    let alertAnchor = document.querySelector("#alertAnchor")
+    let alertElement = document.createElement("div")
+    alertElement.className= "alert alert-primary alert-dismissible bg-success text-white border-0 fade show";
+    alertElement.role = "alert";
+    let svgImage = document.createElement("svg")
+    svgImage.className = "bi flex-shrink-0 me-2"
+    svgImage.width = 24
+    svgImage.height = 24
+    svgImage.role = "img"
+    svgImage.ariaLabel = "Info: "
+    svgImage.innerHTML = `<use xlink:href="#info-fill"/>`
+
+    let texts = document.createElement("span")
+    texts.innerHTML = text ? text : ""
+    if (status === "success"){
+        alertElement.className= "alert alert-success alert-dismissible bg-success text-white border-0 fade show"
+        svgImage.ariaLabel = "Success: "
+        svgImage.innerHTML = `<use xlink:href="#check-circle-fill"/>`
+    } else if (status === "danger"){
+        alertElement.className= "alert alert-danger alert-dismissible bg-danger text-white border-0 fade show"
+        svgImage.ariaLabel = "Danger: "
+        svgImage.innerHTML = `<use xlink:href="#exclamation-triangle-fill"/>`
+    } else if (status === "secondary"){
+        alertElement.className= "alert alert-secondary alert-dismissible bg-secondary text-white border-0 fade show"
+        svgImage.ariaLabel = "Info: "
+        svgImage.innerHTML = `<use xlink:href="#info-fill"/>`
+    }
+    alertElement.append(svgImage)
+    alertElement.append(text)
+    alertAnchor.append(alertElement)
+    setTimeout(function () {
+        if (alertElement){
+            alertElement.style.display = 'none'
+        }
+    }, isNaN(time) ? 3000 : time)
+}
