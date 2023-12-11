@@ -1,0 +1,150 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>View Sessions - Warehouse Electron (N)</title>
+    <link rel="shortcut icon" type="image/png" href="../../assets/images/logos/favicon.png"/>
+    <link rel="stylesheet" href="../../assets/css/styles.min.css"/>
+</head>
+
+<body><!--  Body Wrapper -->
+<div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+     data-sidebar-position="fixed" data-header-position="fixed"><!-- Sidebar Start -->
+    <aside class="left-sidebar"><!-- Sidebar scroll-->
+        <script>
+            const sidebarContent = document.querySelector("#main-wrapper aside")
+            fetch('../../layout/sidebar.html')
+                .then(response => response.text())
+                .then(data => {
+                    sidebarContent.innerHTML = data
+                })
+        </script>
+    </aside>
+
+    <div class="body-wrapper">
+        <div id="navbarAnchor"></div> <!-- Navbar Header from fetch-->
+        <script>
+            const navbarContent = document.querySelector("#navbarAnchor")
+            fetch('../../layout/navbar.html')
+                .then(response => response.text())
+                .then(data => {
+                    navbarContent.innerHTML = data
+                })
+        </script>
+
+        <div class="container-fluid">
+            <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+                <div class="card-body px-4 py-3">
+                    <div class="row align-items-center">
+                        <div class="col-12">
+                            <h4 class="fw-semibold mb-8">Sessions</h4>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../home/index.html">Home</a>
+                                    </li>
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../sessions/index.html">Sessions</a>
+                                    </li>
+                                    <li class="breadcrumb-item" aria-current="page" id="breadcrumb_viewSession">View Session</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="alertAnchor">
+                <div class="alert alert-success alert-dismissible bg-success text-white border-0 fade show" role="alert"
+                     style="display: none" id="div_successAlertblock">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <span id="alert_text"><strong>Success</strong> - Stock has been successfully added, redirect to
+                    stock-list now.</span>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title fw-semibold mb-4">Actions</h5>
+                    <div class="list-group-item-action">
+                        <a class="mb-0 ms-2" href="#" id="act_listchange" data-value="all">List All Sessions</a>
+                        <div id="loadingStatus">
+                            <span class="spinner-border" role="status" id="loadingSpinners"></span>
+                            <span class="" id="loadingTableText">Loading data...</span>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="card-body">
+                    <h5 class="card-title fw-semibold mb-4">List of Sessions</h5>
+                    <p class="mb-0">
+                    <table class="table" id="table">
+                        <thead class="thead-light">
+                        <tr>
+                            <th scope="col">Product</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Best before</th>
+                            <th scope="col">Location</th>
+                            <th scope="col">Stock ID</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <th scope="col">Product</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Best before</th>
+                            <th scope="col">Location</th>
+                            <th scope="col">Stock ID</th>
+                        </tr>
+                        </tfoot>
+                        <tbody id="activeTBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addSessionModal" tabindex="-1" aria-labelledby="addSessionModalLabel" aria-hidden="true">
+        <div class="modal-dialog model-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addSessionModalLabel">Create Session</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">Please record down the Session code and prepare for use in client page.</p>
+                    <form>
+                        <div class="col-12">
+                            <label for="addModal_sessioncode" class="form-label">Session Code:</label>
+                            <input type="text" class="form-control col-6" id="addModal_sessioncode" disabled value="">
+                        </div>
+                        <div class="col-12">
+                            <label for="addModal_sessioncode" class="form-label">Session Start:</label>
+                            <input type="datetime-local" class="form-control col-6" id="addModal_sessionStart" value="">
+                        </div>
+                        <div class="col-12">
+                            <label for="addModal_sessioncode" class="form-label">Session End:</label>
+                            <input type="datetime-local" class="form-control col-6" id="addModal_sessionEnd" value="">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="addSessionModal_btnsubmit" disabled>Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script> window.$ = window.jQuery = require('jquery');</script>
+<script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../assets/js/sidebarmenu.js"></script>
+<script src="../../assets/js/app.min.js"></script>
+<script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
+
+<script src="./view.js"></script>
+</body>
+
+</html>
