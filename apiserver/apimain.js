@@ -14,6 +14,7 @@ const {ServerApiVersion} = require("mongodb");
 const cors = require("cors")
 
 const Storage = require("electron-store");
+const {isNumber} = require("lodash");
 
 const newStorage = new Storage();
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
@@ -820,29 +821,43 @@ router.post("/v1/preload/update", async (req, res) => {
     let dbclient = new MongoClient(uri, {
         serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true},
     });
+    if (req.body.hasOwnProperty("item") && req.body.item.hasOwnProperty("productLabel")) {
+        // 手动组装符合条件的元素，并使用updateOne+Upsert插入
+        let itemContent = {
+            productLabel: req.body.item.productLabel,
+            removed: 0,
+            createTime: new Date(),
+            loggingTime: new Date(),
+            labelBuild: 3,
+            unitPrice: 0
+        }
+        if (req.body.item.hasOwnProperty("productCode")){ itemContent.productCode = (req.body.item.productCode) }
+        if (req.body.item.hasOwnProperty("quantity")){ itemContent.quantity = parseInt(req.body.item.quantity) }
+        if (req.body.item.hasOwnProperty("quantityUnit")){ itemContent.quantityUnit = req.body.item.quantityUnit }
+        if (req.body.item.hasOwnProperty("shelfLocation")){ itemContent.shelfLocation = (req.body.item.shelfLocation) }
 
-    if (Array.isArray(bodyContent) && req.body.hasOwnProperty("item")) {
-        let bodyContent = req.body.item
-        bodyContent.forEach(eachItem => {
-            eachItem.removed = 0
-            eachItem.loggingTime = new Date()
-            eachItem.createTime = new Date() // MongoDB Time Series
-        })
+        if (req.body.item.hasOwnProperty("POnumber")){ itemContent.POnumber = (req.body.item.POnumber) }
+        else if (req.body.item.hasOwnProperty("POIPnumber")){itemContent.POnumber = (req.body.item.POIPnumber)}
+        
+        if (req.body.item.hasOwnProperty("productName")){ itemContent.productName = (req.body.item.productName) }
+        if (req.body.item.hasOwnProperty("bestbefore")){ itemContent.bestbefore = (req.body.item.bestbefore) }
+        if (req.body.item.hasOwnProperty("unitprice")){ itemContent.unitprice = parseFloat(req.body.item.unitprice) }
+        if (req.body.item.hasOwnProperty("createTime")){ itemContent.createTime = new Date(req.body.item.createTime) }
+
+        // Preload数据中，不组装session数据，
         try {
             await dbclient.connect()
             const session = dbclient.db(targetDB).collection("preloadlog");
-            let result = await session.insertMany(bodyContent)
-            if (result.acknowledged) {
-                response.acknowledged = true
-                response.data = result
-            }
+            let currentResult = await session.findOne({productLabel: req.body.item.productLabel},{$set: itemContent})
+            response = currentResult ? await session.updateOne({productLabel: req.body.item.productLabel},{$set: itemContent}) : await session.insertOne(itemContent)
         } catch (e) {
+            console.error(e)
             response.message = e
         } finally {
             await dbclient.close()
         }
     } else {
-        response.message = "Missing products information's "
+        response.message = "Missing product labelID for filtering"
     }
     res.json(response)
 })
@@ -859,11 +874,9 @@ router.post("/v1/preload/remove", async (req, res) => {
         try {
             await dbclient.connect()
             const session = dbclient.db(targetDB).collection("preloadlog");
-            let result = await session.updateMany({productLabel: req.body.productLabel},
-                {$set: {removed: 1, removedTime: removeTime}}, {upsert: false})
+            let result = await session.deleteOne({productLabel: req.body.productLabel})
             if (result.acknowledged) {
-                response.acknowledged = true
-                response.data = result
+                response = result
             }
         } catch (e) {
             response.message = e

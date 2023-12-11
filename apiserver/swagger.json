@@ -10,7 +10,7 @@
       "name": "Apache 2.0",
       "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "version": "0.9.7"
+    "version": "0.9.8"
   },
   "servers": [
     {
@@ -181,54 +181,13 @@
         }
       }
     },
-    "/v1/sessionlogs/itemadd": {
-      "post": {
-        "tags": [
-          "Sessions"
-        ],
-        "summary": "Adding items by scanner",
-        "description": "Wechat program will automatic input scanning items via this interface",
-        "operationId": "addlogOld",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/sessionAddlog"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/pollinglog"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid status value",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/pollinglog"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/session/addlog": {
       "post": {
         "tags": [
           "Sessions"
         ],
-        "summary": "Adding items from third-party | 从API添加一个扫描记录",
-        "description": "Thirdparty using session code + base64 string of the product to adding a session log | 该端口目前交由移动端提供会话号和产品base64编码信息",
+        "summary": "Adding a session log from outside requests",
+        "description": "Thirdparty using session code + base64 string of the product to adding a session log",
         "operationId": "addlog",
         "requestBody": {
           "content": {
@@ -241,7 +200,17 @@
                     "description": "session code for the adding action | 需要针对操作的会话ID"
                   },
                   "item": {
-                    "$ref": "#/components/schemas/productinfo"
+                    "type": "object",
+                    "properties": {
+                      "productCode": {
+                        "type": "string",
+                        "description": "DEC2023 update, productCode is optional"
+                      },
+                      "productLabel": {
+                        "type": "string",
+                        "description": "DEC2023 update, only require item code"
+                      }
+                    }
                   }
                 }
               }
@@ -333,6 +302,94 @@
                       "update"
                     ]
                   },
+                  "item": {
+                    "$ref": "#/components/schemas/product"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/trueORfalse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/trueORfalse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/product/add": {
+      "post": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Add a product",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/product"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/trueORfalse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/trueORfalse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/product/update": {
+      "post": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Update an information of product",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
                   "item": {
                     "$ref": "#/components/schemas/product"
                   }
@@ -470,7 +527,7 @@
                     ]
                   },
                   "item": {
-                    "$ref": "#/components/schemas/pollinglog"
+                    "$ref": "#/components/schemas/stock"
                   }
                 }
               }
@@ -504,7 +561,7 @@
     "/v1/stocks/update": {
       "post": {
         "tags": [
-          "Stocks (New)"
+          "Stocks"
         ],
         "summary": "Add / Edit / Update | 添加，修改和更新货架上的货品信息",
         "description": "This method was inherited from /v1/stocks, and split actions by URL, this method is enabled with Upsert, any data not in database process by this method will be inserted to database",
@@ -516,7 +573,7 @@
                 "type": "object",
                 "properties": {
                   "item": {
-                    "$ref": "#/components/schemas/pollinglog"
+                    "$ref": "#/components/schemas/stock"
                   }
                 }
               }
@@ -550,7 +607,7 @@
     "/v1/stocks/move": {
       "post": {
         "tags": [
-          "Stocks (New)"
+          "Stocks"
         ],
         "summary": "Move Stock by Item Label ID | 提供Label ID以添加产品移动记录",
         "description": "Move Stock by giving newLocation and item.productLabel, if item does not exist, it will redirect to add action as insert. | 提供newLocation和item中的ProductLabel字段作为更新条件，该状态下不支持upsert",
@@ -604,7 +661,7 @@
     "/v1/stocks/remove": {
       "post": {
         "tags": [
-          "Stocks (New)"
+          "Stocks"
         ],
         "summary": "Remove Stock by Item Label ID | 提供Label ID以添加产品移除记录",
         "description": "Only productLabel field will be required, data parameter is optional | 仅要求传入信息，时间参数为可选",
@@ -730,7 +787,7 @@
                 "type": "object",
                 "properties": {
                   "item": {
-                    "$ref": "#/components/schemas/pollinglog"
+                    "$ref": "#/components/schemas/preloadlog"
                   }
                 }
               }
@@ -894,7 +951,7 @@
             "type": "string",
             "example": "AA"
           },
-          "POIPnumber": {
+          "POnumber": {
             "type": "string",
             "description": "Purchease Order Identification Number (Optional)"
           },
@@ -931,28 +988,17 @@
           }
         }
       },
-      "pollinglogsRespose": {
+      "stock": {
         "type": "object",
         "properties": {
-          "acknowledged": {
-            "type": "boolean",
-            "description": "Flag of respond status"
-          },
-          "data": {
+          "sessions": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/pollinglog"
-            }
+              "type": "string",
+              "example": ""
+            },
+            "description": "DEC2023 update, By session will store all the stock-take session that it has involved."
           },
-          "message": {
-            "type": "string",
-            "description": "Detail of error informations"
-          }
-        }
-      },
-      "productinfo": {
-        "type": "object",
-        "properties": {
           "productCode": {
             "type": "string"
           },
@@ -966,9 +1012,10 @@
           },
           "shelfLocation": {
             "type": "string",
-            "example": "AA"
+            "example": "AA",
+            "description": "DEC2023 update, DEPRECATED by JAN2024, This field is replaced by locationRecords"
           },
-          "POIPnumber": {
+          "POnumber": {
             "type": "string",
             "description": "Purchease Order Identification Number (Optional)"
           },
@@ -997,19 +1044,102 @@
             "type": "string",
             "format": "date-time",
             "description": "Date Format must be YYYY-MM-DD HH:mm:ss"
+          },
+          "unitprice": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, Unit price of the item"
+          },
+          "locationRecords": {
+            "type": "array",
+            "description": "DEC2023 Update, Store location records by Objects",
+            "items": {
+              "$ref": "#/components/schemas/locationRecords"
+            }
           }
         }
       },
-      "sessionAddlog": {
+      "preloadlog": {
         "type": "object",
         "properties": {
-          "session": {
-            "type": "string",
-            "description": "session code for the adding action | 需要针对操作的会话ID"
+          "productCode": {
+            "type": "string"
           },
-          "item": {
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quantityUnit": {
             "type": "string",
-            "description": "Base64 encoded string for the product information | 产品信息，需要Base64编码后的"
+            "example": "Bag"
+          },
+          "shelfLocation": {
+            "type": "string",
+            "example": "AA"
+          },
+          "POnumber": {
+            "type": "string",
+            "description": "Purchease Order Identification Number (Ref for Ours)"
+          },
+          "POnumber2": {
+            "type": "string",
+            "description": "Purchease Order Identification Number (Ref for Seller's )"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "bestbefore": {
+            "type": "string",
+            "format": "date"
+          },
+          "productLabel": {
+            "type": "string",
+            "description": "Product Label Identification Number, must be identical, format as YYYYMMDD1234567, last 7 chars can be Hexadecimal"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date Format must be YYYY-MM-DD HH:mm:ss"
+          },
+          "removed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Flag used to identify whether product has been removed from DB"
+          }
+        }
+      },
+      "locationRecords": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "example": "AA1",
+            "description": "E.g. AB1 Refers Aisle A, Rack B, Level 1"
+          },
+          "datetime": {
+            "type": "string",
+            "format": "date-time",
+            "example": "Object(YYYY-MM-DD HH:mm:ss)",
+            "description": "Record the change effect date&time"
+          }
+        }
+      },
+      "pollinglogsRespose": {
+        "type": "object",
+        "properties": {
+          "acknowledged": {
+            "type": "boolean",
+            "description": "Flag of respond status"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/stock"
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "Detail of error informations"
           }
         }
       },

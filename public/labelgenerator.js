@@ -86,15 +86,17 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
     for (let i = 0; i < productLists.length; i++) {
         let rowInput = productLists[i].querySelectorAll("input")
         for (let copy = 0; copy < rowInput[4].value; copy++) { // Looping when require multiple copies
-            var qrCodeInfos = {
-                POIPnumber: "",
+            var stockInfo = {
+                POnumber: "",
                 productCode: "",
                 productName: "",
                 quantity: 1,
                 quantityUnit: "",
                 bestbefore: "",
                 productLabel: (new Date()).toISOString().replaceAll("-", "").split("T")[0] + getRandomXHexdigits(7),
-                removed: 0
+                removed: 0,
+                loggingTime: new Date(),
+                createTime: new Date()
             }
             
             // 验证输入的productName是否在库中, 替换rowInput[0].value中的名称为产品Code，通过搜索原datalist的列表
@@ -105,81 +107,59 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
             })
             let units = {bag:"bags",bottle:"btls",box:"boxes",carton:"ctns",piece:"pcs",roll:"rolls",unit:"units",pallet:"plts",skid:"skids"}
 
-            qrCodeInfos.productCode = rowInput[0].value
-            qrCodeInfos.productName = checkProductNameInDatabase(productsData,rowInput[0].value) ?
+            stockInfo.productCode = rowInput[0].value
+            stockInfo.productName = checkProductNameInDatabase(productsData,rowInput[0].value) ?
                 checkProductNameInDatabase(productsData,rowInput[0].value) :rowInput[0].value
-            qrCodeInfos.quantity = rowInput[1].value // Quantity
-            qrCodeInfos.quantityUnit = rowInput[2].value.toLowerCase() //
+            stockInfo.quantity = rowInput[1].value // Quantity
+            stockInfo.quantityUnit = rowInput[2].value.toLowerCase() //
             if (units[rowInput[2].value.toLowerCase()]){
-                qrCodeInfos.quantityUnit = units[rowInput[2].value.toLowerCase()]
+                stockInfo.quantityUnit = units[rowInput[2].value.toLowerCase()]
             }
-            qrCodeInfos.bestbefore = rowInput[3].value
-            qrCodeInfos.POIPnumber = document.querySelector("#input_purchaseorder").value ? document.querySelector("#input_purchaseorder").value : ""
+            stockInfo.bestbefore = rowInput[3].value
+            stockInfo.POnumber = document.querySelector("#input_purchaseorder").value ? document.querySelector("#input_purchaseorder").value : ""
 
             var initTextSize = 120
             doc.setFontSize(initTextSize).setFont(undefined, 'normal')
-            var part1Text = qrCodeInfos.productName.slice(0,30);
+            var part1Text = stockInfo.productName.slice(0,30);
             while (doc.getTextDimensions(part1Text).w > doc.internal.pageSize.getWidth() - 20) {
                 initTextSize -= 5;
                 doc.setFontSize(initTextSize).setFont(undefined, 'normal')
             }
-            doc.text((qrCodeInfos.productName.length<=50 ? qrCodeInfos.productName : qrCodeInfos.productName.slice(0,50)+"..."),
-                (qrCodeInfos.productName.length<=25 ? doc.internal.pageSize.getWidth()/2 : 15),
-                (qrCodeInfos.productName.length<=25 ? 110 : 70), {
+            doc.text((stockInfo.productName.length<=50 ? stockInfo.productName : stockInfo.productName.slice(0,50)+"..."),
+                (stockInfo.productName.length<=25 ? doc.internal.pageSize.getWidth()/2 : 15),
+                (stockInfo.productName.length<=25 ? 110 : 70), {
                     lineHeightFactor: 1.1,
-                    align: (qrCodeInfos.productName.length<=25 ? "center" : 'left'),
+                    align: (stockInfo.productName.length<=25 ? "center" : 'left'),
                     maxWidth: doc.internal.pageSize.width-30});
             // 新增内容，如果字段过长，拆分成2行，每行限制30字符，至多60字符，两行使用相同配置，左对齐
 
             doc.setFontSize(90).setFont(undefined, 'normal'); //Quantity Text
-            doc.text(qrCodeInfos.quantity + "  " + qrCodeInfos.quantityUnit, 25, doc.internal.pageSize.getHeight() - 190, {lineHeightFactor: 0.8});
+            doc.text(stockInfo.quantity + "  " + stockInfo.quantityUnit, 25, doc.internal.pageSize.getHeight() - 190, {lineHeightFactor: 0.8});
 
             doc.setFontSize(90).setFont(undefined, 'normal'); // bestbefore Text
-            doc.text(qrCodeInfos.bestbefore, 20, doc.internal.pageSize.getHeight() - 75, {lineHeightFactor: 0.8});
+            doc.text(stockInfo.bestbefore, 20, doc.internal.pageSize.getHeight() - 75, {lineHeightFactor: 0.8});
 
-            doc.addImage(qrCodeGenerateV3(qrCodeInfos.POIPnumber, qrCodeInfos.productCode, qrCodeInfos.productName,
-                    qrCodeInfos.quantity, qrCodeInfos.quantityUnit, qrCodeInfos.bestbefore, qrCodeInfos.productLabel)
+            doc.addImage(qrCodeGenerateV3(stockInfo.POnumber, stockInfo.productCode, stockInfo.productName,
+                    stockInfo.quantity, stockInfo.quantityUnit, stockInfo.bestbefore, stockInfo.productLabel)
                 , "PNG", doc.internal.pageSize.getWidth() - 255, doc.internal.pageSize.getHeight() - 255, 250, 250)
 
             //新增右上角标签号标记
             doc.setFontSize(28).setFont(undefined, 'normal')
-            doc.text(qrCodeInfos.productLabel.slice(-7), doc.internal.pageSize.getWidth()-20, 32, {lineHeightFactor: 0.75, align: "right"});
+            doc.text(stockInfo.productLabel.slice(-7), doc.internal.pageSize.getWidth()-20, 32, {lineHeightFactor: 0.75, align: "right"});
 
             doc.setFontSize(10).setFont(undefined, 'normal')
-            let bottomVerfiyText = ["V3", qrCodeInfos.productLabel, qrCodeInfos.POIPnumber, qrCodeInfos.productCode,
-                qrCodeInfos.quantity + qrCodeInfos.quantityUnit, (qrCodeInfos.bestbefore ? "Exp:" + qrCodeInfos.bestbefore : "*")]
+            let bottomVerfiyText = ["V3", stockInfo.productLabel, stockInfo.POnumber, stockInfo.productCode,
+                stockInfo.quantity + stockInfo.quantityUnit, (stockInfo.bestbefore ? "Exp:" + stockInfo.bestbefore : "*")]
+            if (document.querySelector("#preloadCheckbox").checked) {
+                prefillItem({item: stockInfo})
+            }
             doc.text(bottomVerfiyText.toString(), 20, doc.internal.pageSize.getHeight() - 30, {lineHeightFactor: 0.6});
-            prefillArray.push(qrCodeInfos);
+            prefillArray.push(stockInfo);
             doc.addPage("a4","landscape");
         }
     }
-    // console.log(prefillArray)
-    if (document.querySelector("#preloadCheckbox").checked){
-        axios.post('/api/v1/preload',{body: prefillArray},{headers:{
-                'Content-Type': 'application/json'
-            }})
-            .then(response=>{
-                // console.log(response)
-                if (response.data.acknowledged){
-                    document.querySelector("#toastDiv .toast-body").innerText = "Label prefill successfully"
-                    document.querySelector("#toastDiv").classList.add("bg-success");
-                    document.querySelector("#toastDiv").classList.remove("bg-warning");
-                    (new bootstrap.Toast(toast)).show();
-                }else {
-                    document.querySelector("#toastDiv .toast-body").innerText = "There are some problem encountered when prefilling labels"
-                    document.querySelector("#toastDiv").classList.add("bg-warning");
-                    document.querySelector("#toastDiv").classList.remove("bg-success");
-                    (new bootstrap.Toast(toast)).show();
-                }
-            })
-            .catch(error=>{
-                console.error("Error occured when prefill label:",error)
-                document.querySelector("#toastDiv .toast-body").innerText = "There are some problem encountered when prefilling labels"
-                document.querySelector("#toastDiv").classList.add("bg-warning");
-                document.querySelector("#toastDiv").classList.remove("bg-success");
-                (new bootstrap.Toast(toast)).show();
-            })
-    }
+    console.log(prefillArray)
+
     doc.deletePage(doc.internal.getNumberOfPages()); // Delete last empty page
     doc.setProperties({title: `PrintoutLabel${new Date().toJSON().slice(0, 19).replaceAll("-", "").replaceAll(":", "").replaceAll("T", "")}`});
     // doc.output('dataurlnewwindow'); // Using non-HTTPs link, only available to pop in new window
@@ -187,6 +167,23 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
     window.open(URL.createObjectURL(doc.output('blob')))
     doc.save(`PrintoutLabel${new Date().toJSON().slice(0,19).replaceAll("-","").replaceAll(":","").replaceAll("T","")}.pdf`);
 })
+
+function prefillItem(preloadBodyContent){
+    return fetch("/api/v1/preload/update", {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(preloadBodyContent)
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data)
+            return {acknowledged: true, data: data}
+        })
+        .catch(error => {
+            console.error(error)
+            return {acknowledged: false, data: {error:error}}
+        })
+}
 
 function checkProductNameInDatabase(productsData, productCode){
     for (let j = 0; j < productsData.length; j++) {
@@ -207,7 +204,7 @@ function qrCodeGenerateV3(purchaseNo = "", productCode = "", productName = "", q
     var qrText = "https://yourAddress.local/?item=" + btoa(
         JSON.stringify({
             Build: 3,
-            POIPnumber: purchaseNo, //Purchase Order Reference
+            POnumber: purchaseNo, //Purchase Order Reference
             productCode: productCode,
             productName: productName,
             quantity: quantity,
