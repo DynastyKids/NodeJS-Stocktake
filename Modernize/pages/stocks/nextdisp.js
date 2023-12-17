@@ -12,13 +12,20 @@ var DataTable = require('datatables.net-responsive-bs5')(window, $);
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
-
 const {setInterval} = require('timers');
 
 let shouldRefresh = true;
 const countdownFrom = 90;
 let countdown = 90;
 
+let table = new DataTable('#table', {
+    responsive: true,
+    pageLength: 25,
+    lengthMenu:[10,15,25,50,100, -1],
+    columns: [{"width": "35%"}, {"width": "25%"},{"width": "20%"},{"width": "20%"}],
+    order: [[1, 'asc']],
+    columnDefs: [{ targets: [1,2,3], className: 'datatable-Col-txtcenter' }]
+});
 document.addEventListener("DOMContentLoaded", async (event) => {
     // 页面自动刷新
     const automaticRefresh = setInterval(() => {
@@ -44,128 +51,73 @@ document.addEventListener("DOMContentLoaded", async (event) => {
         }
     })
 
-    // await fetchProducts();
-    document.querySelector("#table-body").append(await fetchProducts())
-    //跑马灯滚动
-    const tbody = document.querySelector('#scroll-tbody');
+    let stockList = await fetchProducts()       ;
+    let displayList = assembleDisplayArray(stockList);
+    displayList.forEach(eachRow=>{
+        table.row.add([
+            `${(eachRow.hasOwnProperty("productCode") ? eachRow.productCode : "")} - ${eachRow.hasOwnProperty("productName") ? eachRow.productName : ""}`,
+            `${(eachRow.next.length>0 ? eachRow.next[0].location+"<br>"+eachRow.next[0].bestbefore:"")}`,
+            `${(eachRow.next.length>1 ? eachRow.next[1].location+"<br>"+eachRow.next[1].bestbefore:"")}`,
+            `${(eachRow.next.length>2 ? eachRow.next[2].location+"<br>"+eachRow.next[2].bestbefore:"")}`,
+        ]).draw(false)
+    })
 });
 
-async function fetchProducts() {
+async function fetchProducts () {
     let client = new MongoClient(uri, {
         serverApi: {version: ServerApiVersion.v1, strict: true, deprecationErrors: true,
             useNewUrlParser: true, useUnifiedTopology: true}
     });
-    let productsDisplay;
+    let results;
     try {
         await client.connect();
         const sessions = client.db(targetDB).collection("pollinglog");
-        const query = {removed: 0};
         const options = {'productCode': 1, 'bestbefore': 1, 'productLabel': 1};
-        const cursor = sessions.find(query).sort(options);
-        if ((await sessions.countDocuments({})) === 0) {
-            console.log("[MongoDB] Nothing Found");
-        }
-
-        const seenProducts = new Set();
-        await cursor.forEach(product => {
-            if (product.removed === 0) {
-                seenProducts.add(product);
-            }
-        });
-        productsDisplay = build2DProductArray(seenProducts)
+        results = await sessions.find({removed: 0}, {projection: {"_id": 0 }}).sort(options).toArray();
     } catch (e) {
         console.error(e)
     } finally {
         await client.close()
     }
-    let htmlContent = '';
-    let tableBodyElement = document.createElement("tbody")
-    productsDisplay.forEach(item => {
-        if (item.bestbeforeArray.length > 0 && item.LocationArray.length > 0 && item.bestbeforeArray[0]) {
-            let newRow = document.createElement("tr")
-            var productCodeCol = document.createElement("td")
-            productCodeCol.className = "tableItemName"
-            productCodeCol.textContent = `${(item.productCode ? item.productCode : "")} ${item.productName}`
-            newRow.append(productCodeCol)
-
-            var productLocationCol = document.createElement("td")
-            productLocationCol.className = "tableNext1"
-            if (item.bestbeforeArray.length > 0 && item.LocationArray.length > 0) {
-                productLocationCol.innerHTML = `${item.LocationArray[0]}<br>${item.bestbeforeArray[0]}`
-            }
-            newRow.append(productLocationCol)
-
-            var productLocationCol = document.createElement("td")
-            productLocationCol.className = "tableNext2"
-            if (item.bestbeforeArray.length > 1 && item.LocationArray.length > 1) {
-                productLocationCol.innerHTML = `${item.LocationArray[1]}<br>${item.bestbeforeArray[1]}`
-            }
-            newRow.append(productLocationCol)
-
-            var productLocationCol = document.createElement("td")
-            productLocationCol.className = "tableNext2"
-            if (item.bestbeforeArray.length > 2 && item.LocationArray.length > 2) {
-                productLocationCol.innerHTML = `${item.LocationArray[2]}<br>${item.bestbeforeArray[2]}`
-                htmlContent += `<td class="tableNext2">${item.LocationArray[2]}<br>${item.bestbeforeArray[2]}</td>`
-            }
-            newRow.append(productLocationCol)
-            tableBodyElement.append(newRow)
-        }
-    })
-    return tableBodyElement
+    return results
 }
 
-function build2DProductArray(productList) {
-    let productArray = []
-    productList.forEach(item => {
-        if (productArray.length > 0 && item.productCode !== "") {
-            if (productArray[productArray.length - 1].productCode === item.productCode) {
-                productArray[productArray.length - 1]["bestbeforeArray"].push(item.bestbefore ? item.bestbefore.replaceAll("-", ""): "")
-                productArray[productArray.length - 1]["LocationArray"].push(item.shelfLocation ? item.shelfLocation : "")
-            } else {
-                productArray.push(item)
-                productArray[productArray.length - 1]["bestbeforeArray"] = [(item.bestbefore ? item.bestbefore.replaceAll("-", ""): "")]
-                productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation ? item.shelfLocation : ""]
-                delete productArray[productArray.length - 1].session;
-                delete productArray[productArray.length - 1]._id;
-                delete productArray[productArray.length - 1].POIPnumber;
-                delete productArray[productArray.length - 1].removed;
-                delete productArray[productArray.length - 1].loggingTime;
-            }
-        } else {
-            productArray.push(item)
-            productArray[productArray.length - 1]["bestbeforeArray"] = [(item.bestbefore ? item.bestbefore.replaceAll("-", ""): "")]
-            productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation ? item.shelfLocation : ""]
-            delete productArray[productArray.length - 1].session;
-            delete productArray[productArray.length - 1]._id;
-            delete productArray[productArray.length - 1].POIPnumber;
-            delete productArray[productArray.length - 1].removed;
-            delete productArray[productArray.length - 1].loggingTime;
+function assembleDisplayArray(stockData){
+    let result =[]
+    if (Array.isArray(stockData)){
+        if (stockData.length > 0){
+            result.push({
+                productCode: stockData[0].productCode ? stockData[0].productCode : ``,
+                productName: stockData[0].productName ? stockData[0].productName : ``,
+                next:[{
+                    location: stockData[0].shelfLocation ? stockData[0].shelfLocation : "",
+                    bestbefore: stockData[0].bestbefore ? stockData[0].bestbefore : ""
+                }]
+            })
         }
-    })
-    return productArray
+        for (let i = 1; i < stockData.length; i++) {
+            var foundFlag = false
+            for (let j = 0; j < result.length; j++) {
+                 if (result[j].productCode === stockData[i].productCode){
+                     foundFlag = true
+                     result[j].next.push({
+                         location: stockData[i].shelfLocation ? stockData[i].shelfLocation : "",
+                         bestbefore: stockData[i].bestbefore ? stockData[i].bestbefore : ""
+                     })
+                     break;
+                 }
+            }
+            if (!foundFlag){
+                result.push({
+                    productCode: stockData[i].productCode ? stockData[i].productCode : ``,
+                    productName: stockData[i].productName ? stockData[i].productName : ``,
+                    next:[{
+                        location: stockData[i].shelfLocation ? stockData[i].shelfLocation : "",
+                        bestbefore: stockData[i].bestbefore ? stockData[i].bestbefore : ""
+                    }]
+                })
+            }
+        }
+    }
+    return result
 }
-
-window.onload = function () {
-    setTimeout(function () {
-        let tableBodyContainer = document.querySelector('#table-body-container');
-        let tableContent = document.querySelector('#table-body');
-
-        let clonedBody = tableContent.cloneNode(true);
-        tableContent.appendChild(clonedBody.querySelector('tbody'));
-
-        const step = 1;
-
-        function scrollTable() {
-            let currentTop = parseInt(getComputedStyle(tableContent).marginTop) || 0;
-            if (Math.abs(currentTop) >= tableContent.offsetHeight / 2) {
-                tableContent.style.marginTop = '0px'; // 滚动位置=原始表格体的高度时重置到0
-            } else {
-                tableContent.style.marginTop = (currentTop - step) + 'px';
-            }
-            requestAnimationFrame(scrollTable); // 递归持续滚动
-        }
-        scrollTable();
-
-    }, 2500); // 2.5s滚动冷却时间
-};

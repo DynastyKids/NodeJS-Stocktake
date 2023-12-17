@@ -32,69 +32,60 @@
                     navbarContent.innerHTML = data
                 })
         </script>
-
         <div class="container-fluid">
-            <div class="container-fluid">
-                <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
-                    <div class="card-body px-4 py-3">
-                        <div class="row align-items-center">
-                            <div class="col-12">
-                                <h4 class="fw-semibold mb-8">Next Dispatch</h4>
-                                <nav aria-label="breadcrumb">
-                                    <ol class="breadcrumb">
-                                        <li class="breadcrumb-item">
-                                            <a class="text-muted text-decoration-none"
-                                               href="../home/index.html">Home</a>
-                                        </li>
-                                        <li class="breadcrumb-item">
-                                            <a class="text-muted text-decoration-none"
-                                               href="../stocks/index.html">Stocks
-                                            </a>
-                                        </li>
-                                        <li class="breadcrumb-item" aria-current="page">Next Dispatch</li>
-                                    </ol>
-                                </nav>
-                            </div>
+            <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+                <div class="card-body px-4 py-3">
+                    <div class="row align-items-center">
+                        <div class="col-12">
+                            <h4 class="fw-semibold mb-8">Next Dispatch</h4>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../home/index.html">Home</a>
+                                    </li>
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../stocks/index.html">Stocks</a>
+                                    </li>
+                                    <li class="breadcrumb-item" aria-current="page">Next Dispatch</li>
+                                </ol>
+                            </nav>
                         </div>
                     </div>
                 </div>
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title fw-semibold mb-4">Actions</h5>
-                        <small>To use on TV / large screen for display, click 'switch view'.</small>
-                        <div class="list-group-item-action">
-                            <div class="row mb-0 ms-2">
-                                <span class="toggleRefreshText" style="float: left;">Auto Refresh in: <span
-                                        id="toggleTimes"></span></span><span class="toggleRefreshText"></span>
-                            </div>
-                            <a class="mb-0 ms-2" href="#" id="act_reloadTable">Reload Table</a>
-                            <a class="mb-0 ms-2" href="./nextdisp2.html">Switch View</a>
-                            <a class="mb-0 ms-2" href="#" id="act_pause">Pause Timer</a>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title fw-semibold mb-4">Actions</h5>
+                    <small>To use on TV / large screen for display, click 'switch view'.</small>
+                    <div class="list-group-item-action">
+                        <div class="row mb-0 ms-2">
+                            <span class="toggleRefreshText" style="float: left;">Auto Refresh in:
+                                <span id="toggleTimes"></span></span>
+                            <span class="toggleRefreshText"></span>
                         </div>
-
-                        <table id="table-header">
-                            <thead style="font-size: x-large; text-align: center">
-                            <tr>
-                                <th scope="col" class="tableItemName" rowspan="2" style="font-size: large">Product</th>
-                                <th scope="col" class="tableNext1" style="font-size: large">1st<br>Location / Date</th>
-                                <th scope="col" class="tableNext2" style="font-size: large">2nd<br>Location / Date</th>
-                                <th scope="col" class="tableNext2" style="font-size: large">3rd<br>Location / Date</th>
-                            </tr>
-                            </thead>
-                        </table>
-                        <div id="table-body-container">
-                            <table id="table-body">
-<!--                                <thead style="font-size: x-large; text-align: center">-->
-<!--                                    <tr>-->
-<!--                                        <th scope="col" class="tableItemName" rowspan="2" id="tablehead1">Product</th>-->
-<!--                                        <th scope="col" class="tableNext2" id="tablehead2">1st<br>Location / Date</th>-->
-<!--                                        <th scope="col" class="tableNext2" id="tablehead3">2nd<br>Location / Date</th>-->
-<!--                                        <th scope="col" class="tableNext2" id="tablehead4">3rd<br>Location / Date</th>-->
-<!--                                    </tr>-->
-<!--                                </thead>-->
-                            </table>
-                        </div>
+                        <a class="mb-0 ms-2" href="#" id="act_reloadTable">Reload Table</a>
+                        <a class="mb-0 ms-2" href="./nextdisp2.html">Switch View</a>
+                        <a class="mb-0 ms-2" href="#" id="act_pause">Pause Timer</a>
                     </div>
+                    <table class="table table-responsive" id="table" style="width: 100%">
+                        <thead>
+                        <tr style="text-align: center">
+                            <th scope="col">Product</th>
+                            <th scope="col">1st<br>Location / Date</th>
+                            <th scope="col">2nd<br>Location / Date</th>
+                            <th scope="col">3rd<br>Location / Date</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr style="text-align: center">
+                            <th scope="col">Product</th>
+                            <th scope="col">1st<br>Location / Date</th>
+                            <th scope="col">2nd<br>Location / Date</th>
+                            <th scope="col">3rd<br>Location / Date</th>
+                        </tr>
+                        </tfoot>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -108,78 +99,8 @@
 <script src="./nextdisp.js"></script>
 </body>
 <style>
-    #fill-div {
-        overflow: hidden;
-        /*position: relative;*/
-    }
-
-    #table-header,
-    #scrolling-tbody {
-        width: 100%;
-    }
-
-    #table-body-container {
-        overflow: hidden;
-        /*position: absolute;*/
-        /*position: relative;*/
-        top: 0;
-        left: 0;
-        width: 100%;
-    }
-
-    .dataTable thead tr {
-        font-size: large;
-    }
-
-    .dataTable tbody {
-        font-size: large;
-    }
-
-    #dataTableBody {
-        overflow: hidden;
-        position: absolute;
-        top: 0;
-        left: 0;
-    }
-
-    .tableItemName {
-        text-align: left;
-        font-size: large;
-        vertical-align: center;
-        width: 35%;
-        font-weight: bold;
-    }
-
-    .tableNext1 {
-        font-family: 'Courier New', Courier, monospace;
+    .datatable-Col-txtcenter{
         text-align: center;
-        font-size: x-large;
-        font-stretch: expanded;
-        width: 25%;
-        font-weight: bold;
-    }
-
-    .tableNext2 {
-        font-family: 'Courier New', Courier, monospace;
-        text-align: center;
-        font-size: large;
-        width: 20%;
-        font-weight: bold;
-    }
-
-    table {
-        width: 100%;
-        border: 2px solid black;
-    }
-
-    tr {
-        border: 1px solid black;
-        border-collapse: collapse;
-    }
-
-    td, th {
-        border: 1px dashed grey;
-        padding: 3px;
     }
 </style>
 
