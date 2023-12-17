@@ -84,7 +84,6 @@ document.addEventListener("DOMContentLoaded", (event) => {
 document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
     //弹出后先填充表格
     let requestLabelId = ev.relatedTarget.getAttribute("data-bs-itemId")
-    console.log(fullResultSet)
     document.querySelector("#modalEditLabelid").value = requestLabelId
     document.querySelector("#editModalSubmitBtn").disabled = true
     document.querySelector("#editModalSubmitBtn").textContent = "Submit"
@@ -104,8 +103,8 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
             document.querySelector("#modelEditPOnumber").value = (fullResultSet[i].POnumber ? fullResultSet[i].POnumber : (fullResultSet[i].POIPnumber ? fullResultSet[i].POIPnumber : ""))
             document.querySelector("#modelEditUnitprice").value = (fullResultSet[i].unitPrice ? fullResultSet[i].unitPrice : "")
             document.querySelector("#modelEditLoggingTime").value = (fullResultSet[i].loggingTime ? fullResultSet[i].loggingTime : "")
-            document.querySelector("#modelCheckboxConsumed").checked = (fullResultSet[i].removed === 1)
-            document.querySelector("#modelEditConsumeTime").value = (fullResultSet[i].removeTime ? fullResultSet[i].removeTime : "")
+            document.querySelector("#modelCheckboxRemoved").checked = (fullResultSet[i].removed === 1)
+            document.querySelector("#modelEditRemoveTime").value = (fullResultSet[i].removeTime ? fullResultSet[i].removeTime : "")
             document.querySelector("#editModalSubmitBtn").disabled = false
             break;
         }
@@ -146,12 +145,12 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
     })
 })
 
-document.querySelector("#modelCheckboxConsumed").addEventListener("change",(ev)=>{
+document.querySelector("#modelCheckboxRemoved").addEventListener("change",(ev)=>{
     if (ev.target.checked){
-        document.querySelector("#group_consumeTime").style = ""
+        document.querySelector("#group_removeTime").style = ""
     } else {
-        document.querySelector("#group_consumeTime").style = "display:none"
-        document.querySelector("#inpt_consumeTime").value = ""
+        document.querySelector("#group_removeTime").style = "display:none"
+        document.querySelector("#inpt_removeTime").value = ""
     }
 })
 

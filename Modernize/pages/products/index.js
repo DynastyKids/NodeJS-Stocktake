@@ -159,8 +159,8 @@ async function fetchTablesData() {
         dataset.push([
             `${(eachItem.productCode ? eachItem.productCode : "")}${(eachItem.labelname && eachItem.productCode ? " - ": "")}${(eachItem.labelname ? eachItem.labelname : "")}<br><span>${eachItem.withBestbefore > 0 ? "<i class=\"ti ti-calendar-due\"></i>" : ""}</span>`,
             `${stockTurnoverRate > 0 && stockCount > 0 ?(stockTurnoverRate / stockCount / 86400000 ).toFixed(2): ""}`,
-            `${stocksLevel["eachItem.productCode"] && stocksLevel['eachItem.productCode'].hasOwnProperty("quantity") ?
-                stocksLevel[eachItem.productCode].quantity + (stocksLevel[eachItem.productCode].quantity > 0 ? " "+stocksLevel[eachItem.productCode].unit :"") : ""}`,
+            // `${stocksLevel["eachItem.productCode"] && stocksLevel['eachItem.productCode'].hasOwnProperty("quantity") ?
+            //     stocksLevel[eachItem.productCode].quantity + (stocksLevel[eachItem.productCode].quantity > 0 ? " "+stocksLevel[eachItem.productCode].unit :"") : ""}`,
             `${(eachItem.cartonQty ? eachItem.cartonQty + (eachItem.unit ? " " + eachItem.unit : "") : " - ")}` +
             `<br><small ${eachItem.cartonQty && eachItem.palletQty ? "data-bs-toggle=\"tooltip\" data-bs-placement=\"top\" " +
                 "title=\" + eachItem.palletQty / eachItem.cartonQty +\" ctns" : null} >${(eachItem.palletQty ?
@@ -269,7 +269,7 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
 
             document.querySelector("#editRowModalinput_vendorCode").value = (result.vendorCode ? result.vendorCode : "")
             document.querySelector("#editRowModalinput_purcPrice").value = (result.unitPrice ? result.unitPrice : "")
-            document.querySelector("#editRowModalinput_sellPrice").value = (result.sellPrice ? result.sellPrice : "")
+            // document.querySelector("#editRowModalinput_sellPrice").value = (result.sellPrice ? result.sellPrice : "")
             if (result.withBestbefore && result.withBestbefore === 1) {
                 document.querySelector("#expiredateCheck").checked = true
             } else {
@@ -310,7 +310,7 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
 
         result.vendorCode = document.querySelector("#editRowModalinput_vendorCode").value
         result.unitPrice = document.querySelector("#editRowModalinput_purcPrice").value
-        result.sellPrice = document.querySelector("#editRowModalinput_sellPrice").value
+        // result.sellPrice = document.querySelector("#editRowModalinput_sellPrice").value
 
         let updateResult = await updateRecordById(itemId, result)
         //     当最后确认提交成功则dismiss并回弹成功信息
