@@ -324,62 +324,6 @@ router.get("/v1/products", async (req, res) => {
 
 /*
 * PRODUCTS
-* products POST方法， 新
-* 允许用户通过客户端添加，更新产品信息
-*/
-router.post("/v1/products", async (req, res) => {
-    let response = {acknowledged: false, data: [], message: ""};
-    let dbclient = new MongoClient(uri, {
-        serverApi: {
-            version: ServerApiVersion.v1,
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        },
-    });
-    try {
-        let session = dbclient.db(targetDB).collection("products");
-        await dbclient.connect()
-
-        if (req.body && req.body.action && req.body.item) {
-            let options = {upsert: false}
-            let filter = {}
-            if (req.body.action === "add" || req.body.action === "update") {
-                if (req.body.action === "add") {
-                    options = {upsert: true}
-                } //添加操作
-                if (req.body.item && req.body.item.itemcode) {
-                    filter = {itemcode: req.body.item.itemcode}
-                    if (req.body.item.vendorCode) {
-                        filter = {itemcode: req.body.item.itemcode, vendorCode: req.body.item.vendorCode}
-                    }
-
-                    const result = await session.updateOne(filter, {$set: req.body.item}, options);
-                    if (result.matchedCount === result.modifiedCount || result.upsertedCount > 0) {
-                        response.acknowledged = true
-                        if (result.upsertedCount > 0) {
-                            response.data = {"upsertId": result.upsertedId}
-                        }
-                    }
-                } else {
-                    response.message = `Missing mandatory field {itemcode} on update action`
-                }
-            } else {
-                response.message = `Action parameter incorrect`
-            }
-        } else {
-            response.message = `Missing parameter(s)`
-        }
-    } catch (e) {
-        response.message = `Error on /v1/products: ${e}`
-    } finally {
-        await dbclient.close()
-    }
-
-    res.json(response)
-})
-
-/*
-* PRODUCTS
 * product/add POST方法， 新
 * 允许用户通过第三方渠道添加新产品
 */
@@ -396,10 +340,10 @@ router.post("/v1/product/add", async (req, res) => {
         let session = dbclient.db(targetDB).collection("products");
         await dbclient.connect()
 
-        if (req.hasOwnProperty("body") && req.body.hasOwnProperty("item") && req.body.item.hasOwnProperty("itemcode")) {
-            let filter = {itemcode: req.body.item.itemcode}
+        if (req.hasOwnProperty("body") && req.body.hasOwnProperty("item") && req.body.item.hasOwnProperty("productCode")) {
+            let filter = {productCode: req.body.item.productCode}
             if (req.body.item.vendorCode) {
-                filter = {itemcode: req.body.item.itemcode, vendorCode: req.body.item.vendorCode}
+                filter = {productCode: req.body.item.productCode, vendorCode: req.body.item.vendorCode}
             }
 
             const result = await session.updateOne(filter, {$set: req.body.item}, {upsert: true});
@@ -410,7 +354,7 @@ router.post("/v1/product/add", async (req, res) => {
                 }
             }
         } else {
-            response.message = `Missing body parameter(s), and itemcode is a mandatory field`
+            response.message = `Missing body parameter(s), and productCode is a mandatory field`
         }
     } catch (e) {
         response.message = `Error on /v1/products: ${e}`
@@ -434,10 +378,10 @@ router.post("/v1/products/update", async (req, res) => {
         let session = dbclient.db(targetDB).collection("products");
         await dbclient.connect()
 
-        if (req.hasOwnProperty("body") && req.body.hasOwnProperty("item") && req.body.item.hasOwnProperty("itemcode")) {
-            let filter = {itemcode: req.body.item.itemcode}
+        if (req.hasOwnProperty("body") && req.body.hasOwnProperty("item") && req.body.item.hasOwnProperty("productCode")) {
+            let filter = {productCode: req.body.item.productCode}
             if (req.body.item.vendorCode) {
-                filter = {itemcode: req.body.item.itemcode, vendorCode: req.body.item.vendorCode}
+                filter = {productCode: req.body.item.productCode, vendorCode: req.body.item.vendorCode}
             }
 
             const result = await session.updateOne(filter, {$set: req.body.item}, {upsert: false});
@@ -445,7 +389,7 @@ router.post("/v1/products/update", async (req, res) => {
                 response.acknowledged = true
             }
         } else {
-            response.message = `Missing parameter, body.item.itemcode is mandatory field`
+            response.message = `Missing parameter, body.item.productCode is mandatory field`
         }
     } catch (e) {
         response.message = `Error on /v1/products: ${e}`
@@ -455,66 +399,6 @@ router.post("/v1/products/update", async (req, res) => {
 
     res.json(response)
 })
-
-
-/*
- *  STOCKS
- *  GET 方法
- *
- *  获取所有产品库存信息，使用productCode+labelID去重
- *  允许用户从label, productCode, location和session四个维度自行筛选过滤数据
- */
-router.get("/v1/stocks", async (req, res) => {
-    let response = {acknowledged: false, data: [], message: ""};
-    let dbclient = new MongoClient(uri, {
-        serverApi: {
-            version: ServerApiVersion.v1,
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        },
-    });
-    try {
-        await dbclient.connect()
-        const session = dbclient.db(targetDB).collection("pollinglog");
-        const options = {$sort: {productCode: 1, bestbefore: -1, productLabel: -1}, projection: {"_id": 0}}
-        let result = await session.find({}, options).toArray()
-        response.data = result
-        response.acknowledged = true
-        //     去掉相同的重复条目
-        let filteredResult = filterDuplicate(['productLabel', 'productCode'], result)
-        response.data = filteredResult
-
-        // 根据Query筛选
-        if (!req.query.hasOwnProperty("removed")) {
-            mongodbFilter["$contains"]["removed"] = 0
-        }
-
-        if (req.query.hasOwnProperty("session") && req.query.session.length >= 3) { // Session
-            mongodbFilter["$contains"]["session"] = req.query.session
-        }
-
-        if (req.query.hasOwnProperty("product") && req.query.product.length >= 3) { //Product
-            mongodbFilter["$contains"]["productName"] = req.query.product
-        }
-
-        if (req.query.hasOwnProperty("location") && req.query.location.length >= 2) { // Location
-            mongodbFilter["$contains"]["shelfLocation"] = req.query.location
-        }
-
-        if (req.query.hasOwnProperty("label") && req.query.label.length >= 3) { // Label
-            mongodbFilter["$contains"]["productLabel"] = req.query.label
-        }
-
-        console.log(mongodbFilter)
-        response = await session.find(mongodbFilter, options).toArray()
-        console.log(`GetStocks: Result length: ${response.length}; Filtered Length:${response.length}`)
-    } catch (e) {
-        response.message = e
-    } finally {
-        await dbclient.close()
-    }
-    res.json(response)
-});
 
 function filterDuplicate(fields, data) {
     const seen = new Set();
@@ -527,76 +411,6 @@ function filterDuplicate(fields, data) {
         return true;
     });
 }
-
-/*
- * STOCKS
- * POST方法
- * 重写后的STOCKS方法， 重整了关于返回值和传入值的问题
- *
- * 可接受的操作依旧保持为库存信息的添加，更新和删除，均使用updateOne完成，仅添加使用upsert方法
- *
- */
-router.post("/v1/stocks", async (req, res) => {
-    let response = {acknowledged: false, data: [], message: ""};
-    let dbclient = new MongoClient(uri, {
-        serverApi: {
-            version: ServerApiVersion.v1,
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        },
-    });
-
-
-    let actionsAllowed = ['add', 'update', 'remove', "move", "consume"]
-    if (!req.body || !req.body.action) {
-        response.message = "Missing action"
-    } else if (!req.body || !req.body.item) {
-        response.message = "Missing item informations"
-    } else if (req.body && req.body.action && actionsAllowed.indexOf(req.body.action) >= 0) {
-        let filter = {}
-        let updateObject = {$set: {}}
-        let options = {upsert: false}
-        if (req.body.item.productLabel) {
-            filter = {productLabel: req.body.item.productLabel}
-            updateObject = {$set: req.body.item}
-            if (actionsAllowed[actionsAllowed.indexOf(req.body.action)] === "remove" ||
-                actionsAllowed[actionsAllowed.indexOf(req.body.action)] === "consume") {
-                updateObject = { $set: { removed: 1, loggingTime: new Date() , removeTime: new Date() } } // 仅标注使用字段
-            }
-            if (actionsAllowed[actionsAllowed.indexOf(req.body.action)] === "add") {
-                options.upsert = true;
-                // 检查各种字段中是否由需要的对应参数，如果没有则补齐
-                // 每当切换新版本后，均需要按照新版本参数补齐
-                let updateItems = req.body.item
-                updateItems.removed = 0
-                updateItems.createTime = new Date()
-                updateItems.loggingTime = new Date()
-                updateObject = {$set: updateItems}
-            }
-
-            try {
-                await dbclient.connect()
-                const session = dbclient.db(targetDB).collection("pollinglog");
-
-                let result = await session.updateOne(filter, updateObject, options)
-                if (result.acknowledged) {
-                    response.acknowledged = true
-                    response.data = result
-                }
-            } catch (e) {
-                response.message = e
-            } finally {
-                await dbclient.close()
-            }
-        } else {
-            response.message = "Missing products key information's "
-        }
-
-    } else {
-        response.message = "Action is not allowed "
-    }
-    res.json(response)
-})
 
 /*
  * STOCKS - POST方法
@@ -613,6 +427,8 @@ router.post("/v1/stocks/update", async (req, res) => {
         },
     });
 
+    let upsertFlag = (req.query.hasOwnProperty("upsert") && req.query.upsert ? true : false)
+
     if (!req.body || !req.body.item) {
         response.message = "Missing item informations"
     } else if (req.body && req.body.item) {
@@ -620,23 +436,40 @@ router.post("/v1/stocks/update", async (req, res) => {
         let updateObject = {$set: {}}
         if (req.body.item.productLabel) {
             filter = {productLabel: req.body.item.productLabel}
-            updateObject = {$set: req.body.item}
             // 检查各种字段中是否由需要的对应参数，如果没有则补齐
             // 默认使用字段时间并转换为时间对象，如果字段未提供默认使用当前时间
             let updateItems = req.body.item
-            updateItems.createTime = updateItems.hasOwnProperty("createTime") ? new Date(updateItems.createTime) : new Date()
+            if (upsertFlag){  // 新插入数据需要检查时间戳是否齐全，既有数据则跳过
+                updateItems.createTime = updateItems.hasOwnProperty("createTime") ? new Date(updateItems.createTime) : new Date()
+            }
+
+            // 强制更新loggingTime为当前最后更改的时间
             updateItems.loggingTime = updateItems.hasOwnProperty("loggingTime") ? new Date(updateItems.loggingTime) : new Date()
             updateItems.removed = updateItems.hasOwnProperty("removed") ? updateItems.removed : 0 // 默认设定为未使用
-
-            if (updateItems.removed === 1) {
-                updateItems.removeTime = updateItems.hasOwnProperty("removeTime") ?new Date(updateItems.removeTime) : new Date()
+            if (updateItems.hasOwnProperty("removed") && parseInt(updateItems.removed) === 1) {
+                updateItems.removeTime = updateItems.hasOwnProperty("removeTime") ? new Date(updateItems.removeTime) : new Date()
             }
+            try{
+                updateItems.delete("productLabel")
+            } catch (e) {
+            //     ProductLabel has been removed
+            }
+
+            // 18DEC23 - 该部分交由终端用户对比生成，终端用户应先get产品，然后根据需要主动填入shelfLocations部分
+            // if (updateItems.hasOwnProperty("shelfLocations")) {
+            //     updateObject = {$set: updateItems, $push: {"locationRecords": {datetime: new Date(), location: updateItems.shelfLocations}}}
+            // }
+
+            // 18DEC23 - locationRecords部分API仅作检查,如果存在则尝试转换数据类型为时间类型
+            if (updateItems.hasOwnProperty("locationRecords") && Array.isArray(updateItems.locationRecords)){
+                updateItems.locationRecords.forEach(eachRecords =>{
+                    if(eachRecords.hasOwnProperty("datetime") && typeof eachRecords.datetime === 'string'){
+                        eachRecords.datetime = new Date(eachRecords.datetime)
+                    }
+                })
+            }
+            console.log(updateItems)
             updateObject = {$set: updateItems}
-
-            if (updateItems.hasOwnProperty("shelfLocations")){
-                updateObject = {$set: updateItems, $push:{"locationRecords": {datetime: new Date(), location: updateItems.shelfLocations}}}
-            }
-
             try {
                 await dbclient.connect()
                 const session = dbclient.db(targetDB).collection("pollinglog");
@@ -831,25 +664,47 @@ router.post("/v1/preload/update", async (req, res) => {
             labelBuild: 3,
             unitPrice: 0
         }
-        if (req.body.item.hasOwnProperty("productCode")){ itemContent.productCode = (req.body.item.productCode) }
-        if (req.body.item.hasOwnProperty("quantity")){ itemContent.quantity = parseInt(req.body.item.quantity) }
-        if (req.body.item.hasOwnProperty("quantityUnit")){ itemContent.quantityUnit = req.body.item.quantityUnit }
-        if (req.body.item.hasOwnProperty("shelfLocation")){ itemContent.shelfLocation = (req.body.item.shelfLocation) }
+        if (req.body.item.hasOwnProperty("productCode")) {
+            itemContent.productCode = (req.body.item.productCode)
+        }
+        if (req.body.item.hasOwnProperty("quantity")) {
+            itemContent.quantity = parseInt(req.body.item.quantity)
+        }
+        if (req.body.item.hasOwnProperty("quantityUnit")) {
+            itemContent.quantityUnit = req.body.item.quantityUnit
+        }
+        if (req.body.item.hasOwnProperty("shelfLocation")) {
+            itemContent.shelfLocation = (req.body.item.shelfLocation)
+        }
 
-        if (req.body.item.hasOwnProperty("POnumber")){ itemContent.POnumber = (req.body.item.POnumber) }
-        else if (req.body.item.hasOwnProperty("POIPnumber")){itemContent.POnumber = (req.body.item.POIPnumber)}
-        
-        if (req.body.item.hasOwnProperty("productName")){ itemContent.productName = (req.body.item.productName) }
-        if (req.body.item.hasOwnProperty("bestbefore")){ itemContent.bestbefore = (req.body.item.bestbefore) }
-        if (req.body.item.hasOwnProperty("unitprice")){ itemContent.unitprice = parseFloat(req.body.item.unitprice) }
-        if (req.body.item.hasOwnProperty("createTime")){ itemContent.createTime = new Date(req.body.item.createTime) }
+        if (req.body.item.hasOwnProperty("POnumber")) {
+            itemContent.POnumber = (req.body.item.POnumber)
+        } else if (req.body.item.hasOwnProperty("POIPnumber")) {
+            itemContent.POnumber = (req.body.item.POIPnumber)
+        }
+
+        if (req.body.item.hasOwnProperty("productName")) {
+            itemContent.productName = (req.body.item.productName)
+        }
+        if (req.body.item.hasOwnProperty("bestbefore")) {
+            itemContent.bestbefore = (req.body.item.bestbefore)
+        }
+        if (req.body.item.hasOwnProperty("unitprice")) {
+            itemContent.unitprice = parseFloat(req.body.item.unitprice)
+        }
+        if (req.body.item.hasOwnProperty("createTime")) {
+            itemContent.createTime = new Date(req.body.item.createTime)
+        }
+        if (req.body.item.hasOwnProperty("trackingId")) {
+            itemContent.trackingId = new Date(req.body.item.trackingId)
+        }
 
         // Preload数据中，不组装session数据，
         try {
             await dbclient.connect()
             const session = dbclient.db(targetDB).collection("preloadlog");
-            let currentResult = await session.findOne({productLabel: req.body.item.productLabel},{$set: itemContent})
-            response = currentResult ? await session.updateOne({productLabel: req.body.item.productLabel},{$set: itemContent}) : await session.insertOne(itemContent)
+            let currentResult = await session.findOne({productLabel: req.body.item.productLabel}, {$set: itemContent})
+            response = currentResult ? await session.updateOne({productLabel: req.body.item.productLabel}, {$set: itemContent}) : await session.insertOne(itemContent)
         } catch (e) {
             console.error(e)
             response.message = e
@@ -904,7 +759,7 @@ function createLogObject(sessioncode, iteminfo) {
         removed: 0,
         loggingTime: new Date(),
         createTime: new Date(),
-        locationRecords:[]
+        locationRecords: []
     }
     try {
         if (isBase64String(iteminfo)) {
@@ -947,7 +802,7 @@ function createLogObject(sessioncode, iteminfo) {
             }
             if (productInfo.hasOwnProperty("shelfLocation")) {
                 mongodata.shelfLocation = productInfo.shelfLocation;
-                mongodata.locationRecords.push({datetime:new Date(), location: productInfo.shelfLocation})
+                mongodata.locationRecords.push({datetime: new Date(), location: productInfo.shelfLocation})
             }
         }
     } catch (error) {
@@ -957,31 +812,37 @@ function createLogObject(sessioncode, iteminfo) {
 }
 
 /*
- * Stock中的fetch方法，用来获取产品的在某个位置上的库存信息
- * 需要传入参数：Location 或 label
- * 返回参数：Array[ProductInfo]
+ * STOCKS Get Method
+ *
+ * Using Regex to filter the result on database selection
+ * Allow user to select data via session, location, label, product and removed parameters
  */
-router.get("/v1/stocks/get", async (req, res) => {
-    let productLocation = req.query.shelf
-    let productLabel = req.query.label
+router.get("/v1/stocks", async (req, res) => {
+    let stockLocation = req.query.shelf && String(req.query.shelf).length >= 2 ? req.query.shelf : ""
+    let stockLabel = req.query.label && String(req.query.label).length > 2 ? req.query.label : ""
+    let stockSession = req.query.session && String(req.query.session).length > 2 ? req.query.session : ""
+    let stockProduct = req.query.product && String(req.query.product).length > 2 ? req.query.product : ""
     let response = {acknowledged: false, results: [], info: null}
     await sessionClient.connect()
     const sessions = sessionClient.db(targetDB).collection("pollinglog");
 
     try {
-        let findingQuery = {}
-        if (productLabel && productLabel.length > 0) {
-            findingQuery = {itemcode: productLabel, removed: 0}
-        } else if (productLocation && productLocation.length > 0) {
-            findingQuery = {shelfLocation: productLocation, removed: 0}
+        let findingQuery = {removed: (req.query.removed && parseInt(req.query.label) === 1 ? 1 : 0)}
+        if (stockLabel && stockLabel.length > 0) {
+            findingQuery.productLabel = {$regex: new RegExp(stockLabel),$options: "i"}
         }
-        let result = await sessions.find(findingQuery, {projection: {"_id": 0}})
-        if ((await sessions.countDocuments({})) >= 0) {
-            response.acknowledged = true
-            for await (const x of result) {
-                response.results.push(x);
-            }
+        if (stockLocation && stockLocation.length > 0) {
+            findingQuery.shelfLocation = {$regex: new RegExp(stockLocation),$options: "i"}
         }
+        if (stockSession && stockSession.length > 0) {
+            findingQuery.sessions = {$regex: new RegExp(stockSession),$options: "i"}
+        }
+        if (stockProduct && stockProduct.length > 0) {
+            findingQuery.productCode = {$regex: new RegExp(stockProduct),$options: "i"}
+        }
+
+        console.log(findingQuery)
+        response = await sessions.find(findingQuery, {projection: {"_id": 0}}).toArray()
     } catch (err) {
         console.error(err)
         response.info = err
@@ -989,100 +850,27 @@ router.get("/v1/stocks/get", async (req, res) => {
     res.json(response)
 })
 
-/*
- * Stock中的fetch方法，用来获取产品的在某个位置上的库存信息
- * 需要传入参数：Location 或 label
- * 返回参数：Array[ProductInfo]
- */
-router.post("/v1/stocks/get", async (req, res) => {
-    const contents = req.body
-    let response = {acknowledged: false, results: [], info: null}
-    await sessionClient.connect()
-    const sessions = sessionClient.db(targetDB).collection("pollinglog");
-    const queryOptions = {projection: {"_id": 0}}
-    let result;
-    let findingQuery = {}
-    try {
-        if (contents.input) {
-            var object = JSON.parse(contents.input)
-            console.log(contents.input)
-            if (object.itemcode) {
-                findingQuery = {itemcode: productLabel, removed: 0}
-                result = await sessions.find(findingQuery, queryOptions)
-                if ((await sessions.countDocuments({})) >= 0) {
-                    response.acknowledged = true
-                    for await (const x of result) {
-                        response.results.push(x);
-                    }
-                }
-            } else {
-                // 如果itemcode为空则？？？
-            }
-        } else {
-            response.info = "Content is missing from the body"
-        }
-    } catch (err) {
-        console.error(err)
-        response.info = err
-    }
-    res.json(response)
-})
-
-/*
- * Stock中的consume方法，当某个板位被使用后需要标注所有的该id信息为removed
- */
-router.get("/v1/stocks/consume", async (req, res) => {
+// Delete Method, will erase the record from database, this action cannot be un-done, carefully use.
+// Stage 2: Require add user verify
+router.delete("/v1/stocks/delete", async (req, res) => {
     let response = {acknowledged: false}
     const productLabel = req.query.label
-    const productLocation = req.query.shelf
     if (productLabel && productLabel.length > 0) {
         try {
-            let result = await findAndUpdateLogs({itemcode: productLabel, removed: 0}, {
-                removed: 1,
-                removeTime: new Date()
-            })
-            if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
-                response.acknowledged = true
-            }
-        } catch (err) {
-            console.error(err)
-            res.status(500).json(err)
-        }
-    } else if (productLocation && productLocation.length > 0) {
-        try {
-            let result = await findAndUpdateLogs({shelfLocation: productLocation, removed: 0}, {
-                removed: 1,
-                removeTime: new Date()
-            })
-            if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
-                response.acknowledged = true
-            }
+            await sessionClient.connect()
+            const session = sessionClient.db(targetDB).collection("pollinglog");
+            response = await session.deleteMany({productLabel: productLabel})
+            response.message = `${response.deletedCount} Records has been deleted`
         } catch (err) {
             console.error(err)
             res.status(500).json(err)
         }
     }
-    res.json(response)
+    return response
 })
 
-router.post("api/v1/stocks/consume", async (req, res) => {
-    let response = {acknowledged: false}
-    const {productLabel} = req.body
-    if (productLabel !== undefined && productLabel.length > 0) {
-        try {
-            let result = await findAndUpdateLogs({itemcode: productLabel, removed: 0}, {
-                removed: 1,
-                removeTime: new Date()
-            })
-            if (result.modifiedCount > 0 && result.matchedCount > 0) {
-                response.acknowledged = true
-            }
-        } catch (err) {
-            console.error(err)
-            res.status(500).json(err)
-        }
-    }
-    res.json(response)
+router.get("/v1/ping", (req, res) => {
+    return {acknowledged: true, message: "Connection OK"}
 })
 
 async function findAndUpdateLogs(findCondition, updateQuery) {

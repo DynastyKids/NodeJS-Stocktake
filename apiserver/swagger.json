@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Warehouse Stocktake via Swagger",
-    "description": "This is a Sample Warehouse Stocktake application based on the OpenAPI 3.0 specification.\n\nThis application are require in coherience running with Wechat Miniprogram and Electron distributed package. If you are require customization, please contact author via Github.\n\nAPI information was generated with Swagger Editor\n\n*** \n该项目是个仓库管理场景的开源项目，允许用户搭配小程序、移动应用（开发中）以协助管理仓库\n\nAPI接口信息由DyanstyKids使用Swagger Editor制作，采用OpenAPI 3标准，项目开源于 https://github.com/DynastyKids/NodeJS-Stocktake\n***",
+    "description": "This is a Sample Warehouse Stocktake application based on the OpenAPI 3.0 specification.\n\nThis application are require in coherience running with Wechat Miniprogram and Electron distributed package. If you are require customization, please contact author via Github.\n\nAPI information was generated with Swagger Editor\n\n*** \n该项目是个仓库管理场景的开源项目，允许用户搭配手机自身浏览器、移动应用（开发中）以协助管理仓库\n\nAPI接口信息由DyanstyKids使用Swagger Editor制作，采用OpenAPI 3标准，项目开源于 https://github.com/DynastyKids/NodeJS-Stocktake\n***",
     "contact": {
       "email": "shabibox@outlook.com"
     },
@@ -10,7 +10,7 @@
       "name": "Apache 2.0",
       "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "version": "0.9.8"
+    "version": "0.9.9"
   },
   "servers": [
     {
@@ -23,18 +23,46 @@
   "tags": [
     {
       "name": "Sessions",
-      "description": "Everything about your stocktake sessions | 所有会话相关接口"
+      "description": "Everything about your stocktake sessions \n\n17Dec23 Purposed Update: This section is currently not in use for purposed update, in next version, it will be used to create a snapshot of current stocks.\n"
     },
     {
       "name": "Products",
-      "description": "Everything about your products | 所有和产品相关的增删改查操作"
+      "description": "Everything about your products"
     },
     {
       "name": "Stocks",
-      "description": "Everything about your stocks | 所有库存相关的增删改查操作"
+      "description": "Everything about your stocks"
+    },
+    {
+      "name": "Preload",
+      "description": "Prefill the label to prepare for adding to stocks\n\n10Dec23 Update: This section require to have your 3rd party module to be connected with system.\n"
     }
   ],
   "paths": {
+    "/v1/ping": {
+      "get": {
+        "tags": [
+          "Test"
+        ],
+        "summary": "Respond with service status",
+        "operationId": "testping",
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/baseResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "System Internal error"
+          }
+        }
+      }
+    },
     "/v1/sessions": {
       "get": {
         "tags": [
@@ -45,7 +73,7 @@
         "operationId": "selectSessions",
         "responses": {
           "200": {
-            "description": "Successful | 成功",
+            "description": "Successful",
             "content": {
               "application/json": {
                 "schema": {
@@ -55,55 +83,7 @@
             }
           },
           "500": {
-            "description": "System Internal error | 失败"
-          }
-        }
-      }
-    },
-    "/v1/sessions/join": {
-      "post": {
-        "tags": [
-          "Sessions"
-        ],
-        "summary": "Join a Session from client | 使用客户端加入一个会话",
-        "description": "(Optional *) It's not mandatory requirement as long as user send a valid request from with valid session code, this only for check if session exist purpose. | 非必要请求，仅用于识别用户加入的会话是否是合法会话",
-        "operationId": "sessionJoin",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "session": {
-                    "type": "string",
-                    "description": "Session code, hexadecimal 7 digits",
-                    "example": "1a2b3c4d"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Join Session Success | 加入会话成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/trueORfalse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Join Session Failed | 加入会话失败",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/trueORfalse"
-                }
-              }
-            }
+            "description": "System Internal error"
           }
         }
       }
@@ -113,7 +93,7 @@
         "tags": [
           "Sessions"
         ],
-        "summary": "Create a Session from user Client | 允许用户通过客户端创建一个新的会话，其他用户可以直接加入该会话",
+        "summary": "Create a snapshot of stock records\n创建一个当前的盘点镜像结果\n",
         "operationId": "sessionCreate",
         "responses": {
           "200": {
@@ -159,7 +139,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful | 成功",
+            "description": "Successful",
             "content": {
               "application/json": {
                 "schema": {
@@ -169,67 +149,7 @@
             }
           },
           "500": {
-            "description": "System Internal error | 失败",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/trueORfalse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/session/addlog": {
-      "post": {
-        "tags": [
-          "Sessions"
-        ],
-        "summary": "Adding a session log from outside requests",
-        "description": "Thirdparty using session code + base64 string of the product to adding a session log",
-        "operationId": "addlog",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "session": {
-                    "type": "string",
-                    "description": "session code for the adding action | 需要针对操作的会话ID"
-                  },
-                  "item": {
-                    "type": "object",
-                    "properties": {
-                      "productCode": {
-                        "type": "string",
-                        "description": "DEC2023 update, productCode is optional"
-                      },
-                      "productLabel": {
-                        "type": "string",
-                        "description": "DEC2023 update, only require item code"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/trueORfalse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Invalid status value",
+            "description": "System Internal error",
             "content": {
               "application/json": {
                 "schema": {
@@ -247,13 +167,13 @@
           "Products"
         ],
         "summary": "Get all available products | 获取所有产品信息",
-        "description": "Get all available product information, or selected product information when provide a keywork | 获取产品相关信息,若用户提供了某个关键词则会执行搜索并返回所有相关的信息",
+        "description": "Get all available product information, or selected product information when provide a keywork \n\n获取产品相关信息,若用户提供了某个关键词则会执行搜索并返回所有相关的信息\n",
         "operationId": "getProducts",
         "parameters": [
           {
             "name": "query",
             "in": "query",
-            "description": "Adding Optional search query | 添加搜索条件对结果过滤",
+            "description": "Adding Optional search query\n\n添加搜索条件对结果过滤\n",
             "required": false,
             "schema": {
               "type": "string"
@@ -262,7 +182,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful | 成功",
+            "description": "Successful",
             "content": {
               "application/json": {
                 "schema": {
@@ -272,57 +192,7 @@
             }
           },
           "500": {
-            "description": "System Internal error | 失败",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/trueORfalse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Products"
-        ],
-        "summary": "Adding/edit a product | 添加或修改一个产品",
-        "description": "Adding a product to product list, actions allow add/update. Under item object, itemcode, description and productUnit are mandatory fields | 添加或更新一个产品信息，其中action字段允许填写add或者update; item字段中，强制要求要有itemcode, description和productUnit",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "action": {
-                    "description": "Actions alloed: add, update. On update, will update based on product code & vendor code.",
-                    "enum": [
-                      "add",
-                      "update"
-                    ]
-                  },
-                  "item": {
-                    "$ref": "#/components/schemas/product"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/trueORfalse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid status value",
+            "description": "System Internal error",
             "content": {
               "application/json": {
                 "schema": {
@@ -383,7 +253,21 @@
         "tags": [
           "Products"
         ],
-        "summary": "Update an information of product",
+        "summary": "Update an information of product, with upsert default by true",
+        "parameters": [
+          {
+            "name": "upsert",
+            "in": "query",
+            "description": "If product is not found, should this info be inserted? (Default by true, set to false if not wish to)",
+            "required": false,
+            "schema": {
+              "enum": [
+                true,
+                false
+              ]
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -428,13 +312,13 @@
           "Stocks"
         ],
         "summary": "Get all available current Stocks inhouse | 获取所有当前库存信息",
-        "description": "Stock information are pulled across all session, user needs to tick off from page when used, all queries are NOT case-sensetive | 库存页面会展示所有当前可用库存，当库存信息有差异时可以选择仅使用某次的盘点结果对库存进行核对，所有参数均不区分大小写",
+        "description": "Stock information are pulled across all session, user needs to tick off from page when used\n",
         "operationId": "getStocks",
         "parameters": [
           {
             "name": "session",
             "in": "query",
-            "description": "Optional, Adding session ID for filter the result, STOCK keyword also allowed | 可选参数，使用SessionID过滤出相关的库存信息，也可以使用STOCK关键字列出所有添加库存时的记录",
+            "description": "Optional, Adding session ID for filter the result, STOCK keyword also allowed\n\n可选参数，使用SessionID过滤出相关的库存信息，也可以使用STOCK关键字列出所有添加库存时的记录\n",
             "required": false,
             "schema": {
               "type": "string"
@@ -443,7 +327,7 @@
           {
             "name": "location",
             "in": "query",
-            "description": "Optional, Using at lease 2 characters for location to filter the result | 可选参数，需要提供至少2位字母的库位号来过滤库存信息",
+            "description": "Optional, Using at lease 2 characters for location to filter the result\n\n可选参数，需要提供至少2位字母的库位号来过滤库存信息\n",
             "required": false,
             "schema": {
               "type": "string"
@@ -452,7 +336,7 @@
           {
             "name": "label",
             "in": "query",
-            "description": "Optional, typein part of label id (at least 3 characters) to filter the results | 可选参数，可以使用labelid的尾部字段（至少3位字符）来筛选需要的库存信息",
+            "description": "Optional, typein part of label id (at least 3 characters) to filter the results\n\n可选参数，可以使用labelid的尾部字段（至少3位字符）来筛选需要的库存信息\n",
             "required": false,
             "schema": {
               "type": "string"
@@ -461,7 +345,7 @@
           {
             "name": "product",
             "in": "query",
-            "description": "Optional, typein part of product id (at least 3 characters) to filter the results | 可选参数，使用产品ID（至少3位字符）来筛选需要的库存信息",
+            "description": "Optional, typein part of product id (at least 3 characters) to filter the results \n\n可选参数，使用产品ID（至少3位字符）来筛选需要的库存信息\n",
             "required": false,
             "schema": {
               "type": "string"
@@ -470,7 +354,7 @@
           {
             "name": "removed",
             "in": "query",
-            "description": "Optional, 0 for in-stock products only(default), 1 for including all history products  | 可选参数，是否需要从已使用的产品中查找，默认为0(仅查找现有库存)，1为包括所有历史参数",
+            "description": "Optional, 0 for in-stock products only(default), 1 for including all history products  \n\n可选参数，是否需要从已使用的产品中查找，默认为0(仅查找现有库存)，1为包括所有历史参数\n",
             "required": false,
             "schema": {
               "type": "string",
@@ -483,7 +367,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful | 成功",
+            "description": "Successful",
             "content": {
               "application/json": {
                 "schema": {
@@ -493,60 +377,7 @@
             }
           },
           "500": {
-            "description": "System Internal error | 失败",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/trueORfalse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Stocks"
-        ],
-        "summary": "(Deprecated in Next Ver) Provide Stock actions in All-in-one Space",
-        "description": "Actions alloed: add, move, update, remove. | 允许操作包括增删改查，填入对应关键词，当update时，使用labelid作为主键更新，labelid本身不允许更新",
-        "operationId": "poststocks",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "action": {
-                    "type": "string",
-                    "enum": [
-                      "add",
-                      "move",
-                      "update",
-                      "remove"
-                    ]
-                  },
-                  "item": {
-                    "$ref": "#/components/schemas/stock"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/trueORfalse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request / Unsuccessful operation",
+            "description": "System Internal error",
             "content": {
               "application/json": {
                 "schema": {
@@ -564,8 +395,24 @@
           "Stocks"
         ],
         "summary": "Add / Edit / Update | 添加，修改和更新货架上的货品信息",
-        "description": "This method was inherited from /v1/stocks, and split actions by URL, this method is enabled with Upsert, any data not in database process by this method will be inserted to database",
+        "description": "Using this method to add/edit the stock informations.\n\n18DEC23 Update: locationRecords required to be compare/maintain on yor local devices / then push back the new array to this API portal. API will OVERWRITE the whole array rather than pushback new records.\n",
         "operationId": "updateStocks",
+        "parameters": [
+          {
+            "name": "upsert",
+            "in": "query",
+            "description": "Set if this data required to be upserted (default false)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": false,
+              "enum": [
+                true,
+                false
+              ]
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -636,7 +483,7 @@
         "operationId": "moveStocks",
         "responses": {
           "200": {
-            "description": "Successful | 成功",
+            "description": "Successful",
             "content": {
               "application/json": {
                 "schema": {
@@ -646,7 +493,7 @@
             }
           },
           "500": {
-            "description": "System Internal error | 失败",
+            "description": "System Internal error",
             "content": {
               "application/json": {
                 "schema": {
@@ -691,7 +538,7 @@
         "operationId": "removeStocks",
         "responses": {
           "200": {
-            "description": "Successful | 成功",
+            "description": "Successful",
             "content": {
               "application/json": {
                 "schema": {
@@ -701,7 +548,7 @@
             }
           },
           "500": {
-            "description": "System Internal error | 失败",
+            "description": "System Internal error",
             "content": {
               "application/json": {
                 "schema": {
@@ -709,6 +556,43 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/v1/stocks/delete": {
+      "delete": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Delete a stock from database",
+        "operationId": "deleteStock",
+        "parameters": [
+          {
+            "name": "api_key",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "label",
+            "in": "query",
+            "description": "Product Label ID to delete",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful delete"
+          },
+          "400": {
+            "description": "Invalid stock value"
           }
         }
       }
@@ -751,7 +635,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful | 成功",
+            "description": "Successful",
             "content": {
               "application/json": {
                 "schema": {
@@ -761,7 +645,7 @@
             }
           },
           "500": {
-            "description": "System Internal error | 失败",
+            "description": "System Internal error",
             "content": {
               "application/json": {
                 "schema": {
@@ -1056,6 +940,14 @@
             "items": {
               "$ref": "#/components/schemas/locationRecords"
             }
+          },
+          "trackingId": {
+            "type": "string",
+            "description": "Tracking Number of this product, can be container ID on shipping Vendor Id"
+          },
+          "transporter": {
+            "type": "string",
+            "description": "Name of shipping / carrier"
           }
         }
       },
@@ -1105,6 +997,14 @@
             "type": "integer",
             "format": "int32",
             "description": "Flag used to identify whether product has been removed from DB"
+          },
+          "trackingId": {
+            "type": "string",
+            "description": "Tracking Number of this product, can be container ID on shipping Vendor Id"
+          },
+          "transporter": {
+            "type": "string",
+            "description": "Name of shipping / carrier"
           }
         }
       },
@@ -1149,9 +1049,9 @@
           "description": {
             "type": "string"
           },
-          "itemcode": {
+          "productCode": {
             "type": "string",
-            "description": "Mandatory, the code used to identify the item, and it should be unique, unless it has unique vendor code under same itemcode | 必须字段，产品的ID，该编号须独一无二，若需要复用该编号，须确认两条产品信息有不同的vendorCode"
+            "description": "Mandatory, the code used to identify the item, and it should be unique, unless it has unique vendor code under same productCode | 必须字段，产品的ID，该编号须独一无二，若需要复用该编号，须确认两条产品信息有不同的vendorCode"
           },
           "labelname": {
             "type": "string",
@@ -1229,6 +1129,19 @@
             "items": {
               "$ref": "#/components/schemas/product"
             }
+          },
+          "message": {
+            "type": "string",
+            "description": "Detail of error informations"
+          }
+        }
+      },
+      "baseResponse": {
+        "type": "object",
+        "properties": {
+          "acknowledged": {
+            "type": "boolean",
+            "description": "Flag of respond status"
           },
           "message": {
             "type": "string",
