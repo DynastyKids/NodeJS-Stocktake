@@ -843,9 +843,11 @@ router.get("/v1/stocks", async (req, res) => {
 
         console.log(findingQuery)
         response = await sessions.find(findingQuery, {projection: {"_id": 0}}).toArray()
+        res.status(200)
     } catch (err) {
         console.error(err)
         response.info = err
+        res.status(500)
     }
     res.json(response)
 })
