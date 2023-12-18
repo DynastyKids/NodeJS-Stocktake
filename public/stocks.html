@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stocks - Warehouse Electron</title>
-    <link href="/library/bootstrap.min.css" rel="stylesheet" />
+    <link href="/library/bootstrap.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="/library/tabler/tabler-icons.min.css">
-    <link href="/library/dataTables/datatables.css" rel="stylesheet">
-    <script src="/library/dataTables/datatables.js"></script>
+    <link href="/library/datatables/datatables.css" rel="stylesheet">
 </head>
 <body>
 <div class="container-fluid">
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">Stock-take Electron</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -29,7 +29,9 @@
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="labelgenerator.html">Generate Labels</a></li>
                             <li><a class="dropdown-item" href="labelgenerator.html">Manual Input</a></li>
-                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li><a class="dropdown-item" href="#">Scan QR Code</a></li>
                         </ul>
                     </li>
@@ -44,7 +46,7 @@
         </div>
     </nav>
     <div class="container-fluid">
-        <h1>Stocks Index</h1>
+        <h1>Current Stocks</h1>
         <br>
         <div class="container-fluid" id="maincontent">
             <nav aria-label="breadcrumb">
@@ -53,26 +55,29 @@
                     <li class="breadcrumb-item active" aria-current="page">Stocks</li>
                 </ol>
             </nav>
+            <div id="alertAnchor"></div>
 
             <table id="table" class="table " style="width: 100%">
                 <thead class="thead-light">
                 <tr>
                     <th>Code / Product</th>
                     <th>Quantity</th>
-                    <th>Best Before</th><th>Best Before</th>
+                    <th>Best Before</th>
+                    <th>Best Before</th>
                     <th>Location</th>
                     <th>Stock ID<br>Adding Time</th>
-<!--                    <th></th>-->
+                    <th>Actions</th>
                 </tr>
                 </thead>
                 <tfoot class="tfoot-light">
                 <tr>
                     <th>Code / Product</th>
                     <th>Quantity</th>
-                    <th>Best Before</th><th>Best Before</th>
+                    <th>Best Before</th>
+                    <th>Best Before</th>
                     <th>Location</th>
                     <th>Stock ID<br>Adding Time</th>
-                    <!--                    <th></th>-->
+                    <th>Actions</th>
                 </tr>
                 </tfoot>
                 <tbody></tbody>
@@ -101,49 +106,138 @@
         </div>
     </div>
 </div>
+<div class="modal fade" data-bs-backdrop="static" id="editModal" tabindex="-1"
+     aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Item:</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="row">
+                        <h6>Product Information:</h6>
+                        <div class="col-12">
+                            <div style="display: inline-block">
+                                <label class="form-label">Product Info:</label>
+                                <span id="productInfoText"></span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div style="display: inline">
+                                <label class="form-label">Label ID:</label>
+                                <span id="labelIDText"></span>
+                            </div>
+                        </div>
+                        <input type="text" class="form-control col-6" id="modalEditLabelid" hidden value="">
+                        <div class="col-6 col-md-4">
+                            <label for="modalEditQuantity" class="form-label">Product Quantity:</label>
+                            <input type="number" class="form-control col-6" id="modalEditQuantity" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label for="modalEditUnit" class="form-label">Product Unit:</label>
+                            <input type="text" class="form-control col-6" id="modalEditUnit" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label for="modalEditBestbefore" class="form-label">Best Before:</label>
+                            <input type="date" class="form-control col-6" id="modalEditBestbefore" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label for="modelEditLocation" class="form-label">Location:</label>
+                            <input type="text" class="form-control col-6" id="modelEditLocation" value="">
+                        </div>
+                        <div class="col-12 col-md-8 row">
+                            <div class="col-6">
+                                <input type="checkbox" class="form-check-input" id="modelCheckboxRemoved">
+                                <label class="form-label">Product has been removed?</label>
+                            </div>
+                            <div class="col-6" id="group_removeTime" style="display: none">
+                                <label for="inpt_removeTime" class="form-label">Remove Time:</label>
+                                <input type="datetime-local" class="form-control col-6" id="inpt_removeTime" value="">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <p></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="editModalSubmitBtn" disabled>Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeModalLabel">Remove Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure to REMOVE Item from shelf?</p>
+                <form>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="removeModal_check">
+                                <label class="form-check-label" for="removeModal_check">
+                                    Set remove time manually
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12" id="removeModal_time" style="display: none">
+                            <label>Remove Time</label>
+                            <input type="datetime-local" class="form-control" id="removeModal_datetime" value="">
+                        </div>
+                        <div class="col-12" style="display: none">
+                            <label>Label ID</label>
+                            <input type="text" class="form-control" id="removeModal_labelid" hidden value="">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="removeModalYes">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="revertModal" tabindex="-1" aria-labelledby="revertModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="revertModalLabel">Add Item?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure to put back Item from shelf?
+                <form>
+                    <input type="text" class="form-control" id="revertLabelid" hidden value="">
+                    <div class="col-12">
+                        <label for="revertLocation" class="form-label">Shelf Location:</label>
+                        <input type="text" class="form-control col-6" id="revertLocation" value="">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="revertModalYes">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script src="/library/jquery-3.7.1.min.js"></script>
 <script src="/library/bootstrap.bundle.min.js"></script>
-<script>
-    let table = new DataTable('#table',{
-        responsive: true,
-        pageLength: 25,
-        lengthMenu:[10,15,25,50,100],
-        order: [[2, 'asc']],
-        columnDefs: [
-            {
-                target: 2,
-                visible: false,
-                searchable: false
-            },
-        ]
-    });
-
-    document.addEventListener("DOMContentLoaded", function() {
-        fetch("/api/v1/stocks")
-            .then(respsonse=>{
-                if (!respsonse.ok){
-                    throw new Error("API Request failed")
-                }
-                return respsonse.json()
-            }). then(data=>{
-                console.log(data)
-                if (Array.isArray(data.data)){
-                    table.clear().draw()
-                    data.data.forEach(eachRow=>{
-                        table.row.add([
-                            `${eachRow.productCode ? eachRow.productCode : ''} ${eachRow.productName ? eachRow.productName : ''}`,
-                            `${eachRow.quantity ? eachRow.quantity + (eachRow.quantityUnit ? ' '+ eachRow.quantityUnit : '') : ''}`,
-                            `${eachRow.bestbefore ? eachRow.bestbefore : ''}`,
-                            `${eachRow.bestbefore ? new Date(eachRow.bestbefore).toLocaleDateString('en-AU') : ''}`,
-                            `${eachRow.shelfLocation ? eachRow.shelfLocation : ''}`,
-                            `${eachRow.productLabel ? eachRow.productLabel : ''}`,
-                        ]).draw(false)
-                    })
-                }
-            }). catch(err=>{
-                console.error("Error after fetching data: ", err)
-        })
-    });
-</script>
+<script src="/library/datatables/datatables.js"></script>
+<script src="stocks.js"></script>
 </body>
+<style>
+    .table_actions {
+        padding-left: .25rem;
+        padding-right: .25rem;
+    }
+</style>
 </html>
