@@ -225,7 +225,7 @@ document.querySelector("#deleteRowModal").addEventListener('show.bs.modal', (ev)
         document.querySelector("#deleteModalConfirmBtn").textContent = "Updating"
         result = (itemStatus === "true" ? await updateRecordById(itemId, {"active": false}) : await updateRecordById(itemId, {"active": true}))
         // console.log("Delete Model result", result)
-        if (result.acknowledged) {
+        if (result.acknowledged || result.ok === 1) {
             location.reload()
         } else {
             document.querySelector("#deleteRowModal .modal-body p").innerText = "Error happened while on updates."
@@ -314,7 +314,7 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
 
         let updateResult = await updateRecordById(itemId, result)
         //     当最后确认提交成功则dismiss并回弹成功信息
-        if (updateResult.acknowledged) {
+        if (updateResult.ok === 1 || updateResult.acknowledged) {
             bootstrap.Modal.getInstance(document.querySelector("#editRowModal")).hide()
             window.location.reload()
         } else {
@@ -337,7 +337,7 @@ async function updateRecordById(recordId, updateData) {
     let results;
     try {
         await client.connect();
-        results = await sessions.updateOne({'_id': (new ObjectID(recordId))}, {$set: updateData});
+        results = await sessions.findOneAndUpdate({'_id': (new ObjectID(recordId))}, {$set: updateData});
     } catch (e) {
         console.error("Fetching error:", e)
     } finally {
