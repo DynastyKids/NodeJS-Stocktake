@@ -67,17 +67,13 @@ document.addEventListener("DOMContentLoaded",async () => {
     document.querySelector("#btn_submit").removeAttribute("disabled")
 })
 
-document.querySelector("#check_manualTime").addEventListener("change", (ev)=>{
-    if (ev.target.checked){//     当用户勾选时候允许用户自定义设置时间
+document.querySelector("#check_manualTime").addEventListener("change", function (ev){
+    if (document.querySelector("#check_manualTime").checked){//     当用户勾选时候允许用户自定义设置时间
         document.querySelector("#group_createTime").style = ""
-        if (document.querySelector("#check_itemRemoved").checked){
-            document.querySelector("#group_removeTime").style = ""
-        } else {
-            document.querySelector("#group_removeTime").style = "display: none"
-        }
+        document.querySelector("#group_removeTime").style = (document.querySelector("#check_itemRemoved").checked ? "" : "display: none")
     } else { // 如果用户未勾选则隐藏，用户提交时候二次检查，如果未勾选，则修改时间值为默认值
         document.querySelector("#group_createTime").style = "display: none"
-        document.querySelector("#group_consugroup_removeTimeeTime").style = "display: none"
+        document.querySelector("#group_removeTime").style = "display: none"
     }
 })
 
@@ -87,7 +83,6 @@ document.querySelector("#inpt_shelflocation").addEventListener("change",(ev) =>{
 })
 
 document.querySelector("#check_itemRemoved").addEventListener("change", (ev)=>{
-    document.querySelector("#group_createTime").style = ""
     if (document.querySelector("#check_itemRemoved").checked && document.querySelector("#check_manualTime").checked){
         document.querySelector("#group_removeTime").style = ""
     } else {
