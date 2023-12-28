@@ -305,18 +305,12 @@ function loadStockInfoToTable(fetchAll) {
                     }
                 }
 
-                // Update 2023, using new location field
-                let shelfLocationField = (element.shelfLocation ? `${element.shelfLocation}` : "")
-                if (element.hasOwnProperty("locationRecords") && element.locationRecords.length > 1){
-                    shelfLocationField = element.locationRecords[element.locationRecords.length-1].location
-                }
-
                 table.row.add([
                     `${(element.hasOwnProperty("productCode") ? element.productCode : "")} - ${element.productName}`,
                     `${element.hasOwnProperty("quantity") ? element.quantity + " " + (element.quantityUnit ? element.quantityUnit : "") : ""}`,
                     (element.bestbefore ? new Date(element.bestbefore).getTime() : ""),
                     (element.bestbefore ? new Date(element.bestbefore).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' }) : ""),
-                    (shelfLocationField ? `<a href=../stocks/location.html?location=${shelfLocationField}>${shelfLocationField}</a>`: '') ,
+                    (element.shelfLocation ? `<a href=../stocks/location.html?location=${element.shelfLocation}>${element.shelfLocation}</a>`: '') ,
                     `<small>${(element.hasOwnProperty("createTime") ? "A:"+new Date(element.createTime).toLocaleDateString('en-AU',{ timeZone: 'Australia/Sydney' }) : "")}</small>`+
                     `<small>${(element.hasOwnProperty("removeTime") && element.removed === 1 ? "<br>R:"+new Date(element.removeTime).toLocaleDateString('en-AU',{ timeZone: 'Australia/Sydney' }) : "")}</small>`,
                     `<small>${(element.productLabel ? element.productLabel : "")}</small>`+
