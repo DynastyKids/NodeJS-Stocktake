@@ -83,9 +83,11 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
     // console.log(doc.internal.pageSize.width,doc.internal.pageSize.height) // Line Height在A4横向下总高度约为210
     let prefillArray = []
     let productLists = document.querySelectorAll(".rowRecords")
+    let sequence = 0;
     for (let i = 0; i < productLists.length; i++) {
         let rowInput = productLists[i].querySelectorAll("input")
         for (let copy = 0; copy < rowInput[4].value; copy++) { // Looping when require multiple copies
+            sequence++
             var stockInfo = {
                 POnumber: "",
                 productCode: "",
@@ -93,12 +95,17 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
                 quantity: 1,
                 quantityUnit: "",
                 bestbefore: "",
-                productLabel: (new Date()).toISOString().replaceAll("-", "").split("T")[0] + getRandomXHexdigits(7),
+                productLabel: (new Date()).toISOString().replaceAll("-", "").split("T")[0],
+                seq: sequence,
                 removed: 0,
                 loggingTime: new Date(),
                 createTime: new Date()
             }
-            
+
+            if (String(stockInfo.POnumber).length <= 0){
+                stockInfo.loggingTime = new Date()
+            }
+
             // 验证输入的productName是否在库中, 替换rowInput[0].value中的名称为产品Code，通过搜索原datalist的列表
             document.querySelectorAll("#productSuggestions option").forEach(eachItem =>{
                 if (eachItem.value === rowInput[0].value){
@@ -118,42 +125,59 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
             stockInfo.bestbefore = rowInput[3].value
             stockInfo.POnumber = document.querySelector("#input_purchaseorder").value ? document.querySelector("#input_purchaseorder").value : ""
 
-            var initTextSize = 120
-            doc.setFontSize(initTextSize).setFont(undefined, 'normal')
+            var initTextSize = 110
+            doc.setFontSize(initTextSize).setFont("Helvetica", 'normal')
             var part1Text = stockInfo.productName.slice(0,30);
             while (doc.getTextDimensions(part1Text).w > doc.internal.pageSize.getWidth() - 20) {
                 initTextSize -= 5;
-                doc.setFontSize(initTextSize).setFont(undefined, 'normal')
+                doc.setFontSize(initTextSize).setFont("Helvetica", 'normal')
             }
-            doc.text((stockInfo.productName.length<=50 ? stockInfo.productName : stockInfo.productName.slice(0,50)+"..."),
-                (stockInfo.productName.length<=25 ? doc.internal.pageSize.getWidth()/2 : 15),
-                (stockInfo.productName.length<=25 ? 110 : 70), {
-                    lineHeightFactor: 1.1,
-                    align: (stockInfo.productName.length<=25 ? "center" : 'left'),
-                    maxWidth: doc.internal.pageSize.width-30});
+
+            if (stockInfo.productName.length <= 30) {
+                while (doc.getTextDimensions(part1Text).w > doc.internal.pageSize.getWidth() - 40) {
+                    initTextSize -= 5;
+                    doc.setFontSize(initTextSize).setFont("Helvetica", 'normal')
+                }
+                doc.text(stockInfo.productName, doc.internal.pageSize.getWidth() / 2, 100, {lineHeightFactor: 0.9, align: "center"})
+            } else {
+                while (doc.getTextDimensions(part1Text).w > doc.internal.pageSize.getWidth() - 40) {
+                    initTextSize -= 5;
+                    doc.setFontSize(initTextSize).setFont("Helvetica", 'normal')
+                }
+                doc.text(`${stockInfo.productCode} - ${stockInfo.productName.slice(0, 40)}...`, 15, 80,
+                    {lineHeightFactor: 1.1, align: "left", maxWidth: doc.internal.pageSize.width - 30})
+                stockInfo.productName = `${stockInfo.productCode} - ${stockInfo.productName.slice(0, 40)}...`
+            }
             // 新增内容，如果字段过长，拆分成2行，每行限制30字符，至多60字符，两行使用相同配置，左对齐
 
-            doc.setFontSize(90).setFont(undefined, 'normal'); //Quantity Text
-            doc.text(stockInfo.quantity + "  " + stockInfo.quantityUnit, 25, doc.internal.pageSize.getHeight() - 190, {lineHeightFactor: 0.8});
+            let labelHash = generateProductHashString(stockInfo)
+            stockInfo.productLabel = (new Date()).toISOString().replaceAll("-", "").split("T")[0] + labelHash.substring(0,7)
 
-            doc.setFontSize(90).setFont(undefined, 'normal'); // bestbefore Text
-            doc.text(stockInfo.bestbefore, 20, doc.internal.pageSize.getHeight() - 75, {lineHeightFactor: 0.8});
+            doc.setFontSize(90).setFont("Helvetica", 'normal');
+            doc.text(stockInfo.quantity + "  " + stockInfo.quantityUnit, 15, doc.internal.pageSize.getHeight() - 180, {lineHeightFactor: 1});
 
-            doc.addImage(qrCodeGenerateV3(stockInfo.POnumber, stockInfo.productCode, stockInfo.productName,
-                    stockInfo.quantity, stockInfo.quantityUnit, stockInfo.bestbefore, stockInfo.productLabel)
-                , "PNG", doc.internal.pageSize.getWidth() - 255, doc.internal.pageSize.getHeight() - 255, 250, 250)
+            doc.setFontSize(90).setFont("Helvetica", 'normal')
+            doc.text(stockInfo.bestbefore, 15, doc.internal.pageSize.getHeight() - 90, {lineHeightFactor: 1});
+
+            doc.addImage(QRCodeObjectGenerateV3(stockInfo), "PNG", doc.internal.pageSize.getWidth() - 255, doc.internal.pageSize.getHeight() - 255, 250, 250)
 
             //新增右上角标签号标记
-            doc.setFontSize(28).setFont(undefined, 'normal')
-            doc.text(stockInfo.productLabel.slice(-7), doc.internal.pageSize.getWidth()-20, 32, {lineHeightFactor: 0.75, align: "right"});
+            doc.setFontSize(48).setFont("courier", 'bold')
+            doc.text(`${stockInfo.productLabel.slice(-7)}`, 20, doc.internal.pageSize.getHeight() - 50, {lineHeightFactor: 0.75,});
+
+            doc.setFontSize(36).setFont("courier", 'bold')
+            doc.text(`${stockInfo.productLabel.slice(-7)}`, doc.internal.pageSize.getWidth() - 20, 36, {lineHeightFactor: 0.75, align: "right"});
 
             doc.setFontSize(10).setFont(undefined, 'normal')
-            let bottomVerfiyText = ["V3", stockInfo.productLabel, stockInfo.POnumber, stockInfo.productCode,
-                stockInfo.quantity + stockInfo.quantityUnit, (stockInfo.bestbefore ? "Exp:" + stockInfo.bestbefore : "*")]
+            let bottomVerfiyText = ["V3_Electron", "P:"+stockInfo.POnumber,
+                "C:"+stockInfo.productCode, "Q:"+stockInfo.quantity + stockInfo.quantityUnit,
+                "E:" + (stockInfo.bestbefore ? stockInfo.bestbefore.replaceAll("-", "") : "*")]
+            doc.text(bottomVerfiyText.toString(), 20, doc.internal.pageSize.getHeight() - 30, {lineHeightFactor: 0.8});
+            doc.text("L:"+stockInfo.productLabel, 20, doc.internal.pageSize.getHeight() - 20, {lineHeightFactor: 0.8});
+
             if (document.querySelector("#preloadCheckbox").checked) {
                 prefillItem({item: stockInfo})
             }
-            doc.text(bottomVerfiyText.toString(), 20, doc.internal.pageSize.getHeight() - 30, {lineHeightFactor: 0.6});
             prefillArray.push(stockInfo);
             doc.addPage("a4","landscape");
         }
@@ -195,24 +219,23 @@ function checkProductNameInDatabase(productsData, productCode){
     return false;
 }
 
-function getRandomXHexdigits(bit) {
-    return (Math.random() * 0xfffffffff * 1000000000).toString(16).slice(0, bit)
+// 2024-01-01预更新
+/* 从2024.1.1开始，产品编号不在使用随机数，将改成使用SHA1信息摘要， 根据传入的数组生成对应的HASH值
+* 为了避免信息重复，由收货单传入的值要有PTL#板位号，或者箱数编号范围x-xxx~x-xxx，，手动生成的多个label用自编号1~100...
+* */
+function generateProductHashString(qrObject){
+    let targetObject = qrObject
+    delete targetObject.productLabel
+    return sha1(JSON.stringify(targetObject))
 }
 
-// QR代码生成部分沿用Chrome EXT项目中的方法，默认使用V3，等后续按照产品需要引入V5
-function qrCodeGenerateV3(purchaseNo = "", productCode = "", productName = "", quantity = 1, unit = "", bestbefore = "", labelId = "") {
-    var qrText = "https://yourAddress.local/?item=" + btoa(
-        JSON.stringify({
-            Build: 3,
-            POnumber: purchaseNo, //Purchase Order Reference
-            productCode: productCode,
-            productName: productName,
-            quantity: quantity,
-            quantityUnit: unit,
-            bestbefore: (bestbefore !== null ? bestbefore : ""), // bestbefore by YYYYMMDD
-            productLabel: labelId
-        })
-    );
-    var qrcode = new QRious({level: "M", size: 300, value: qrText, padding: 3});
-    return qrcode.toDataURL("image/png")
+function QRCodeObjectGenerateV3(qrObject){
+    let remoteServerAddress = "http://192.168.0.254:3000/qrstock?item="
+    try {
+        var qrText = remoteServerAddress + btoa(JSON.stringify(qrObject))
+        var qrcode = new QRious({level: "L", size: 300, value: qrText, padding: 5});
+        return qrcode.toDataURL("image/png")
+    } catch (e) {
+        return null
+    }
 }
