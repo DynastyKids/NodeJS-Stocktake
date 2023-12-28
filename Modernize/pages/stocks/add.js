@@ -1,6 +1,5 @@
 const MongoClient = require('mongodb').MongoClient;
-const {ServerApiVersion, ObjectId} = require('mongodb');
-const path = require('path');
+const {ServerApiVersion, ObjectId, Decimal128} = require('mongodb');
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
@@ -140,37 +139,27 @@ document.querySelector("#form_product").addEventListener("submit",(ev)=>{
     object.labelBuild = 3
     object.locationRecords = []
     object.sessions = [(document.querySelector("#inpt_sessionid").value ? document.querySelector("#inpt_sessionid").value : "STOCKS")]
-    if (document.querySelector("#inpt_prodCode").value){
-        object.productCode = document.querySelector("#inpt_prodCode").value
+    if (String(document.querySelector("#inpt_prodCode").value).length > 0){ object.productCode = document.querySelector("#inpt_prodCode").value }
+    if (String(document.querySelector("#inpt_prodName").value).length > 0){ object.productName = document.querySelector("#inpt_prodName").value }
+    if (String(document.querySelector("#inpt_quantity").value).length > 0){ object.quantity = parseInt(document.querySelector("#inpt_quantity").value) }
+    if (String(document.querySelector("#inpt_unit").value).length > 0){ object.quantityUnit = document.querySelector("#inpt_unit").value }
+    if (String(document.querySelector("#inpt_purchaseorder").value).length > 0){ object.POnumber = document.querySelector("#inpt_purchaseorder").value }
+    if (String(document.querySelector("#inpt_bestbefore").value).length > 0){ object.bestbefore = document.querySelector("#inpt_bestbefore").value }
+    if (String(document.querySelector("#inpt_labelid").value).length > 0){ object.productLabel = document.querySelector("#inpt_labelid").value }
+    if (String(document.querySelector("#inpt_unitprice").value).length > 0){
+        object.unitPrice = Decimal128.fromString(document.querySelector("#inpt_unitprice").value)
     }
-    if (document.querySelector("#inpt_prodName").value){
-        object.productName = document.querySelector("#inpt_prodName").value
-    }
-    if (document.querySelector("#inpt_quantity").value){
-        object.quantity = document.querySelector("#inpt_quantity").value
-    }
-    if (document.querySelector("#inpt_unit").value){
-        object.quantityUnit = document.querySelector("#inpt_unit").value
-    }
-    if (document.querySelector("#inpt_purchaseorder").value){
-        object.POnumber = document.querySelector("#inpt_purchaseorder").value
-    }
-    if (document.querySelector("#inpt_bestbefore").value){
-        object.bestbefore = document.querySelector("#inpt_bestbefore").value
-    }
-    if (document.querySelector("#inpt_labelid").value){
-        object.productLabel = document.querySelector("#inpt_labelid").value
-    }
-    if (document.querySelector("#inpt_unitprice").value){
-        object.unitPrice = document.querySelector("#inpt_unitprice").value
-    }
-    object.loggingTime =  new Date()
-    object.createTime =  (document.querySelector("#check_manualTime").checked && document.querySelector("#inpt_createTime").value ?
-        new Date(document.querySelector("#inpt_createTime").value) : new Date())
-    object.removed = document.querySelector("#check_itemRemoved").checked ? 1 : 0;
-    if (document.querySelector("#check_manualTime").checked && document.querySelector("#check_itemRemoved").checked){
+    object.loggingTime = new Date()
+    object.createTime = new Date()
+    if (document.querySelector("#check_itemRemoved").checked){
+        object.removed = 1
         object.removeTime = (document.querySelector("#inpt_removeTime").value ? new Date(document.querySelector("#inpt_removeTime").value) : new Date())
+    } else {
+        object.removed = 0
     }
+    object.createTime = (document.querySelector("#check_manualTime").checked && document.querySelector("#inpt_createTime").value ?
+        new Date(document.querySelector("#inpt_createTime").value) : new Date())
+    object.quarantine =  document.querySelector("#check_itemQuarantine").checked
 
     if (document.querySelector("#inpt_shelflocation").value){
         object.shelfLocation =  document.querySelector("#inpt_shelflocation").value

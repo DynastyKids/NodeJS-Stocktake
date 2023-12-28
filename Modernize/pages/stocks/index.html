@@ -109,6 +109,12 @@
                         <tbody></tbody>
                     </table>
                 </div>
+                <div class="card-footer">
+                    Icon Note:
+                    <ul>
+                        <li><i class="ti ti-message-dots"></i> : Item has addition note within</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -187,7 +193,19 @@
                 <form>
                     <div class="row">
                         <h6>Product Information:</h6>
-                        <input type="text" class="form-control col-6" id="modalEditLabelid" hidden value="">
+                        <div class="col-12">
+                            <div style="display: inline">
+                                <label class="form-label">Label ID:</label>
+                                <span id="labelIDText"></span>
+                                <input type="text" class="form-control col-6" id="modalEditLabelid" disabled hidden value="">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div style="display: inline-block">
+                                <label class="form-label">Product Info:</label>
+                                <span id="productInfoText"></span>
+                            </div>
+                        </div>
                         <div class="col-6 col-md-4">
                             <label for="modalEditQuantity" class="form-label">Product Quantity:</label>
                             <input type="number" class="form-control col-6" id="modalEditQuantity" value="">
@@ -213,30 +231,26 @@
                             <input type="text" class="form-control col-6" id="modelEditPOnumber" value="">
                         </div>
                         <div class="col-6">
-                            <label for="modelEditLoggingTime" class="form-label">Initial Log Time:</label>
-                            <input type="datetime-local" class="form-control col-6" id="modelEditLoggingTime" value="">
-                        </div>
-                        <div class="col-12">
-                            <div style="display: inline-block">
-                                <label class="form-label">Product Info:</label>
-                                <span id="productInfoText"></span>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div style="display: inline">
-                                <label class="form-label">Label ID:</label>
-                                <span id="labelIDText"></span>
-                            </div>
+                            <label for="modelEditCreateTime" class="form-label">Create Time:</label>
+                            <input type="datetime-local" class="form-control col-6" id="modelEditCreateTime" value="">
                         </div>
                         <div class="col-12">
                             <div class="col-6">
-                                <input type="checkbox" class="form-check-input" id="modelCheckboxRemoved">
+                                <input type="checkbox" class="form-check-input" id="modelEditCheckQuarantine">
+                                <label class="form-label">Item is under Quarantine?</label>
+                            </div>
+                            <div class="col-6">
+                                <input type="checkbox" class="form-check-input" id="modelEditCheckRemoved">
                                 <label class="form-label">Product has been removed?</label>
                             </div>
                             <div class="col-6" id="group_removeTime" style="display: none">
                                 <label for="modelEditRemoveTime" class="form-label">Remove Time:</label>
                                 <input type="datetime-local" class="form-control col-6" id="modelEditRemoveTime" value="">
                             </div>
+                        </div>
+                        <div class="col-12">
+                            <label for="modelEditComments" class="form-label">Comments / Notes:</label>
+                            <textarea class="form-control" id="modelEditComments" rows="5"></textarea>
                         </div>
                     </div>
                 </form>

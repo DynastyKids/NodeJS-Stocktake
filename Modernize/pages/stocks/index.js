@@ -1,6 +1,6 @@
 const { ipcRenderer } = require('electron');
 const MongoClient = require('mongodb').MongoClient;
-const {ServerApiVersion} = require('mongodb');
+const {ServerApiVersion, Decimal128} = require('mongodb');
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
@@ -96,44 +96,82 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
             document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${fullResultSet[i].productName}`
             document.querySelector("#editModal .modal-body #productInfoText").textContent = `${fullResultSet[i].productCode} - ${fullResultSet[i].productName}`
             document.querySelector("#editModal .modal-body #labelIDText").textContent = `${fullResultSet[i].productLabel}`
-            document.querySelector("#modalEditQuantity").value = (fullResultSet[i].quantity ? fullResultSet[i].quantity : "")
-            document.querySelector("#modalEditUnit").value = (fullResultSet[i].quantityUnit ? fullResultSet[i].quantityUnit : "")
-            document.querySelector("#modalEditBestbefore").value = (fullResultSet[i].bestbefore ? fullResultSet[i].bestbefore : "")
-            document.querySelector("#modelEditLocation").value = (fullResultSet[i].shelfLocation ? fullResultSet[i].shelfLocation : "")
-            document.querySelector("#modelEditPOnumber").value = (fullResultSet[i].POnumber ? fullResultSet[i].POnumber : (fullResultSet[i].POIPnumber ? fullResultSet[i].POIPnumber : ""))
-            document.querySelector("#modelEditUnitprice").value = (fullResultSet[i].unitPrice ? fullResultSet[i].unitPrice : "")
-            document.querySelector("#modelEditLoggingTime").value = (fullResultSet[i].loggingTime ? fullResultSet[i].loggingTime : "")
-            document.querySelector("#modelCheckboxRemoved").checked = (fullResultSet[i].removed === 1)
-            document.querySelector("#modelEditRemoveTime").value = (fullResultSet[i].removeTime ? fullResultSet[i].removeTime : "")
+            document.querySelector("#modalEditQuantity").value = (fullResultSet[i].hasOwnProperty("quantity") ? fullResultSet[i].quantity : "")
+            document.querySelector("#modalEditUnit").value = (fullResultSet[i].hasOwnProperty("quantityUnit") ? fullResultSet[i].quantityUnit : "")
+            document.querySelector("#modalEditBestbefore").value = (fullResultSet[i].hasOwnProperty("bestbefore") ? fullResultSet[i].bestbefore : "")
+            document.querySelector("#modelEditLocation").value = (fullResultSet[i].hasOwnProperty("shelfLocation") ? fullResultSet[i].shelfLocation : "")
+            document.querySelector("#modelEditPOnumber").value = (fullResultSet[i].hasOwnProperty("POnumber") ? fullResultSet[i].POnumber : (fullResultSet[i].hasOwnProperty("POIPnumber") ? fullResultSet[i].POIPnumber : ""))
+            document.querySelector("#modelEditUnitprice").value = (fullResultSet[i].hasOwnProperty("unitPrice") ? fullResultSet[i].unitPrice : "")
+            document.querySelector("#modelEditCreateTime").value = (fullResultSet[i].hasOwnProperty("createTime") ? fullResultSet[i].createTime : "")
+            document.querySelector("#modelEditCheckRemoved").checked = (fullResultSet[i].hasOwnProperty("removed") && fullResultSet[i].removed === 1)
+            document.querySelector("#modelEditCheckQuarantine").checked = (fullResultSet[i].hasOwnProperty("quarantine") && fullResultSet[i].quarantine)
+            document.querySelector("#modelEditRemoveTime").value = (fullResultSet[i].hasOwnProperty("removeTime") ? fullResultSet[i].removeTime : "")
+            document.querySelector("#modelEditComments").value = (fullResultSet[i].hasOwnProperty("comments") ? fullResultSet[i].comments : "")
             document.querySelector("#editModalSubmitBtn").disabled = false
             break;
         }
     }
 
     document.querySelector("#editModalSubmitBtn").addEventListener("click", async (ev) => {
-        let client = new MongoClient(uri, {
-            serverApi: {
-                version: ServerApiVersion.v1,
-                useNewUrlParser: true,
-                useUnifiedTopology: true
-            }
-        });
+        let client = new MongoClient(uri, {serverApi: { version: ServerApiVersion.v1,  useNewUrlParser: true,  useUnifiedTopology: true }});
         const session = client.db(targetDB).collection("pollinglog");
         document.querySelector("#editModalSubmitBtn").disabled = true
         document.querySelector("#editModalSubmitBtn").textContent = "Updating"
-        let result = await session.updateOne({"productLabel": requestLabelId}, {
-            $set: {
-                quantity: (document.querySelector("#modalEditQuantity").value ? document.querySelector("#modalEditQuantity").value : originProperty.quantity ),
-                quantityUnit: (document.querySelector("#modalEditUnit").value ? document.querySelector("#modalEditUnit").value : originProperty.quantityUnit ),
-                bestbefore : (document.querySelector("#modalEditBestbefore").value ? document.querySelector("#modalEditBestbefore").value : originProperty.bestbefore),
-                shelfLocation: (document.querySelector("#modelEditLocation").value ? document.querySelector("#modelEditLocation").value : originProperty.shelfLocation),
-                POnumber: (document.querySelector("#modelEditPOnumber").value ? document.querySelector("#modelEditPOnumber").value : (originProperty.POnumber ? originProperty.POnumber : ""))
-            },
-        })
-        if (originProperty.shelfLocation !== document.querySelector("#modelEditLocation").value) {
-            // 2023 DEC update: 添加了过往location的记录
-            await session.updateOne({"productLabel": requestLabelId}, {$push: {locationRecords: {datetime: new Date()}}})
+        // 当update时候，获取所有的输入框信息，并和原有的值对比，如果发生变化则添加到新系统中，并且添加个changelog
+
+        let setObject = {}
+        let changedObject = {datetime: new Date(), events:[]}
+        if (originProperty.hasOwnProperty("quantity") && originProperty.quantity !== document.querySelector("#modalEditQuantity").value){
+            setObject.quantity = parseInt(document.querySelector("#modalEditQuantity").value)
+            changedObject.events.push({field:"quantity", before:parseInt(originProperty.quantity)})
         }
+        if (originProperty.hasOwnProperty("quantityUnit") && originProperty.quantityUnit !== document.querySelector("#modalEditUnit").value){
+            setObject.quantityUnit = document.querySelector("#modalEditUnit").value
+            changedObject.events.push({field:"quantityUnit", before:originProperty.quantityUnit})
+        }
+        if (originProperty.hasOwnProperty("bestbefore") && originProperty.bestbefore !== document.querySelector("#modalEditBestbefore").value){
+            setObject.bestbefore = document.querySelector("#modalEditBestbefore").value
+            changedObject.events.push({field:"bestbefore", before: originProperty.bestbefore})
+        }
+        if (originProperty.hasOwnProperty("shelfLocation") && originProperty.shelfLocation !== document.querySelector("#modelEditLocation").value){
+            setObject.shelfLocation = document.querySelector("#modelEditLocation").value
+            changedObject.events.push({field:"shelfLocation", before: originProperty.shelfLocation})
+        }
+        if (originProperty.hasOwnProperty("POnumber") && originProperty.POnumber !== document.querySelector("#modelEditPOnumber").value){
+            setObject.POnumber = document.querySelector("#modelEditPOnumber").value
+            changedObject.events.push({field:"POnumber", before: originProperty.POnumber})
+        }
+        if (originProperty.hasOwnProperty("unitPrice") && originProperty.unitPrice !== document.querySelector("#modelEditUnitprice").value){
+            setObject.unitPrice = Decimal128.fromString(document.querySelector("#modelEditUnitprice").value)
+            changedObject.events.push({field:"unitPrice", before: originProperty.unitPrice})
+        }
+        if (originProperty.hasOwnProperty("removed") && originProperty.removed === 0 && document.querySelector("#modelEditCheckRemoved").checked){
+            setObject.removed = parseInt("1")
+            changedObject.events.push({field:"removed", before: 0})
+        } else if (originProperty.hasOwnProperty("removed") && originProperty.removed === 1 && !document.querySelector("#modelEditCheckRemoved").checked){
+            setObject.removed = parseInt("0")
+            changedObject.events.push({field:"removed", before: 1})
+        }
+
+        if(originProperty.hasOwnProperty("quarantine") && originProperty.quarantine !== document.querySelector("#modelEditCheckQuarantine").checked){
+            setObject.quarantine = document.querySelector("#modelEditCheckQuarantine").checked
+        }
+
+        if (String(document.querySelector("#modelEditComments").value).length > 0){
+            // Comments变动不做记录保存
+            setObject.comments = document.querySelector("#modelEditComments").value
+        }
+
+        // 位置发生变动，需要添加locationRecords
+        let pushObject = {}
+        if (originProperty.shelfLocation !== document.querySelector("#modelEditLocation").value) {
+            pushObject.locationRecords = {datetime: new Date(), location: document.querySelector("#modelEditLocation").value}
+        }
+        if (changedObject.events.length > 0){
+            pushObject.changelog = changedObject
+        }
+
+        let result = await session.updateOne({"productLabel": requestLabelId}, {$set: setObject, $push: pushObject})
         if (result.acknowledged){
             setTimeout(function(){
                 bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
@@ -145,12 +183,12 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
     })
 })
 
-document.querySelector("#modelCheckboxRemoved").addEventListener("change",(ev)=>{
+document.querySelector("#modelEditCheckRemoved").addEventListener("change",(ev)=>{
     if (ev.target.checked){
         document.querySelector("#group_removeTime").style = ""
     } else {
         document.querySelector("#group_removeTime").style = "display:none"
-        document.querySelector("#inpt_removeTime").value = ""
+        document.querySelector("#modelEditRemoveTime").value = ""
     }
 })
 
@@ -306,7 +344,10 @@ function loadStockInfoToTable(fetchAll) {
                 }
 
                 table.row.add([
-                    `${(element.hasOwnProperty("productCode") ? element.productCode : "")} - ${element.productName}`,
+                    `${(element.hasOwnProperty("productCode") ? element.productCode : "")} - ${element.productName}`+
+                    (element.hasOwnProperty("comments") || element.hasOwnProperty("quarantine") ? `<br><span>`+
+                        (element.hasOwnProperty("comments") && element.comments.length > 0 ? `<i class="ti ti-message-dots"></i>`: "") +
+                        (element.hasOwnProperty("quarantine") ? `<i class="ti ti-eye-search"></i>`: "") + `</span>` : "" ),
                     `${element.hasOwnProperty("quantity") ? element.quantity + " " + (element.quantityUnit ? element.quantityUnit : "") : ""}`,
                     (element.bestbefore ? new Date(element.bestbefore).getTime() : ""),
                     (element.bestbefore ? new Date(element.bestbefore).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' }) : ""),
@@ -317,7 +358,7 @@ function loadStockInfoToTable(fetchAll) {
                     `<small><a href="#" data-bs-ponumber="${(element.POnumber ? element.POnumber : (element.POIPnumber ? element.POIPnumber : ""))}" class="table_action_search">
                         ${(element.POnumber ? "<br>"+element.POnumber : (element.POIPnumber ? "<br>"+element.POIPnumber : ""))}</a></small>`,
                     `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
-                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Edit</a>` +
+                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">View/Edit</a>` +
                     (element.removed < 1 ? `
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>
@@ -356,9 +397,7 @@ async function getAllStockItems(findall = false) {
         } else {
             result.resultSet = await sessions.find({removed: 0}, options).toArray()
         }
-        console.log(result)
     } catch (err) {
-        console.error(err)
         result['message'] = err
     } finally {
         await client.close()
