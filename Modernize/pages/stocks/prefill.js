@@ -17,6 +17,7 @@ let table = new DataTable('#table', {
     pageLength: 25,
     lengthMenu: [10, 15, 25, 50, 100],
     columns: [{"width": "25%"}, {"width": "15%"}, {"width": "15%"}, {"width": "10%"}, {"width": "20%"}, null],
+    order: [[4, 'desc']],
 });
 
 document.addEventListener("DOMContentLoaded", async function () {
@@ -50,7 +51,7 @@ async function fetchPatchingItem(productLabel) {
         result = await session.find({productLabel: productLabel}).toArray()
         console.log(result)
     } catch (e) {
-        console.error(`Remove Stock Error when process: ${productLabel};`, e)
+        console.error(`Fetching stock information error when attempt fetching: ${productLabel};`, e)
     } finally {
         await client.close()
     }
