@@ -1,5 +1,5 @@
 const MongoClient = require('mongodb').MongoClient;
-const {ServerApiVersion} = require('mongodb');
+const {ServerApiVersion, Decimal128} = require('mongodb');
 const ObjectID = require("mongodb").ObjectId
 
 var $ = require("jquery");
@@ -129,7 +129,6 @@ async function fetchUsedStock(){
     } finally {
         await client.close();
     }
-    console.log (stocks)
     return stocks
 }
 
@@ -144,8 +143,6 @@ async function fetchTablesData() {
         let stockCount = 0;
         usedStocks.forEach(eachUsedRecord=>{
             if (eachUsedRecord.productCode === eachItem.productCode){
-                console.log(eachUsedRecord.productCode , eachItem.productCode)
-                console.log(eachItem)
                if (eachUsedRecord.hasOwnProperty("createTime") && eachUsedRecord.hasOwnProperty("removeTime")){
                    stockTurnoverRate += parseInt(new Date(eachUsedRecord.removeTime).getTime() - new Date(eachUsedRecord.createTime).getTime())
                    stockCount ++;
@@ -155,7 +152,6 @@ async function fetchTablesData() {
                }
             }
         })
-        console.log(eachItem.productCode,stockTurnoverRate,stockCount)
         dataset.push([
             `${(eachItem.productCode ? eachItem.productCode : "")}${(eachItem.labelname && eachItem.productCode ? " - ": "")}${(eachItem.labelname ? eachItem.labelname : "")}<br><span>${eachItem.withBestbefore > 0 ? "<i class=\"ti ti-calendar-due\"></i>" : ""}</span>`,
             `${stockTurnoverRate > 0 && stockCount > 0 ?(stockTurnoverRate / stockCount / 86400000 ).toFixed(2): ""}`,
@@ -224,7 +220,6 @@ document.querySelector("#deleteRowModal").addEventListener('show.bs.modal', (ev)
         document.querySelector("#deleteModalConfirmBtn").disabled = true
         document.querySelector("#deleteModalConfirmBtn").textContent = "Updating"
         result = (itemStatus === "true" ? await updateRecordById(itemId, {"active": false}) : await updateRecordById(itemId, {"active": true}))
-        // console.log("Delete Model result", result)
         if (result.acknowledged || result.ok === 1) {
             location.reload()
         } else {
@@ -237,6 +232,7 @@ document.querySelector("#deleteRowModal").addEventListener('show.bs.modal', (ev)
 //修改弹窗，和原有的页面跳转暂时保持平行
 document.querySelector("#editRowModal").addEventListener('show.bs.modal', async (ev) => {
     let itemId = ev.relatedTarget.getAttribute("data-bs-itemid")
+    let originProduct = await findOneRecordById(itemId)
     // 2023-10-11新增加Edit为Modal弹窗，通过弹窗直接修改对应参数，Add部分保持不变，旧的Edit/add通用页面继续保留
 
     //初始化设置，默认设置submit btn为不可用，清空所有input
@@ -248,29 +244,28 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
     })
     document.querySelector("#editRowModalLabel").textContent = "Loading Data ..."
     document.querySelector("#expiredateCheck").checked = false
-
     try {
-        let result = await findOneRecordById(itemId)
+        document.querySelector("#editRowModalinput_productId").value = itemId
         //     回填数据到输入框，对输入框解除disabled
-        if (result) {
-            document.querySelector("#editRowModalLabel").textContent = `Edit Product Infos ${result.productCode ? " for " + result.productCode + (result.labelname ? " - " + result.labelname : "") : ""}`
-            document.querySelector("#editRowModalinput_productCode").value = (result.productCode ? result.productCode : "")
-            document.querySelector("#editRowModalinput_labelName").value = (result.labelname ? result.labelname : "")
-            document.querySelector("#editRowModalinput_description").value = (result.description ? result.description : "")
+        if (originProduct) {
+            document.querySelector("#editRowModalLabel").textContent = `Edit Product Infos ${originProduct.productCode ? " for " + originProduct.productCode + (originProduct.labelname ? " - " + originProduct.labelname : "") : ""}`
+            document.querySelector("#editRowModalinput_productCode").value = (originProduct.productCode ? originProduct.productCode : "")
+            document.querySelector("#editRowModalinput_labelName").value = (originProduct.labelname ? originProduct.labelname : "")
+            document.querySelector("#editRowModalinput_description").value = (originProduct.description ? originProduct.description : "")
 
-            document.querySelector("#editRowModalinput_cartonQty").value = (result.cartonQty ? result.cartonQty : "")
-            document.querySelector("#editRowModalinput_palletQty").value = (result.palletQty ? result.palletQty : "")
-            document.querySelector("#editRowModalinput_unit").value = (result.unit ? result.unit : "")
+            document.querySelector("#editRowModalinput_cartonQty").value = (originProduct.cartonQty ? originProduct.cartonQty : "")
+            document.querySelector("#editRowModalinput_palletQty").value = (originProduct.palletQty ? originProduct.palletQty : "")
+            document.querySelector("#editRowModalinput_unit").value = (originProduct.unit ? originProduct.unit : "")
 
-            document.querySelector("#editRowModalinput_weight").value = (result.productCode ? result.productCode : "")
-            document.querySelector("#editRowModalinput_length").value = (result.sizeLength ? result.sizeLength : "")
-            document.querySelector("#editRowModalinput_width").value = (result.sizeWidth ? result.sizeWidth : "")
-            document.querySelector("#editRowModalinput_height").value = (result.sizeHeight ? result.sizeHeight : "")
+            document.querySelector("#editRowModalinput_weight").value = (originProduct.productCode ? originProduct.productCode : "")
+            document.querySelector("#editRowModalinput_length").value = (originProduct.sizeLength ? originProduct.sizeLength : "")
+            document.querySelector("#editRowModalinput_width").value = (originProduct.sizeWidth ? originProduct.sizeWidth : "")
+            document.querySelector("#editRowModalinput_height").value = (originProduct.sizeHeight ? originProduct.sizeHeight : "")
 
-            document.querySelector("#editRowModalinput_vendorCode").value = (result.vendorCode ? result.vendorCode : "")
-            document.querySelector("#editRowModalinput_purcPrice").value = (result.unitPrice ? result.unitPrice : "")
+            document.querySelector("#editRowModalinput_vendorCode").value = (originProduct.vendorCode ? originProduct.vendorCode : "")
+            document.querySelector("#editRowModalinput_purcPrice").value = (originProduct.unitPrice ? originProduct.unitPrice : "")
             // document.querySelector("#editRowModalinput_sellPrice").value = (result.sellPrice ? result.sellPrice : "")
-            if (result.withBestbefore && result.withBestbefore === 1) {
+            if (originProduct.withBestbefore && originProduct.withBestbefore === 1) {
                 document.querySelector("#expiredateCheck").checked = true
             } else {
                 document.querySelector("#expiredateCheck").checked = false
@@ -295,22 +290,51 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
         document.querySelector("#modelEditSubmitBtn").textContent = "Updating";
 
         let result = {}
-        result.productCode = document.querySelector("#editRowModalinput_productCode").value
-        result.labelname = document.querySelector("#editRowModalinput_labelName").value
-        result.description = document.querySelector("#editRowModalinput_description").value
+        if (originProduct.hasOwnProperty("productCode") || String(document.querySelector("#editRowModalinput_productCode").value).length > 0){
+            result.productCode = document.querySelector("#editRowModalinput_productCode").value
+        }
+        if (originProduct.hasOwnProperty("labelname") || String(document.querySelector("#editRowModalinput_labelName").value).length > 0){
+            result.labelname = document.querySelector("#editRowModalinput_labelName").value
+        }
+        if (originProduct.hasOwnProperty("description") || String(document.querySelector("#editRowModalinput_description").value).length > 0){
+            result.description = document.querySelector("#editRowModalinput_description").value
+        }
 
-        result.cartonQty = document.querySelector("#editRowModalinput_cartonQty").value
-        result.palletQty = document.querySelector("#editRowModalinput_palletQty").value
-        result.unit = document.querySelector("#editRowModalinput_unit").value
+        if (originProduct.hasOwnProperty("cartonQty") || String(document.querySelector("#editRowModalinput_cartonQty").value).length > 0){
+            result.cartonQty = (isNaN(parseInt(document.querySelector("#editRowModalinput_cartonQty").value)) ?
+                parseInt(document.querySelector("#editRowModalinput_cartonQty").value) : "")
+        }
+        if (originProduct.hasOwnProperty("palletQty") || String(document.querySelector("#editRowModalinput_palletQty").value).length > 0){
+            result.palletQty = (isNaN(parseInt(document.querySelector("#editRowModalinput_palletQty").value)) ?
+                parseInt(document.querySelector("#editRowModalinput_palletQty").value) : "")
+        }
+        if (originProduct.hasOwnProperty("unit") || String(document.querySelector("#editRowModalinput_unit").value).length > 0){
+            result.unit = document.querySelector("#editRowModalinput_unit").value
+        }
 
-        result.weight = document.querySelector("#editRowModalinput_weight").value
-        result.sizeLength = document.querySelector("#editRowModalinput_length").value
-        result.sizeWidth = document.querySelector("#editRowModalinput_width").value
-        result.sizeHeight = document.querySelector("#editRowModalinput_height").value
+        if (originProduct.hasOwnProperty("weight") || String(document.querySelector("#editRowModalinput_weight").value).length > 0){
+            result.weight = (isNaN(parseInt(document.querySelector("#editRowModalinput_weight").value)) ?
+                parseInt(document.querySelector("#editRowModalinput_weight").value) : "")
+        }
+        if (originProduct.hasOwnProperty("sizeLength") || String(document.querySelector("#editRowModalinput_length").value).length > 0){
+            result.sizeLength = (isNaN(parseInt(document.querySelector("#editRowModalinput_length").value)) ?
+                parseInt(document.querySelector("#editRowModalinput_length").value) : "")
+        }
+        if (originProduct.hasOwnProperty("sizeWidth") || String(document.querySelector("#editRowModalinput_width").value).length > 0){
+            result.sizeWidth = (isNaN(parseInt(document.querySelector("#editRowModalinput_width").value)) ?
+                parseInt(document.querySelector("#editRowModalinput_width").value) : "")
+        }
+        if (originProduct.hasOwnProperty("sizeHeight") || String(document.querySelector("#editRowModalinput_height").value).length > 0){
+            result.sizeHeight = (isNaN(parseInt(document.querySelector("#editRowModalinput_height").value)) ?
+                parseInt(document.querySelector("#editRowModalinput_height").value) : "")
+        }
 
-        result.vendorCode = document.querySelector("#editRowModalinput_vendorCode").value
-        result.unitPrice = document.querySelector("#editRowModalinput_purcPrice").value
-        // result.sellPrice = document.querySelector("#editRowModalinput_sellPrice").value
+        if (originProduct.hasOwnProperty("vendorCode") || String(document.querySelector("#editRowModalinput_vendorCode").value).length > 0){
+            result.vendorCode = document.querySelector("#editRowModalinput_vendorCode").value
+        }
+        if (originProduct.hasOwnProperty("unitPrice") || String(document.querySelector("#editRowModalinput_purcPrice").value).length > 0){
+            result.unitPrice = Decimal128.fromString(document.querySelector("#editRowModalinput_purcPrice").value)
+        }
 
         let updateResult = await updateRecordById(itemId, result)
         //     当最后确认提交成功则dismiss并回弹成功信息
