@@ -77,6 +77,10 @@
                     <h5 class="card-title fw-semibold mb-2">Fill the below table for products</h5>
                     <form id="form_product">
                         <div class="row">
+                            <div class="col-sm-12 col-12 mb-2">
+                                <label for="inpt_labelid">Label ID</label>
+                                <input type="text" class="form-control" id="inpt_labelid" placeholder="Label ID">
+                            </div>
                             <div class="col-sm-6 mb-2">
                                 <label for="inpt_prodCode">Product Code</label>
                                 <input class="form-control" id="inpt_prodCode" placeholder="Select from list" value="" required="">
@@ -101,10 +105,6 @@
                             <div class="col-sm-6 col-6 mb-2">
                                 <label for="inpt_bestbefore">Best before</label>
                                 <input type="date" class="form-control" id="inpt_bestbefore">
-                            </div>
-                            <div class="col-sm-6 col-6 mb-2">
-                                <label for="inpt_labelid">Label ID</label>
-                                <input type="text" class="form-control" id="inpt_labelid" placeholder="Label ID">
                             </div>
                             <div class="col-sm-6 col-6 mb-2">
                                 <label for="inpt_sessionid">Session ID</label>
@@ -147,9 +147,7 @@
                                 <input type="datetime-local" class="form-control" id="inpt_removeTime" value="">
                             </div>
                         </div>
-                        <button class="btn btn-primary rounded-pill px-4 mt-3" type="submit" id="btn_submit"
-                                disabled="">Submit
-                        </button>
+                        <button class="btn btn-primary rounded-pill px-4 mt-3" type="submit" id="btn_submit" disabled="">Submit</button>
                         <button class="btn btn-info rounded-pill px-4 mt-3" id="btn_scanqrcode">QR Scanner</button>
                     </form>
                     <br>

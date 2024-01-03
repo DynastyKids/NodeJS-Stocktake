@@ -65,6 +65,7 @@
     "qrcode-reader": "^1.0.4",
     "realm": "^11.10.1",
     "sass": "^1.69.5",
+    "sha1": "^1.1.1",
     "simple-keyboard": "^3.7.14",
     "simplebar": "^6.2.5",
     "swagger-ui-express": "^5.0.0",

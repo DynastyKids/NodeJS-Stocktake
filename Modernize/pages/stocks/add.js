@@ -7,6 +7,7 @@ const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb:/
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
 const jsQR = require("jsqr")
+let defaultCreateDate = new Date();
 
 document.querySelector("#act_reset").addEventListener("click",(ev)=>{
     document.querySelectorAll("#div_datatable input").forEach(eachinput=>{
@@ -70,11 +71,25 @@ document.querySelector("#check_manualTime").addEventListener("change", function 
     if (document.querySelector("#check_manualTime").checked){//     当用户勾选时候允许用户自定义设置时间
         document.querySelector("#group_createTime").style = ""
         document.querySelector("#group_removeTime").style = (document.querySelector("#check_itemRemoved").checked ? "" : "display: none")
+        document.querySelector("#inpt_createTime").value = formatDateToYYYYMMDD(defaultCreateDate)+"T12:00"
     } else { // 如果用户未勾选则隐藏，用户提交时候二次检查，如果未勾选，则修改时间值为默认值
         document.querySelector("#group_createTime").style = "display: none"
         document.querySelector("#group_removeTime").style = "display: none"
     }
 })
+
+function formatDateToYYYYMMDD(date) {
+    let targetDate = date instanceof Date && !isNaN(date.valueOf()) ? date : new Date()
+    var year = targetDate.getFullYear();
+    var month = targetDate.getMonth() + 1; // January is 0!
+    var day = targetDate.getDate();
+
+    // Padding month and day with zero if they are less than 10
+    month = month < 10 ? '0' + month : month;
+    day = day < 10 ? '0' + day : day;
+
+    return '' + year + '-' + month + '-' + day;
+}
 
 document.querySelector("#inpt_shelflocation").addEventListener("change",(ev) =>{
     document.querySelector("#inpt_shelflocation").value =
@@ -88,6 +103,82 @@ document.querySelector("#check_itemRemoved").addEventListener("change", (ev)=>{
         document.querySelector("#group_removeTime").style = "display: none"
     }
 })
+
+document.querySelector("#inpt_labelid").addEventListener("input",async (ev) => {
+    var currentValue = ev.target.value
+    if (currentValue && String(currentValue).length > 8) {
+        // 31DEC2023 新增内容，用户输入labelid时候，达到8位则开始自动补充createTime，忽略提交时候是否有勾选均会传递参数，如果用户已经指定了createTime则忽略
+        if (!/^[0-9]{4}[0-1][0-9][0-3][0-9]$/.test(currentValue)) {
+            let dateInfo = {year: currentValue.substring(0, 4), month: currentValue.substring(4, 6), day: currentValue.substring(6, 8)}
+            var date = new Date(dateInfo.year, (dateInfo.month - 1), dateInfo.day)
+            if (date.getFullYear() == dateInfo.year && date.getMonth() + 1 == dateInfo.month && date.getDate() == dateInfo.day) {
+                defaultCreateDate = new Date(dateInfo.year, (dateInfo.month - 1), dateInfo.day)
+                document.querySelector("#inpt_createTime").value = formatDateToYYYYMMDD(defaultCreateDate) + "T12:00"
+            }
+        }
+    }
+    if (currentValue && String(currentValue).length >= 14) {
+        // 31DEC2023 新增内容，当用户输入达到14位时候则开始查找prefill表格内是否有相同label的产品信息，如果有则弹出alert提示并预填充已有信息
+        console.log()
+        let stockResults = await fetchPrefillStockById(currentValue)
+        if (stockResults.length > 0) {
+            if (stockResults[0].hasOwnProperty("productName") && String(document.querySelector("#inpt_prodName").value).length <= 0){
+                document.querySelector("#inpt_prodName").value = stockResults[0].productName
+            }
+            if (stockResults[0].hasOwnProperty("productCode") && String(document.querySelector("#inpt_prodCode").value).length <= 0){
+                document.querySelector("#inpt_prodCode").value = stockResults[0].productCode
+            }
+            if (stockResults[0].hasOwnProperty("quantity") && String(document.querySelector("#inpt_quantity").value).length <= 0){
+                document.querySelector("#inpt_quantity").value = stockResults[0].quantity
+            }
+            if (stockResults[0].hasOwnProperty("quantityUnit") && String(document.querySelector("#inpt_unit").value).length <= 0){
+                document.querySelector("#inpt_unit").value = stockResults[0].quantityUnit
+            } else if (stockResults[0].hasOwnProperty("unit") && String(document.querySelector("#inpt_unit").value).length <= 0){
+                document.querySelector("#inpt_unit").value = stockResults[0].unit
+            }
+            if (stockResults[0].hasOwnProperty("POnumber") && String(document.querySelector("#inpt_purchaseorder").value).length <= 0){
+                document.querySelector("#inpt_purchaseorder").value = stockResults[0].POnumber
+            }
+            if (stockResults[0].hasOwnProperty("bestbefore") && String(document.querySelector("#inpt_bestbefore").value).length <= 0){
+                document.querySelector("#inpt_bestbefore").value = stockResults[0].bestbefore
+            }
+            if (stockResults[0].hasOwnProperty("unitPrice") && parseFloat(stockResults[0].unitPrice > 0) && String(document.querySelector("#inpt_unitprice").value).length <= 0){
+                document.querySelector("#inpt_unitprice").value = stockResults[0].unitPrice
+            }
+
+            if (stockResults[0].hasOwnProperty("removed") && stockResults[0].removed === 1){
+                document.querySelector("#check_itemRemoved").checked = true
+            } else if(stockResults[0].hasOwnProperty("removed") && stockResults[0].removed === 0) {
+                document.querySelector("#check_itemRemoved").checked = false
+            }
+
+            if (stockResults[0].hasOwnProperty("createTime")){
+                if (!document.querySelector("#check_manualTime").checked){
+                    document.querySelector("#check_manualTime").click()
+                }
+                document.querySelector("#inpt_createTime").value = `${new Date(stockResults[0].createTime).getFullYear()}-${new Date(stockResults[0].createTime).getMonth()+1}-${new Date(stockResults[0].createTime).getDate()}T12:00`
+            }
+        }
+    }
+})
+
+async function fetchPrefillStockById(stockLabel) {
+    let client = new MongoClient(uri, {
+        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
+    let results = []
+    try {
+        await client.connect();
+        let session = await client.db(targetDB).collection("preloadlog")
+        results = await session.find({productLabel:stockLabel}).toArray();
+    } catch (e) {
+        console.error("Data upsert:", e)
+    } finally {
+        await client.close();
+    }
+    return results;
+}
+
 
 async function fetchProductList() {
     let client = new MongoClient(uri, {
@@ -159,7 +250,7 @@ document.querySelector("#form_product").addEventListener("submit",(ev)=>{
     }
     object.createTime = (document.querySelector("#check_manualTime").checked && document.querySelector("#inpt_createTime").value ?
         new Date(document.querySelector("#inpt_createTime").value) : new Date())
-    object.quarantine =  document.querySelector("#check_itemQuarantine").checked
+    object.quarantine = document.querySelector("#check_itemQuarantine").checked
 
     if (document.querySelector("#inpt_shelflocation").value){
         object.shelfLocation =  document.querySelector("#inpt_shelflocation").value
