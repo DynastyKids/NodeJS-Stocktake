@@ -9,7 +9,7 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 
 const MongoClient = require("mongodb").MongoClient;
-const {ServerApiVersion} = require("mongodb");
+const {ServerApiVersion, Decimal128} = require("mongodb");
 
 const cors = require("cors")
 
@@ -659,45 +659,23 @@ router.post("/v1/preload/update", async (req, res) => {
         let itemContent = {
             productLabel: req.body.item.productLabel,
             removed: 0,
-            createTime: new Date(),
+            createTime: req.body.item.hasOwnProperty("createTime") ? new Date(req.body.item.createTime) : new Date(),
             loggingTime: new Date(),
             labelBuild: 3,
-            unitPrice: 0
         }
-        if (req.body.item.hasOwnProperty("productCode")) {
-            itemContent.productCode = (req.body.item.productCode)
-        }
-        if (req.body.item.hasOwnProperty("quantity")) {
-            itemContent.quantity = parseInt(req.body.item.quantity)
-        }
-        if (req.body.item.hasOwnProperty("quantityUnit")) {
-            itemContent.quantityUnit = req.body.item.quantityUnit
-        }
-        if (req.body.item.hasOwnProperty("shelfLocation")) {
-            itemContent.shelfLocation = (req.body.item.shelfLocation)
-        }
+        if (req.body.item.hasOwnProperty("productCode")) { itemContent.productCode = (req.body.item.productCode) }
+        if (req.body.item.hasOwnProperty("quantity")) { itemContent.quantity = parseInt(req.body.item.quantity) }
+        if (req.body.item.hasOwnProperty("quantityUnit")) { itemContent.quantityUnit = req.body.item.quantityUnit }
+        if (req.body.item.hasOwnProperty("shelfLocation")) { itemContent.shelfLocation = (req.body.item.shelfLocation) }
 
-        if (req.body.item.hasOwnProperty("POnumber")) {
-            itemContent.POnumber = (req.body.item.POnumber)
-        } else if (req.body.item.hasOwnProperty("POIPnumber")) {
-            itemContent.POnumber = (req.body.item.POIPnumber)
-        }
+        if (req.body.item.hasOwnProperty("POnumber")) { itemContent.POnumber = (req.body.item.POnumber) }
+        else if (req.body.item.hasOwnProperty("POIPnumber")) { itemContent.POnumber = (req.body.item.POIPnumber) }
 
-        if (req.body.item.hasOwnProperty("productName")) {
-            itemContent.productName = (req.body.item.productName)
-        }
-        if (req.body.item.hasOwnProperty("bestbefore")) {
-            itemContent.bestbefore = (req.body.item.bestbefore)
-        }
-        if (req.body.item.hasOwnProperty("unitprice")) {
-            itemContent.unitprice = parseFloat(req.body.item.unitprice)
-        }
-        if (req.body.item.hasOwnProperty("createTime")) {
-            itemContent.createTime = new Date(req.body.item.createTime)
-        }
-        if (req.body.item.hasOwnProperty("trackingId")) {
-            itemContent.trackingId = new Date(req.body.item.trackingId)
-        }
+        if (req.body.item.hasOwnProperty("productName")) { itemContent.productName = (req.body.item.productName) }
+        if (req.body.item.hasOwnProperty("bestbefore")) { itemContent.bestbefore = (req.body.item.bestbefore) }
+        if (req.body.item.hasOwnProperty("unitprice")) { itemContent.unitprice = Decimal128.fromString(req.body.item.unitprice) }
+        if (req.body.item.hasOwnProperty("trackingId")) { itemContent.trackingId = new Date(req.body.item.trackingId) }
+        if (req.body.item.hasOwnProperty("seq")) { itemContent.seq = parseInt(req.body.item.seq) }
 
         // Preload数据中，不组装session数据，
         try {
