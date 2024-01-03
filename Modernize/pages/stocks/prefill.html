@@ -64,11 +64,12 @@
                     </div>
                     <div class="row">
                         <div class="col-12 mb-2" id="card_infotext">
-                            * Beta Testing:<br>
                             <p>Pre-filled table is used by label generator to generate and pre-filling stock information to a standalone datatable.
                                 Which can be later used to complete the data when they fill into stock table.</p>
-                            <p>Pre-filled datatable is default has countdown within the database system,
-                                data has not been loaded to standard stock table will expire after certain periods (Default 90 days)</p>
+                        </div>
+                        <div class="actions">
+<!--                            <a href="../stocks/addPrefill.html">Add Prefill Item</a>-->
+                            <a href="#" id="deleteAllPrefillModal">Delete all prefilled labels</a>
                         </div>
                     </div>
                     <div class="tab-pane fade show active" id="nav-all" role="tabpanel" aria-labelledby="nav-all-tab">
@@ -78,7 +79,7 @@
                                 <th scope="col">Code</th>
                                 <th scope="col">Quantity</th>
                                 <th scope="col">Best before</th>
-                                <th scope="col">Location</th>
+                                <th scope="col">PO#<br><small>Sequence</small></th>
                                 <th scope="col">Stock ID<br><small>Add Time</small></th>
                                 <th scope="col">Action</th>
                             </tr>
@@ -88,7 +89,7 @@
                                 <th scope="col">Code</th>
                                 <th scope="col">Quantity</th>
                                 <th scope="col">Best before</th>
-                                <th scope="col">Location</th>
+                                <th scope="col">PO#<br><small>Sequence</small></th>
                                 <th scope="col">Stock ID<br><small>Add Time</small></th>
                                 <th scope="col">Action</th>
                             </tr>
@@ -138,6 +139,18 @@
                 <form>
                     <div class="row">
                         <h6>Product Information:</h6>
+                        <div class="col-12">
+                            <div style="display: inline-block">
+                                <label class="form-label">Product Info:</label>
+                                <span id="productInfoText" style="font-size: large"></span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div style="display: inline">
+                                <label class="form-label">Label ID:</label>
+                                <span id="labelIDText" style="font-size: large"></span>
+                            </div>
+                        </div>
                         <input type="text" class="form-control col-6" id="modalEditLabelid" hidden value="">
                         <div class="col-6 col-md-4">
                             <label for="modalEditQuantity" class="form-label">Product Quantity:</label>
@@ -162,18 +175,6 @@
                         <div class="col-6  col-md-4">
                             <label for="modelEditPOnumber" class="form-label">Purchase OrderID:</label>
                             <input type="text" class="form-control col-6" id="modelEditPOnumber" value="">
-                        </div>
-                        <div class="col-12">
-                            <div style="display: inline-block">
-                                <label class="form-label">Product Info:</label>
-                                <span id="productInfoText"></span>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div style="display: inline">
-                                <label class="form-label">Label ID:</label>
-                                <span id="labelIDText"></span>
-                            </div>
                         </div>
                         <div class="col-12">
                             <div class="col-6">

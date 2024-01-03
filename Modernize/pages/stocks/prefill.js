@@ -20,20 +20,22 @@ let table = new DataTable('#table', {
     order: [[4, 'desc']],
 });
 
+let prefillDatas = []
+
 document.addEventListener("DOMContentLoaded", async function () {
     await redrawTable()
 })
 
-async function redrawTable() {
+async function redrawTable(forced = false) {
     table.clear().draw()
-    let tableData = await getPrefillDatas()
+    let tableData = await getPrefillDatas(forced)
     tableData.forEach(eachRow => {
         table.row.add([
             (eachRow.productCode ? eachRow.productCode : ``) + (eachRow.productCode && eachRow.productName ? ` - ` : ``) + (eachRow.productName ? eachRow.productName : ``),
             (eachRow.quantity ? eachRow.quantity + ` ` + (eachRow.quantityUnit ? eachRow.quantityUnit : ``) : ``),
             (eachRow.bestbefore ? new Date(eachRow.bestbefore).toLocaleDateString("en-AU") : ``),
-            (eachRow.shelfLocation ? eachRow.shelfLocation : ``),
-            (eachRow.productLabel ? eachRow.productLabel : ``),
+            (eachRow.POnumber ? eachRow.POnumber : ``)+(eachRow.seq ? `<br><small>${eachRow.seq}</small>` : ``),
+            (eachRow.productLabel ? eachRow.productLabel : ``)+(eachRow.createTime ? `<br><small>${new Date(eachRow.createTime).toLocaleString('en-AU')}</small>` : (eachRow.loggingTime ? `<br><small>${new Date(eachRow.loggingTime).toLocaleString('en-AU')}</small>` : ``)),
             `<a href="#" class="table_actions table_action_remove" data-bs-itemId="${eachRow.productLabel}" data-bs-toggle="modal" data-bs-target="#editModal" style="margin: 0 2px 0 2px">Patch</a>` +
             `<a href="#" class="table_actions table_action_remove" data-bs-itemId="${eachRow.productLabel}" data-bs-toggle="modal" data-bs-target="#removeModal" style="margin: 0 2px 0 2px">Remove</a>`
         ]).draw(false)
@@ -49,7 +51,6 @@ async function fetchPatchingItem(productLabel) {
         await client.connect();
         const session = client.db(targetDB).collection("preloadlog");
         result = await session.find({productLabel: productLabel}).toArray()
-        console.log(result)
     } catch (e) {
         console.error(`Fetching stock information error when attempt fetching: ${productLabel};`, e)
     } finally {
@@ -67,7 +68,6 @@ async function fetchProductInformation(productCode) {
         await client.connect();
         const session = client.db(targetDB).collection("products");
         result = await session.find({productCode: productCode}).toArray()
-        console.log(result)
     } catch (e) {
         console.error(`Fetching product information error on: ${productCode};`, e)
     } finally {
@@ -86,7 +86,6 @@ async function deletePrefillData(productLabel) {
         await client.connect();
         const session = client.db(targetDB).collection("preloadlog");
         result = await session.deleteMany({productLabel: productLabel})
-        console.log(result)
     } catch (e) {
         console.error(`Remove Stock Error when process: ${productLabel};`, e)
     } finally {
@@ -107,30 +106,6 @@ async function insertToPollinglog(content) {
         await pollingSession.insertMany(content)
     } catch (e) {
         console.error(`Insert Stock Error when process:;`, e)
-    } finally {
-        await client.close()
-    }
-    return result
-}
-
-async function migrateToPollinglog(productLabel) {
-//     Moving filled data from Prefill table to pollinglog Table
-    let result = []
-    let client = new MongoClient(uri, {
-        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
-    });
-    try {
-        await client.connect();
-        const preloadSession = client.db(targetDB).collection("preloadlog");
-        const pollingSession = client.db(targetDB).collection("pollinglog");
-        result = await preloadSession.find({productLabel: productLabel}).toArray()
-        if (result.length > 0) {
-            await pollingSession.insertMany(result)
-            await preloadSession.deleteMany({productLabel: productLabel})
-        }
-        console.log(result)
-    } catch (e) {
-        console.error(`Remove Stock Error when process: ${productLabel};`, e)
     } finally {
         await client.close()
     }
@@ -202,6 +177,13 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", async (ev
 let removeModal = document.querySelector("#removeModal")
 removeModal.addEventListener("show.bs.modal", function (ev) {
     let labelId = ev.relatedTarget.getAttribute("data-bs-itemId")
+    prefillDatas.forEach(eachdata => {
+        if (eachdata.productLabel === labelId){
+        //     Change text
+            document.querySelector("#removeModal .modal-body p").innerHTML =
+                `Are you sure to remove the '${eachdata.productName}' with label ID ends in '${eachdata.productLabel.slice(-7)}?'<br>This action CANNOT be reverted.`
+        }
+    })
     removeModal.querySelector("#removeModal_labelid").value = labelId
     document.querySelector("#removeModalYes").disabled = false
     document.querySelector("#removeModalYes").textContent = "Confirm"
@@ -210,7 +192,6 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
     // 收到用户的确认请求，移除该库存
     ev.preventDefault()
     let labelId = removeModal.querySelector("#removeModal_labelid").value
-    console.log(labelId)
     let model = bootstrap.Modal.getInstance(document.querySelector("#removeModal"));
     document.querySelector("#removeModalYes").disabled = true
     document.querySelector("#removeModalYes").textContent = "Updating"
@@ -226,7 +207,6 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
         await client.connect();
         const session = client.db(targetDB).collection("preloadlog");
         let result = await session.deleteMany({productLabel: labelId})
-        console.log(result)
     } catch (e) {
         console.error(`Remove Stock Error when process: ${labelId};`, e)
     } finally {
@@ -237,23 +217,26 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
 })
 
 
-async function getPrefillDatas() {
-    let client = new MongoClient(uri, {
-        serverApi: {
-            version: ServerApiVersion.v1,
-            useNewUrlParser: true,
-            useUnifiedTopology: true
+async function getPrefillDatas(forced = false) {
+    let result = prefillDatas
+    if (forced || prefillDatas.length <=0 ) {
+        let client = new MongoClient(uri, {
+            serverApi: {
+                version: ServerApiVersion.v1,
+                useNewUrlParser: true,
+                useUnifiedTopology: true
+            }
+        });
+        try {
+            await client.connect();
+            const session = client.db(targetDB).collection("preloadlog");
+            result = await session.find({}).toArray()
+            prefillDatas = result
+        } catch (e) {
+            console.error("Error when fetching preload data: ", e)
+        } finally {
+            await client.close()
         }
-    });
-    let result = []
-    try {
-        await client.connect();
-        const session = client.db(targetDB).collection("preloadlog");
-        result = await session.find({}).toArray()
-    } catch (e) {
-        console.error("Error when fetching preload data: ", e)
-    } finally {
-        await client.close()
     }
     return result
 }
