@@ -76,7 +76,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             document.querySelector("#act_pause").innerText = "Resume Timer";
         } else {
             document.querySelector("#act_pause").innerText = "Pause Timer";
-            location.reload()
+            loadStockInfoToTable(true)
         }
     })
 });
@@ -175,8 +175,8 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
         if (result.acknowledged){
             setTimeout(function(){
                 bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
-                window.location.reload()
-            },2500)
+                loadStockInfoToTable(true)
+            },3000)
         } else {
             document.querySelector("#editModal .modal-body p").textContent = "Error on Update"
         }
@@ -308,19 +308,11 @@ revertModal.querySelector("#revertModalYes").addEventListener("click", async fun
 })
 
 document.querySelector("#act_reloadTable").addEventListener("click",(ev) =>{
-    if (document.querySelector("#switchCheck").checked){
-        loadStockInfoToTable(true)
-    } else {
-        loadStockInfoToTable(false)
-    }
+    loadStockInfoToTable()
 })
 
 document.querySelector("#filterdate").addEventListener("change", (ev)=>{
-    if (document.querySelector("#switchCheck").checked){
-        loadStockInfoToTable(true)
-    } else {
-        loadStockInfoToTable(false)
-    }
+    loadStockInfoToTable()
 });
 
 
