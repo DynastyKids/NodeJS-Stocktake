@@ -250,7 +250,7 @@ document.querySelector("#form_product").addEventListener("submit",(ev)=>{
     }
     object.createTime = (document.querySelector("#check_manualTime").checked && document.querySelector("#inpt_createTime").value ?
         new Date(document.querySelector("#inpt_createTime").value) : new Date())
-    object.quarantine = document.querySelector("#check_itemQuarantine").checked
+    object.quarantine = parseInt(document.querySelector("input[name='quarantineRatio']:checked").value)
 
     if (document.querySelector("#inpt_shelflocation").value){
         object.shelfLocation =  document.querySelector("#inpt_shelflocation").value

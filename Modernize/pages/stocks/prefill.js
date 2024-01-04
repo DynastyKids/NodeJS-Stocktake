@@ -1,6 +1,6 @@
 const {ipcRenderer} = require('electron');
 const MongoClient = require('mongodb').MongoClient;
-const {ServerApiVersion} = require('mongodb');
+const {ServerApiVersion, ObjectId} = require('mongodb');
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
@@ -36,13 +36,13 @@ async function redrawTable(forced = false) {
             (eachRow.bestbefore ? new Date(eachRow.bestbefore).toLocaleDateString("en-AU") : ``),
             (eachRow.POnumber ? eachRow.POnumber : ``)+(eachRow.seq ? `<br><small>${eachRow.seq}</small>` : ``),
             (eachRow.productLabel ? eachRow.productLabel : ``)+(eachRow.createTime ? `<br><small>${new Date(eachRow.createTime).toLocaleString('en-AU')}</small>` : (eachRow.loggingTime ? `<br><small>${new Date(eachRow.loggingTime).toLocaleString('en-AU')}</small>` : ``)),
-            `<a href="#" class="table_actions table_action_remove" data-bs-itemId="${eachRow.productLabel}" data-bs-toggle="modal" data-bs-target="#editModal" style="margin: 0 2px 0 2px">Patch</a>` +
-            `<a href="#" class="table_actions table_action_remove" data-bs-itemId="${eachRow.productLabel}" data-bs-toggle="modal" data-bs-target="#removeModal" style="margin: 0 2px 0 2px">Remove</a>`
+            `<a href="#" class="table_actions table_action_remove" data-bs-itemId="${eachRow._id}" data-bs-toggle="modal" data-bs-target="#editModal" style="margin: 0 2px 0 2px">Patch</a>` +
+            `<a href="#" class="table_actions table_action_remove" data-bs-itemId="${eachRow._id}" data-bs-toggle="modal" data-bs-target="#removeModal" style="margin: 0 2px 0 2px">Remove</a>`
         ]).draw(false)
     })
 }
 
-async function fetchPatchingItem(productLabel) {
+async function fetchPatchingItem(labelId) {
     let result = []
     let client = new MongoClient(uri, {
         serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
@@ -50,9 +50,9 @@ async function fetchPatchingItem(productLabel) {
     try {
         await client.connect();
         const session = client.db(targetDB).collection("preloadlog");
-        result = await session.find({productLabel: productLabel}).toArray()
+        result = await session.find({_id: labelId}).toArray()
     } catch (e) {
-        console.error(`Fetching stock information error when attempt fetching: ${productLabel};`, e)
+        console.error(`Fetching stock information error when attempt fetching: ${labelId};`, e)
     } finally {
         await client.close()
     }
@@ -76,7 +76,7 @@ async function fetchProductInformation(productCode) {
     return result
 }
 
-async function deletePrefillData(productLabel) {
+async function deletePrefillData(labelId = null) {
 //     Moving filled data from Prefill table to pollinglog Table
     let result = []
     let client = new MongoClient(uri, {
@@ -85,9 +85,9 @@ async function deletePrefillData(productLabel) {
     try {
         await client.connect();
         const session = client.db(targetDB).collection("preloadlog");
-        result = await session.deleteMany({productLabel: productLabel})
+        result = await session.deleteMany({_id: ObjectId(labelId)})
     } catch (e) {
-        console.error(`Remove Stock Error when process: ${productLabel};`, e)
+        console.error(`Remove Stock Error when process: ${labelId};`, e)
     } finally {
         await client.close()
     }
@@ -206,7 +206,7 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
     try {
         await client.connect();
         const session = client.db(targetDB).collection("preloadlog");
-        let result = await session.deleteMany({productLabel: labelId})
+        let result = await session.deleteMany({_id: labelId})
     } catch (e) {
         console.error(`Remove Stock Error when process: ${labelId};`, e)
     } finally {

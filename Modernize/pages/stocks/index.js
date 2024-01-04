@@ -1,6 +1,6 @@
 const { ipcRenderer } = require('electron');
 const MongoClient = require('mongodb').MongoClient;
-const {ServerApiVersion, Decimal128} = require('mongodb');
+const {ServerApiVersion, Decimal128, ObjectId} = require('mongodb');
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
@@ -81,19 +81,21 @@ document.addEventListener("DOMContentLoaded", (event) => {
     })
 });
 
+function getDateTimeforInput(datetime = new Date()){
+    return `${datetime.getFullYear()}-${datetime.getMonth()}-${datetime.getDate()}T${datetime.getHours()}:${datetime.getMinutes()}`
+}
+
 document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
     //弹出后先填充表格
     let requestLabelId = ev.relatedTarget.getAttribute("data-bs-itemId")
-    document.querySelector("#modalEditLabelid").value = requestLabelId
     document.querySelector("#editModalSubmitBtn").disabled = true
     document.querySelector("#editModalSubmitBtn").textContent = "Submit"
     document.querySelector("#editModal .modal-title").textContent = `Loading Product Information`
     let originProperty = {}
     for (let i = 0; i < fullResultSet.length; i++) {
-        if (fullResultSet[i].productLabel === requestLabelId){
-            originProperty = fullResultSet[i]
-            //找到了目标信息，继续填充
-            document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${fullResultSet[i].productName}`
+        if ((fullResultSet[i]._id).toString() === requestLabelId){
+            originProperty = fullResultSet[i] //找到了目标信息，继续填充
+            document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${fullResultSet[i].productName} | StockID: ${fullResultSet[i].productLabel.slice(-7)}`
             document.querySelector("#editModal .modal-body #productInfoText").textContent = `${fullResultSet[i].productCode} - ${fullResultSet[i].productName}`
             document.querySelector("#editModal .modal-body #labelIDText").textContent = `${fullResultSet[i].productLabel}`
             document.querySelector("#modalEditQuantity").value = (fullResultSet[i].hasOwnProperty("quantity") ? fullResultSet[i].quantity : "")
@@ -102,10 +104,16 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
             document.querySelector("#modelEditLocation").value = (fullResultSet[i].hasOwnProperty("shelfLocation") ? fullResultSet[i].shelfLocation : "")
             document.querySelector("#modelEditPOnumber").value = (fullResultSet[i].hasOwnProperty("POnumber") ? fullResultSet[i].POnumber : (fullResultSet[i].hasOwnProperty("POIPnumber") ? fullResultSet[i].POIPnumber : ""))
             document.querySelector("#modelEditUnitprice").value = (fullResultSet[i].hasOwnProperty("unitPrice") ? fullResultSet[i].unitPrice : "")
-            document.querySelector("#modelEditCreateTime").value = (fullResultSet[i].hasOwnProperty("createTime") ? fullResultSet[i].createTime : "")
             document.querySelector("#modelEditCheckRemoved").checked = (fullResultSet[i].hasOwnProperty("removed") && fullResultSet[i].removed === 1)
-            document.querySelector("#modelEditCheckQuarantine").checked = (fullResultSet[i].hasOwnProperty("quarantine") && fullResultSet[i].quarantine)
-            document.querySelector("#modelEditRemoveTime").value = (fullResultSet[i].hasOwnProperty("removeTime") ? fullResultSet[i].removeTime : "")
+            document.querySelector("#modelEditCreateTime").value = (fullResultSet[i].hasOwnProperty("createTime") ? getDateTimeforInput(fullResultSet[i].createTime) : "")
+            document.querySelector("#group_removeTime").style = (document.querySelector("#modelEditCheckRemoved").checked ? "" : "display:none")
+            document.querySelector("#modelEditRemoveTime").value = (fullResultSet[i].hasOwnProperty("removeTime") ? getDateTimeforInput(fullResultSet[i].removeTime) : "")
+
+            // document.querySelector("#modelEditCheckQuarantine").checked = (fullResultSet[i].hasOwnProperty("quarantine") && fullResultSet[i].quarantine)
+            document.querySelector('#modalEdit_quarantineYes').checked = (!!(fullResultSet[i].hasOwnProperty("quarantine") && fullResultSet[i].quarantine === 1))
+            document.querySelector('#modalEdit_quarantineNo').checked = (!!(fullResultSet[i].hasOwnProperty("quarantine") && fullResultSet[i].quarantine === 0))
+            document.querySelector('#modalEdit_quarantineFinished').checked = (!!(fullResultSet[i].hasOwnProperty("quarantine") && fullResultSet[i].quarantine === -1))
+
             document.querySelector("#modelEditComments").value = (fullResultSet[i].hasOwnProperty("comments") ? fullResultSet[i].comments : "")
             document.querySelector("#editModalSubmitBtn").disabled = false
             break;
@@ -121,40 +129,76 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
 
         let setObject = {}
         let changedObject = {datetime: new Date(), events:[]}
-        if (originProperty.hasOwnProperty("quantity") && originProperty.quantity !== document.querySelector("#modalEditQuantity").value){
+
+        if (document.querySelector("#modalEditQuantity").value.toString().length > 0 ){
             setObject.quantity = parseInt(document.querySelector("#modalEditQuantity").value)
-            changedObject.events.push({field:"quantity", before:parseInt(originProperty.quantity)})
-        }
-        if (originProperty.hasOwnProperty("quantityUnit") && originProperty.quantityUnit !== document.querySelector("#modalEditUnit").value){
-            setObject.quantityUnit = document.querySelector("#modalEditUnit").value
-            changedObject.events.push({field:"quantityUnit", before:originProperty.quantityUnit})
-        }
-        if (originProperty.hasOwnProperty("bestbefore") && originProperty.bestbefore !== document.querySelector("#modalEditBestbefore").value){
-            setObject.bestbefore = document.querySelector("#modalEditBestbefore").value
-            changedObject.events.push({field:"bestbefore", before: originProperty.bestbefore})
-        }
-        if (originProperty.hasOwnProperty("shelfLocation") && originProperty.shelfLocation !== document.querySelector("#modelEditLocation").value){
-            setObject.shelfLocation = document.querySelector("#modelEditLocation").value
-            changedObject.events.push({field:"shelfLocation", before: originProperty.shelfLocation})
-        }
-        if (originProperty.hasOwnProperty("POnumber") && originProperty.POnumber !== document.querySelector("#modelEditPOnumber").value){
-            setObject.POnumber = document.querySelector("#modelEditPOnumber").value
-            changedObject.events.push({field:"POnumber", before: originProperty.POnumber})
-        }
-        if (originProperty.hasOwnProperty("unitPrice") && originProperty.unitPrice !== document.querySelector("#modelEditUnitprice").value){
-            setObject.unitPrice = Decimal128.fromString(document.querySelector("#modelEditUnitprice").value)
-            changedObject.events.push({field:"unitPrice", before: originProperty.unitPrice})
-        }
-        if (originProperty.hasOwnProperty("removed") && originProperty.removed === 0 && document.querySelector("#modelEditCheckRemoved").checked){
-            setObject.removed = parseInt("1")
-            changedObject.events.push({field:"removed", before: 0})
-        } else if (originProperty.hasOwnProperty("removed") && originProperty.removed === 1 && !document.querySelector("#modelEditCheckRemoved").checked){
-            setObject.removed = parseInt("0")
-            changedObject.events.push({field:"removed", before: 1})
+            if ((originProperty.hasOwnProperty("quantity") && originProperty.quantity !== document.querySelector("#modalEditQuantity").value)
+                || !originProperty.hasOwnProperty("quantity")){
+                changedObject.events.push({field:"quantity", before:parseInt(originProperty.quantity), datetime: new Date()})
+            }
         }
 
-        if(originProperty.hasOwnProperty("quarantine") && originProperty.quarantine !== document.querySelector("#modelEditCheckQuarantine").checked){
-            setObject.quarantine = document.querySelector("#modelEditCheckQuarantine").checked
+        if (document.querySelector("#modalEditUnit").value.toString().length > 0){
+            setObject.quantityUnit = document.querySelector("#modalEditUnit").value
+            if ((originProperty.hasOwnProperty("quantityUnit") && originProperty.quantityUnit !== document.querySelector("#modalEditUnit").value)
+                || !originProperty.hasOwnProperty("quantityUnit") ){
+                changedObject.events.push({field:"quantityUnit", before:originProperty.quantityUnit, datetime: new Date()})
+            }
+        }
+
+        if (document.querySelector("#modalEditBestbefore").value.toString().length > 0){
+            setObject.bestbefore = document.querySelector("#modalEditBestbefore").value
+            if ((originProperty.hasOwnProperty("bestbefore") && originProperty.bestbefore !== document.querySelector("#modalEditBestbefore").value)
+                || !originProperty.hasOwnProperty("bestbefore")){
+                changedObject.events.push({field:"bestbefore", before: originProperty.bestbefore, datetime: new Date()})
+            }
+        }
+
+        if (document.querySelector("#modelEditLocation").value.toString().length > 0){
+            setObject.shelfLocation = document.querySelector("#modelEditLocation").value
+            if ((originProperty.hasOwnProperty("shelfLocation") && originProperty.shelfLocation !== document.querySelector("#modelEditLocation").value)
+                || !originProperty.hasOwnProperty("shelfLocation")){
+                changedObject.events.push({field:"shelfLocation", before: originProperty.shelfLocation, datetime: new Date()})
+            }
+        }
+
+        if (document.querySelector("#modelEditPOnumber").value.toString().length > 0){
+            setObject.POnumber = document.querySelector("#modelEditPOnumber").value
+            if ((originProperty.hasOwnProperty("POnumber") && originProperty.POnumber !== document.querySelector("#modelEditPOnumber").value)
+                || !originProperty.hasOwnProperty("POnumber")){
+                changedObject.events.push({field:"POnumber", before: originProperty.POnumber, datetime: new Date()})
+            }
+        }
+
+        if (document.querySelector("#modelEditUnitprice").value.toString().length > 0){
+            setObject.unitPrice = Decimal128.fromString(document.querySelector("#modelEditUnitprice").value)
+            if ((originProperty.hasOwnProperty("unitPrice") && originProperty.unitPrice !== document.querySelector("#modelEditUnitprice").value)
+                || !originProperty.hasOwnProperty("unitPrice")){
+                changedObject.events.push({field:"unitPrice", before: originProperty.unitPrice, datetime: new Date()})
+            }
+        }
+
+        if (!originProperty.hasOwnProperty("removed")) {
+            setObject.removed = parseInt("0")
+        } else if(originProperty.removed === 0 && document.querySelector("#modelEditCheckRemoved").checked){
+            setObject.removed = parseInt("1")
+            changedObject.events.push({field:"removed", before: 0, datetime: new Date()})
+        } else if (originProperty.removed === 1 && !document.querySelector("#modelEditCheckRemoved").checked){
+            setObject.removed = parseInt("0")
+            changedObject.events.push({field:"removed", before: 1, datetime: new Date()})
+        }
+
+        try{
+            if(document.querySelector("input[name='modalEdit_quarantineRatio']:checked").value){
+                setObject.quarantine = parseInt(document.querySelector("input[name='modalEdit_quarantineRatio']:checked").value)
+                changedObject.events.push({
+                    field:"quarantineRatio",
+                    before: (originProperty.hasOwnProperty("quarantine") ? parseInt(originProperty.quarantine) : null),
+                    datetime: new Date()
+                })
+            } 
+        } catch (e) {
+           console.log("Original Property does not have quarantine Ratio")
         }
 
         if (String(document.querySelector("#modelEditComments").value).length > 0){
@@ -165,13 +209,14 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
         // 位置发生变动，需要添加locationRecords
         let pushObject = {}
         if (originProperty.shelfLocation !== document.querySelector("#modelEditLocation").value) {
+            changedObject.events.push({field:"shelfLocation", before: originProperty.shelfLocation, datetime: new Date()})
             pushObject.locationRecords = {datetime: new Date(), location: document.querySelector("#modelEditLocation").value}
         }
         if (changedObject.events.length > 0){
             pushObject.changelog = changedObject
         }
 
-        let result = await session.updateOne({"productLabel": requestLabelId}, {$set: setObject, $push: pushObject})
+        let result = await session.updateOne({"_id": new ObjectId(requestLabelId)}, {$set: setObject, $push: pushObject})
         if (result.acknowledged){
             setTimeout(function(){
                 bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
@@ -192,7 +237,7 @@ document.querySelector("#modelEditCheckRemoved").addEventListener("change",(ev)=
     }
 })
 
-document.querySelector("#removeModal_check").addEventListener("change",(ev)=>{
+document.querySelector("#removeModal_setManualTimeCheck").addEventListener("change",(ev)=>{
     if (ev.target.checked) {
         document.querySelector("#removeModal_time").style = ""
         document.querySelector("#removeModal_datetime").value = new Date()
@@ -240,7 +285,7 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
         await client.connect();
         const session = client.db(targetDB).collection("pollinglog");
         let result = await session.updateMany(
-            {productLabel: labelId, removed: 0} ,
+            {_id: new ObjectId(labelId), removed: 0} ,
             {$set: {removed: 1, removeTime: new Date(localTime)}},
             {upsert: false}
         )
@@ -273,7 +318,7 @@ revertModal.addEventListener("show.bs.modal", function (ev) {
 })
 revertModal.querySelector("#revertModalYes").addEventListener("click", async function (ev) {
     ev.preventDefault()
-    let labelId = revertModal.querySelector("#revertLabelid").value
+    let labelId =  ev.relatedTarget.getAttribute("data-bs-itemId")
     let model = bootstrap.Modal.getInstance(document.querySelector("#revertModal"));
     let client = new MongoClient(uri, {
         serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
@@ -284,11 +329,11 @@ revertModal.querySelector("#revertModalYes").addEventListener("click", async fun
     try {
         await client.connect();
         const session = client.db(targetDB).collection("pollinglog");
-        let result = await session.updateMany({productLabel: labelId, removed: 1} ,
+        let result = await session.updateMany({_id: new ObjectId(labelId), removed: 1} ,
             {$set: {removed: 0}, $unset: {"removeTime":""}},{upsert: false})
         // 如果用户设定了返回的地点，则一并写入
         if (String(document.querySelector("#revertLocation").value).length > 0){
-            result = await session.updateMany({productLabel: labelId} ,
+            result = await session.updateMany({_id: new ObjectId(labelId)} ,
                 {$set: {removed: 0, shelfLocation: document.querySelector("#revertLocation").value}},{upsert: false})
         }
         if (result.modifiedCount > 0 && result.matchedCount === result.modifiedCount) {
@@ -316,7 +361,7 @@ document.querySelector("#filterdate").addEventListener("change", (ev)=>{
 });
 
 
-function loadStockInfoToTable(fetchAll) {
+function loadStockInfoToTable(fetchAll = document.querySelector("#switchCheck").check) {
     table.clear().draw()
     let requestAllData = fetchAll ? fetchAll : false
     const URLqueries = new URLSearchParams(window.location.search)
@@ -339,7 +384,10 @@ function loadStockInfoToTable(fetchAll) {
                     `${(element.hasOwnProperty("productCode") ? element.productCode : "")} - ${element.productName}`+
                     (element.hasOwnProperty("comments") || element.hasOwnProperty("quarantine") ? `<br><span>`+
                         (element.hasOwnProperty("comments") && element.comments.length > 0 ? `<i class="ti ti-message-dots"></i>`: "") +
-                        (element.hasOwnProperty("quarantine") ? `<i class="ti ti-eye-search"></i>`: "") + `</span>` : "" ),
+                        (element.hasOwnProperty("quarantine") && element.quarantine === 1 ?
+                            `<i class="ti ti-zoom-question"></i>`
+                            : (element.quarantine === -1 ? `<i class="ti ti-zoom-check-filled"></i>`: "")) +
+                        `</span>` : "" ),
                     `${element.hasOwnProperty("quantity") ? element.quantity + " " + (element.quantityUnit ? element.quantityUnit : "") : ""}`,
                     (element.bestbefore ? new Date(element.bestbefore).getTime() : ""),
                     (element.bestbefore ? new Date(element.bestbefore).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' }) : ""),
@@ -350,12 +398,12 @@ function loadStockInfoToTable(fetchAll) {
                     `<small><a href="#" data-bs-ponumber="${(element.POnumber ? element.POnumber : (element.POIPnumber ? element.POIPnumber : ""))}" class="table_action_search">
                         ${(element.POnumber ? "<br>"+element.POnumber : (element.POIPnumber ? "<br>"+element.POIPnumber : ""))}</a></small>`,
                     `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
-                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">View/Edit</a>` +
+                        data-bs-itemId="${element._id}" style="margin: 0 2px 0 2px">View/Edit</a>` +
                     (element.removed < 1 ? `
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
-                        data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">Remove</a>
+                        data-bs-itemId="${element._id}" style="margin: 0 2px 0 2px">Remove</a>
                     ` : `<a href="#" class="table_actions table_action_revert" data-bs-toggle="modal" data-bs-target="#revertModal" 
-                        data-bs-itemId="${element.productLabel}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}" style="margin: 0 2px 0 2px">Revert</a>`)
+                        data-bs-itemId="${element._id}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}" style="margin: 0 2px 0 2px">Revert</a>`)
                 ]).draw(false);
             }
         }
