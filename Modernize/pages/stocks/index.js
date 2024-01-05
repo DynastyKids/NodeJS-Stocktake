@@ -12,7 +12,6 @@ var DataTable = require('datatables.net-responsive-bs5')(window, $);
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
-
 const {setInterval} = require('timers');
 const i18next = require("i18next");
 
@@ -52,7 +51,7 @@ function refreshCheckSwitch(){
 
 document.addEventListener("DOMContentLoaded", (event) => {
     const URLqueries = new URLSearchParams(window.location.search)
-    document.querySelector("#switchCheck").checked = ( URLqueries.get('q') ? true : false) // 该query存在则拉取所有数据
+    document.querySelector("#switchCheck").checked = ( !!URLqueries.get('q')) // 该query存在则拉取所有数据
     refreshCheckSwitch()
     let shouldRefresh = true
     const automaticRefresh = setInterval(() => {
