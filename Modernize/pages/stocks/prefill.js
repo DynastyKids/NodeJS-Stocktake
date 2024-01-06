@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 })
 
 async function redrawTable(forced = false) {
+    document.querySelector("#loadingStatus").style = ""
     table.clear().draw()
     let tableData = await getPrefillDatas(forced)
     tableData.forEach(eachRow => {
@@ -40,7 +41,12 @@ async function redrawTable(forced = false) {
             `<a href="#" class="table_actions table_action_remove" data-bs-itemId="${eachRow._id}" data-bs-toggle="modal" data-bs-target="#removeModal" style="margin: 0 2px 0 2px">Remove</a>`
         ]).draw(false)
     })
+    document.querySelector("#loadingStatus").style = "display: none"
 }
+
+document.querySelector("#act_reloadTable").addEventListener("click",async (ev)=>{
+    await redrawTable(true)
+})
 
 async function fetchPatchingItem(labelId) {
     let result = []

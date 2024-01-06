@@ -40,29 +40,40 @@ document.addEventListener("DOMContentLoaded", async (event) => {
         }
     }, 1000)
 
-    document.querySelector("#act_pause").addEventListener("click", (ev)=> {
-        shouldRefresh= !shouldRefresh
-        if (!shouldRefresh){
-            clearInterval(automaticRefresh)
-            document.querySelector("#act_pause").innerText = "Resume Timer";
-        } else {
-            document.querySelector("#act_pause").innerText = "Pause Timer";
-            location.reload()
-        }
-    })
+    await redrawStockList()
+});
 
-    let stockList = await fetchStockslist()       ;
+document.querySelector("#act_pause").addEventListener("click", async (ev) => {
+    shouldRefresh = !shouldRefresh
+    if (!shouldRefresh) {
+        clearInterval(automaticRefresh)
+        document.querySelector("#act_pause").innerText = "Resume Timer";
+    } else {
+        document.querySelector("#act_pause").innerText = "Pause Timer";
+        await redrawStockList()
+    }
+})
+
+document.querySelector("#act_reloadTable").addEventListener("click",async (ev)=>{
+    await redrawStockList()
+})
+
+async function redrawStockList() {
+    document.querySelector("#loadingStatus").style = ""
+    table.clear().draw(false)
+    let stockList = await fetchStockslist();
     let displayList = assembleDisplayArray(stockList);
-    displayList.forEach(eachRow=>{
+    displayList.forEach(eachRow => {
         table.row.add([
             `${(eachRow.hasOwnProperty("productCode") ? eachRow.productCode : "")} - ${eachRow.hasOwnProperty("productName") ? eachRow.productName : ""}`,
-            `${(eachRow.next.length>0 ? eachRow.next[0].location+(eachRow.next[0].quarantine === 1 ? `<span style="color: orange"><i class="ti ti-zoom-question"></i></span>`: "")+"<br>"+(eachRow.next[0].bestbefore ? eachRow.next[0].bestbefore: "") :"")}`,
-            `${(eachRow.next.length>1 ? eachRow.next[1].location+(eachRow.next[1].quarantine === 1 ? `<span style="color: orange"><i class="ti ti-zoom-question"></i></span>`: "")+"<br>"+(eachRow.next[1].bestbefore ? eachRow.next[1].bestbefore: ""):"")}`,
-            `${(eachRow.next.length>2 ? eachRow.next[2].location+(eachRow.next[2].quarantine === 1 ? `<span style="color: orange"><i class="ti ti-zoom-question"></i></span>`: "")+"<br>"+(eachRow.next[2].bestbefore ? eachRow.next[2].bestbefore: ""):"")}`,
-            `${(eachRow.next.length>3 ? eachRow.next[3].location+(eachRow.next[3].quarantine === 1 ? `<span style="color: orange"><i class="ti ti-zoom-question"></i></span>`: "")+"<br>"+(eachRow.next[3].bestbefore ? eachRow.next[3].bestbefore: ""):"")}`,
+            `${(eachRow.next.length > 0 ? eachRow.next[0].location + (eachRow.next[0].quarantine === 1 ? `<span style="color: orange"><i class="ti ti-zoom-question"></i></span>` : "") + "<br>" + (eachRow.next[0].bestbefore ? eachRow.next[0].bestbefore : "") : "")}`,
+            `${(eachRow.next.length > 1 ? eachRow.next[1].location + (eachRow.next[1].quarantine === 1 ? `<span style="color: orange"><i class="ti ti-zoom-question"></i></span>` : "") + "<br>" + (eachRow.next[1].bestbefore ? eachRow.next[1].bestbefore : "") : "")}`,
+            `${(eachRow.next.length > 2 ? eachRow.next[2].location + (eachRow.next[2].quarantine === 1 ? `<span style="color: orange"><i class="ti ti-zoom-question"></i></span>` : "") + "<br>" + (eachRow.next[2].bestbefore ? eachRow.next[2].bestbefore : "") : "")}`,
+            `${(eachRow.next.length > 3 ? eachRow.next[3].location + (eachRow.next[3].quarantine === 1 ? `<span style="color: orange"><i class="ti ti-zoom-question"></i></span>` : "") + "<br>" + (eachRow.next[3].bestbefore ? eachRow.next[3].bestbefore : "") : "")}`,
         ]).draw(false)
     })
-});
+    document.querySelector("#loadingStatus").style = "display: none"
+}
 
 async function fetchStockslist () {
     let client = new MongoClient(uri, {
