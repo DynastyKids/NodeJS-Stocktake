@@ -245,22 +245,20 @@ document.querySelector("#removeModal_setManualTimeCheck").addEventListener("chan
     }
 })
 
-let removeModal = document.querySelector("#removeModal")
-removeModal.addEventListener("show.bs.modal", function (ev) {
-    var lableID = ev.relatedTarget.getAttribute("data-bs-itemId")
-    let hiddenInput = removeModal.querySelector("#removeModal_labelid")
-    hiddenInput.value = lableID
-    document.querySelector("#removeModalYes").disabled = false
-    document.querySelector("#removeModalYes").textContent = "Confirm"
+document.querySelector("#removeModal").addEventListener("show.bs.modal", function (ev) {
+    var itemId = ev.relatedTarget.getAttribute("data-bs-itemId")
+    document.querySelector("#removeModal_labelid").value = itemId
+    document.querySelector("#removeModal_btnConfirm").disabled = false
+    document.querySelector("#removeModal_btnConfirm").textContent = "Confirm"
 })
 
-removeModal.querySelector("#removeModalYes").addEventListener("click", async function (ev) {
+document.querySelector("#removeModal").querySelector("#removeModal_btnConfirm").addEventListener("click", async function (ev) {
     // 收到用户的确认请求，移除该库存
     ev.preventDefault()
-    let labelId = removeModal.querySelector("#removeModal_labelid").value
+    let labelId = document.querySelector("#removeModal_labelid").value
     let model = bootstrap.Modal.getInstance(document.querySelector("#removeModal"));
-    document.querySelector("#removeModalYes").disabled = true
-    document.querySelector("#removeModalYes").textContent = "Updating"
+    document.querySelector("#removeModal_btnConfirm").disabled = true
+    document.querySelector("#removeModal_btnConfirm").textContent = "Updating"
 
     let localTime = new Date();
     if (document.querySelector("#removeModal_check").checked){ // 检查用户是否自定义了时间
