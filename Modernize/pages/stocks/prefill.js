@@ -382,18 +382,18 @@ document.querySelector("#removeModal").addEventListener("show.bs.modal", functio
         document.querySelector("#removeModal_itemid").value = ev.relatedTarget.getAttribute("data-bs-itemId")
     }
     //     No label ID captures, may request for removeAll / remove Duplicate
-    document.querySelector("#removeModalYes").disabled = false
-    document.querySelector("#removeModalYes").textContent = "Confirm"
+    document.querySelector("#removeModal_btnConfirm").disabled = false
+    document.querySelector("#removeModal_btnConfirm").textContent = "Confirm"
 })
-document.querySelector("#removeModal").querySelector("#removeModalYes").addEventListener("click", async function (ev) {
+document.querySelector("#removeModal_btnConfirm").addEventListener("click", async function (ev) {
     // 收到用户的确认请求，移除该库存
     ev.preventDefault()
     let labelId = document.querySelector("#removeModal_labelid").value
     let removeAllRequest = document.querySelector("#removeModal_allLabels").checked
     let removeDuplicateRequest = document.querySelector("#removeModal_duplicateLabels").checked
-
-    document.querySelector("#removeModalYes").disabled = true
-    document.querySelector("#removeModalYes").textContent = "Updating"
+    document.querySelector("#removeModal_btnCancel").disabled = true
+    document.querySelector("#removeModal_btnConfirm").disabled = true
+    document.querySelector("#removeModal_btnConfirm").textContent = "Updating"
     let client = new MongoClient(uri, {
         serverApi: { version: ServerApiVersion.v1,  useNewUrlParser: true,  useUnifiedTopology: true,  retryWrites: false }
     });
@@ -417,18 +417,20 @@ document.querySelector("#removeModal").querySelector("#removeModalYes").addEvent
         //     拉取当前列表和Stock表格，如果发现stock中已经存在了label和productCode均相同的产品，则删除prefill表格中的对应条目
         let prefillList = await fetchPrefillDatas()
         createAlert("info", `Checking databases, this may take a while`, 5000)
-        for (const eachPrefillLabel of prefillList) {
-            let stocksResults = await fetchStockInfoByLabel(eachPrefillLabel.productLabel)
+        for (let i = 0; i < prefillList.length; i++) {
+            document.querySelector("#removeModal_StatusText").textContent = `Checking duplicate items. Processing ${i} of ${prefillList.length} items.`
+            let stocksResults = await fetchStockInfoByLabel(prefillList[i].productLabel)
             if (stocksResults.stocks.length > 0){
-                await deletePrefillData(eachPrefillLabel.productLabel)
+                await deletePrefillData(prefillList[i].productLabel)
             }
         }
         createAlert("success", `Prefill Duplicate data check has finished`, 5000)
     } else if(removeAllRequest){
         let prefillList = await fetchPrefillDatas()
         createAlert("info", `Clear Databases`, 5000)
-        for (const eachPrefillLabel of prefillList) {
-            await deletePrefillData(eachPrefillLabel.productLabel)
+        for (let i = 0; i < prefillList.length; i++) {
+            document.querySelector("#removeModal_StatusText").textContent = `Delete all items. Deleting ${i} of ${prefillList.length} items.`
+            await deletePrefillData(prefillList[i].productLabel)
         }
         createAlert("success", `Prefill Duplicate data check has finished`, 5000)
     }
