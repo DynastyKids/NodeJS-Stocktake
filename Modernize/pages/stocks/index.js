@@ -208,7 +208,7 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
         // 位置发生变动，需要添加locationRecords
         let pushObject = {}
         if (originProperty.shelfLocation !== document.querySelector("#modelEditLocation").value) {
-            changedObject.events.push({field:"shelfLocation", before: originProperty.shelfLocation, datetime: new Date()})
+            changedObject.events.push({field:"shelfLocation", before: originProperty.shelfLocation})
             pushObject.locationRecords = {datetime: new Date(), location: document.querySelector("#modelEditLocation").value}
         }
         if (changedObject.events.length > 0){
@@ -396,13 +396,11 @@ function loadStockInfoToTable(fetchAll = document.querySelector("#switchCheck").
                     `<small>${(element.productLabel ? element.productLabel : "")}</small>`+
                     `<small><a href="#" data-bs-ponumber="${(element.POnumber ? element.POnumber : (element.POIPnumber ? element.POIPnumber : ""))}" class="table_action_search">
                         ${(element.POnumber ? "<br>"+element.POnumber : (element.POIPnumber ? "<br>"+element.POIPnumber : ""))}</a></small>`,
-                    `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
-                        data-bs-itemId="${element._id}" style="margin: 0 2px 0 2px">View/Edit</a>` +
+                    `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-itemId="${element._id}" >View/Edit</a>` +
                     (element.removed < 1 ? `
-                    <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 
-                        data-bs-itemId="${element._id}" style="margin: 0 2px 0 2px">Remove</a>
+                    <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-itemId="${element._id}">Remove</a>
                     ` : `<a href="#" class="table_actions table_action_revert" data-bs-toggle="modal" data-bs-target="#revertModal" 
-                        data-bs-itemId="${element._id}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}" style="margin: 0 2px 0 2px">Revert</a>`)
+                        data-bs-itemId="${element._id}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}">Revert</a>`)
                 ]).draw(false);
             }
         }
