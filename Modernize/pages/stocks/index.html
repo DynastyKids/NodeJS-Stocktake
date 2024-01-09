@@ -7,12 +7,13 @@
     <title>Stocks - Warehouse Electron (N) </title>
     <link rel="shortcut icon" type="image/png" href="../../assets/images/logos/favicon.png"/>
     <link rel="stylesheet" href="../../assets/css/styles.min.css"/>
+    <link rel="stylesheet" href="../../../node_modules/@tabler/icons-webfont/tabler-icons.min.css">
 </head>
 
-<body><!--  Body Wrapper -->
+<body>
 <div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
-     data-sidebar-position="fixed" data-header-position="fixed"><!-- Sidebar Start -->
-    <aside class="left-sidebar"><!-- Sidebar scroll-->
+     data-sidebar-position="fixed" data-header-position="fixed">
+    <aside class="left-sidebar">
         <script>
             const sidebarContent = document.querySelector("#main-wrapper aside")
             fetch('../../layout/sidebar.html')
@@ -76,7 +77,7 @@
                         <a class="mb-0 ms-2" href="#" id="act_pause">Pause Timer</a>
                     </div>
                 </div>
-                <div card="card-body" id="loadingStatus">
+                <div class="card-body" id="loadingStatus">
                     <span class="spinner-border" role="status" id="loadingSpinners"></span>
                     <span class="" id="loadingTableText">Loading data...</span>
                 </div>
@@ -113,6 +114,8 @@
                     Icon Note:
                     <ul>
                         <li><i class="ti ti-message-dots"></i> : Item has addition note within</li>
+                        <li><i class="ti ti-zoom-question"></i> : Item is requiring inspections</li>
+                        <li><i class="ti ti-zoom-check-filled"></i> : Item inspections has finished</li>
                     </ul>
                 </div>
             </div>
@@ -133,8 +136,8 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="removeModal_check">
-                                <label class="form-check-label" for="removeModal_check">
+                                <input class="form-check-input" type="checkbox" value="" id="removeModal_setManualTimeCheck">
+                                <label class="form-check-label" for="removeModal_setManualTimeCheck">
                                     Set remove time manually
                                 </label>
                             </div>
@@ -151,8 +154,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="removeModalYes">Confirm</button>
+                <button type="button" class="btn btn-secondary" id="removeModal_btnCancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="removeModal_btnConfirm">Confirm</button>
             </div>
         </div>
     </div>
@@ -192,18 +195,17 @@
             <div class="modal-body">
                 <form>
                     <div class="row">
-                        <h6>Product Information:</h6>
+                        <h3>Product Information:</h3>
                         <div class="col-12">
-                            <div style="display: inline">
-                                <label class="form-label">Label ID:</label>
-                                <span id="labelIDText"></span>
-                                <input type="text" class="form-control col-6" id="modalEditLabelid" disabled hidden value="">
+                            <div style="display: flex">
+                                <h5 class="form-label" style="font-weight: bolder">Product Info: </h5>
+                                <h5 id="productInfoText"></h5>
                             </div>
                         </div>
                         <div class="col-12">
-                            <div style="display: inline-block">
-                                <label class="form-label">Product Info:</label>
-                                <span id="productInfoText"></span>
+                            <div style="display: flex">
+                                <h5 class="form-label" style="font-weight: bolder">Label ID: </h5>
+                                <h5 id="labelIDText"></h5>
                             </div>
                         </div>
                         <div class="col-6 col-md-4">
@@ -234,12 +236,23 @@
                             <label for="modelEditCreateTime" class="form-label">Create Time:</label>
                             <input type="datetime-local" class="form-control col-6" id="modelEditCreateTime" value="">
                         </div>
-                        <div class="col-12">
-                            <div class="col-6">
-                                <input type="checkbox" class="form-check-input" id="modelEditCheckQuarantine">
-                                <label class="form-label">Item is under Quarantine?</label>
+                        <div class="col-12 mt-2 mb-2">
+                            <div class="col-12 mb-2">
+                                <label class="form-label">Item require Quarantine?</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineYes" value="1">
+                                    <label class="form-check-label" for="modalEdit_quarantineYes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineNo" value="0">
+                                    <label class="form-check-label" for="modalEdit_quarantineNo">No</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineFinished" value="-1">
+                                    <label class="form-check-label" for="modalEdit_quarantineFinished">Inspected Finished</label>
+                                </div>
                             </div>
-                            <div class="col-6">
+                            <div class="col-12 mb-2">
                                 <input type="checkbox" class="form-check-input" id="modelEditCheckRemoved">
                                 <label class="form-label">Product has been removed?</label>
                             </div>
@@ -274,5 +287,9 @@
 <script src="../../../node_modules/prismjs/prism.js"></script>
 <script src="./index.js"></script>
 </body>
-
+<style>
+    .table_actions{
+        margin-right: 5px
+    }
+</style>
 </html>

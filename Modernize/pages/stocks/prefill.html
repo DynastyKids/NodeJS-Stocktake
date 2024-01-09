@@ -58,6 +58,10 @@
                 </div>
             </div>
             <div class="card">
+                <div class="card-body" id="loadingStatus">
+                    <span class="spinner-border" role="status" id="loadingSpinners"></span>
+                    <span class="" id="loadingTableText">Loading data...</span>
+                </div>
                 <div class="card-body">
                     <div class="row">
                         <h5 class="card-title fw-semibold mb-4">Action:</h5>
@@ -68,8 +72,10 @@
                                 Which can be later used to complete the data when they fill into stock table.</p>
                         </div>
                         <div class="actions">
-<!--                            <a href="../stocks/addPrefill.html">Add Prefill Item</a>-->
-                            <a href="#" id="deleteAllPrefillModal">Delete all prefilled labels</a>
+                            <a class="mb-0 ms-2" href="#" id="act_reloadTable">Reload Table</a>
+                            <a class="mb-0 ms-2" href="#" id="act_addPrefill" data-bs-toggle="modal" data-bs-target="#addModal">Add Prefill Item</a>
+                            <a class="mb-0 ms-2" href="#" id="act_deleteAll">Delete all prefilled labels</a>
+                            <a class="mb-0 ms-2" href="#" id="act_deleteDuplicate">Delete duplicate labels</a>
                         </div>
                     </div>
                     <div class="tab-pane fade show active" id="nav-all" role="tabpanel" aria-labelledby="nav-all-tab">
@@ -102,6 +108,83 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addModalLabel">Adding Prefill Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Fill out the following form as much as you can to save the prefill informations.</p>
+                <form>
+                    <div class="row">
+                        <div class="col-12">
+                            <label class="form-label">Label ID</label>
+                            <input type="text" class="form-control" id="addModal_labelid" value="">
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <label class="form-label">Product Code</label>
+                            <input class="form-control" id="addModal_prodcode" value="">
+                        </div>
+                        <div class="col-6  col-sm-4">
+                            <label class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="addModal_prodname" value="">
+                        </div>
+                        <div class="col-6  col-sm-4">
+                            <label class="form-label">Purchase Order Ref</label>
+                            <input type="text" class="form-control" id="addModal_ponumber" value="">
+                        </div>
+                        <div class="col-6  col-sm-4">
+                            <label class="form-label">Product Quantity</label>
+                            <input type="number" step="1" min="0" class="form-control" id="addModal_quantity" value="">
+                        </div>
+                        <div class="col-6  col-sm-4">
+                            <label class="form-label">Product Unit</label>
+                            <input type="text" class="form-control" id="addModal_produnit" value="">
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <label class="form-label">Best before</label>
+                            <input type="datetime-local" class="form-control" id="addModal_bestbefore" value="">
+                        </div>
+                        <div class="col-6 col-sm-4" id="removeModal_time">
+                            <label class="form-label">Reserved Location</label>
+                            <input type="text" class="form-control" id="addModal_location" value="">
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <label class="form-label">Unit Price</label>
+                            <input type="number" step="0.01" min="0" class="form-control" id="addModal_unitprice" value="">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Item Require Quarantine?</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="addModal_quarantineRatio" id="addModal_quarantineYes" value="1">
+                                <label class="form-check-label" for="addModal_quarantineYes">Yes</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="addModal_quarantineRatio" id="addModal_quarantineNo" value="0" checked>
+                                <label class="form-check-label" for="addModal_quarantineNo">No</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="addModal_quarantineRatio" id="addModal_quarantineFinished" value="-1">
+                                <label class="form-check-label" for="addModal_quarantineFinished">Inspected Finished</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+<!--                            Camera Preview-->
+                        </div>
+                    </div>
+                </form>
+                <div class="col-12" id="addModal_statusText"></div>
+            </div>
+            <div class="modal-footer">
+<!--                <button type="button" class="btn btn-info" id="addModal_scan">Scan Label</button>-->
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="addModal_btnSubmit">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
     <div class="modal-dialog model-lg">
         <div class="modal-content">
@@ -112,17 +195,16 @@
             <div class="modal-body">
                 <p class="mb-2">Are you sure to REMOVE prefilled item info? This action cannot be reverted.</p>
                 <form>
-                    <div class="row">
-                        <div class="col-12" style="display: none">
-<!--                            Label ID-->
-                            <input type="text" class="form-control" id="removeModal_labelid" hidden value="">
-                        </div>
-                    </div>
+                    <input type="text" class="form-control" id="removeModal_labelid" hidden value="">
+                    <input type="text" class="form-control" id="removeModal_itemid" hidden value="">
+                    <input class="form-check-input" type="checkbox" value="" disabled hidden id="removeModal_allLabels">
+                    <input class="form-check-input" type="checkbox" value="" disabled hidden id="removeModal_duplicateLabels">
                 </form>
+                <p class="mt-2 mb-2" id="removeModal_StatusText"></p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="removeModalYes">Confirm</button>
+                <button type="button" class="btn btn-secondary" id="removeModal_btnCancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="removeModal_btnConfirm">Confirm</button>
             </div>
         </div>
     </div>
@@ -156,25 +238,44 @@
                             <label for="modalEditQuantity" class="form-label">Product Quantity:</label>
                             <input type="number" class="form-control col-6" id="modalEditQuantity" value="">
                         </div>
-                        <div class="col-6  col-md-4">
+                        <div class="col-6 col-md-4">
                             <label for="modalEditUnit" class="form-label">Product Unit:</label>
                             <input type="text" class="form-control col-6" id="modalEditUnit" value="">
                         </div>
-                        <div class="col-6  col-md-4">
+                        <div class="col-6 col-md-4">
                             <label for="modalEditBestbefore" class="form-label">Best Before:</label>
                             <input type="date" class="form-control col-6" id="modalEditBestbefore" value="">
                         </div>
-                        <div class="col-6  col-md-4">
+                        <div class="col-6 col-md-4">
                             <label for="modelEditLocation" class="form-label">Location:</label>
                             <input type="text" class="form-control col-6" id="modelEditLocation" value="">
                         </div>
-                        <div class="col-6  col-md-4">
-                            <label for="modelEditUnitprice" class="form-label">Unit Price:</label>
+                        <div class="col-6 col-md-4">
+                            <label for="modelEditUnitprice" class="form-label">Unit Price: <a href="#" id="modelEditDefaultPrice">Use Default Value</a></label>
                             <input type="text" class="form-control col-6" id="modelEditUnitprice" value="">
                         </div>
-                        <div class="col-6  col-md-4">
+                        <div class="col-6 col-md-4">
                             <label for="modelEditPOnumber" class="form-label">Purchase OrderID:</label>
                             <input type="text" class="form-control col-6" id="modelEditPOnumber" value="">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Item Require Quarantine?</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="modelEdit_quarantineRatio" id="modelEdit_quarantineYes" value="1">
+                                <label class="form-check-label" for="modelEdit_quarantineYes">Yes</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="modelEdit_quarantineRatio" id="modelEdit_quarantineNo" value="0" checked>
+                                <label class="form-check-label" for="modelEdit_quarantineNo">No</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="modelEdit_quarantineRatio" id="modelEdit_quarantineFinished" value="-1">
+                                <label class="form-check-label" for="modelEdit_quarantineFinished">Inspected Finished</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Comments / Notes</label>
+                            <textarea class="form-control" id="modelEdit_notes" rows="5"></textarea>
                         </div>
                         <div class="col-12">
                             <div class="col-6">

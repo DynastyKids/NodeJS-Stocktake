@@ -221,7 +221,7 @@ document.querySelector("#deleteRowModal").addEventListener('show.bs.modal', (ev)
         document.querySelector("#deleteModalConfirmBtn").textContent = "Updating"
         result = (itemStatus === "true" ? await updateRecordById(itemId, {"active": false}) : await updateRecordById(itemId, {"active": true}))
         if (result.acknowledged || result.ok === 1) {
-            location.reload()
+            await fetchTablesData()
         } else {
             document.querySelector("#deleteRowModal .modal-body p").innerText = "Error happened while on updates."
         }
@@ -340,7 +340,7 @@ document.querySelector("#editRowModal").addEventListener('show.bs.modal', async 
         //     当最后确认提交成功则dismiss并回弹成功信息
         if (updateResult.ok === 1 || updateResult.acknowledged) {
             bootstrap.Modal.getInstance(document.querySelector("#editRowModal")).hide()
-            window.location.reload()
+            await fetchTablesData()
         } else {
             document.querySelector("#deleteRowModal .modal-body p").innerText = "Error happened while on updates."
         }

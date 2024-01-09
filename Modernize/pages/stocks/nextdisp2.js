@@ -66,18 +66,16 @@ async function fetchProducts() {
         let htmlContent = '';
         productsDisplay.forEach(item => {
             if (item.bestbeforeArray.length > 0 && item.LocationArray.length > 0 && item.bestbeforeArray[0]) {
-                htmlContent += `<tr><td class="tableItemName">${(item.productCode ? item.productCode : "")} ${item.productName}</td>`
-                htmlContent += `<td class="tableNext1">${item.LocationArray[0]}<br>${item.bestbeforeArray[0]}</td>`
-                if (item.bestbeforeArray.length > 1 && item.LocationArray.length > 1) {
-                    htmlContent += `<td class="tableNext2">${item.LocationArray[1]}<br>${item.bestbeforeArray[1]}</td>`
-                } else {
-                    htmlContent += `<td class="tableNext2"></td>`
-                }
-                if (item.bestbeforeArray.length > 2 && item.LocationArray.length > 2) {
-                    htmlContent += `<td class="tableNext2">${item.LocationArray[2]}<br>${item.bestbeforeArray[2]}</td>`
-                } else {
-                    htmlContent += `<td class="tableNext2"></td>`
-                }
+                htmlContent += `<tr><td class="tableItemName">${(item.productCode ? item.productCode : "")} - ${item.productName}</td>`
+                htmlContent += `<td class="tableNext1">${item.LocationArray[0]} ${item.hasOwnProperty("quanartineArray") && item.quanartineArray[0] === 1 ? '<span style="color: orange"><i class="ti ti-zoom-question"></i></span>': ""}<br>${item.bestbeforeArray[0]}</td>`
+
+                htmlContent += (item.bestbeforeArray.length > 1 && item.LocationArray.length > 1) ?
+                    `<td class="tableNext2">${item.LocationArray[1]} ${item.hasOwnProperty("quanartineArray") && item.quanartineArray[1] === 1 ? '<span style="color: orange"><i class="ti ti-zoom-question"></i></span>': ""}<br>${item.bestbeforeArray[1]}</td>` :
+                    `<td class="tableNext2"></td>`
+
+                htmlContent += (item.bestbeforeArray.length > 2 && item.LocationArray.length > 2) ?
+                    `<td class="tableNext2">${item.LocationArray[2]} ${item.hasOwnProperty("quanartineArray") && item.quanartineArray[2] === 1 ? '<span style="color: orange"><i class="ti ti-zoom-question"></i></span>': ""}<br>${item.bestbeforeArray[2]}</td>` :
+                    `<td class="tableNext2"></td>`
                 htmlContent += `</tr>`
             }
         })
@@ -89,14 +87,15 @@ function build2DProductArray(productList) {
     let productArray = []
     productList.forEach(item => {
         if (productArray.length > 0 && item.productCode !== "") {
-            console.log(productArray[productArray.length - 1])
             if (productArray[productArray.length - 1].productCode === item.productCode) {
                 productArray[productArray.length - 1]["bestbeforeArray"].push(item.bestbefore ? item.bestbefore.replaceAll("-", ""): "")
                 productArray[productArray.length - 1]["LocationArray"].push(item.shelfLocation ? item.shelfLocation : "")
+                productArray[productArray.length - 1]["quanartineArray"].push(item.hasOwnProperty("quanartine") ? parseInt(item.quanartine) : 0)
             } else {
                 productArray.push(item)
                 productArray[productArray.length - 1]["bestbeforeArray"] = [item.bestbefore ? item.bestbefore.replaceAll("-", ""): ""]
                 productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation ? item.shelfLocation : ""]
+                productArray[productArray.length - 1]["quanartineArray"] = [item.hasOwnProperty("quanartine") ? parseInt(item.quanartine) : 0]
                 delete productArray[productArray.length - 1].session;
                 delete productArray[productArray.length - 1]._id;
                 delete productArray[productArray.length - 1].POIPnumber;
@@ -107,6 +106,7 @@ function build2DProductArray(productList) {
             productArray.push(item)
             productArray[productArray.length - 1]["bestbeforeArray"] = [item.bestbefore ? item.bestbefore.replaceAll("-", ""): ""]
             productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation ? item.shelfLocation : ""]
+            productArray[productArray.length - 1]["quanartineArray"] = [item.hasOwnProperty("quanartine") ? parseInt(item.quanartine) : 0]
             delete productArray[productArray.length - 1].session;
             delete productArray[productArray.length - 1]._id;
             delete productArray[productArray.length - 1].POIPnumber;
