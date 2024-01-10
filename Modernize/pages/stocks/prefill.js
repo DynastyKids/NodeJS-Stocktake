@@ -182,6 +182,8 @@ document.querySelector("#addModal_btnSubmit").addEventListener("click", async fu
         console.log(insertResult)
         bootstrap.Modal.getInstance(document.querySelector("#addModalLabel")).hide()
     }
+
+    await redrawTable(true)
 })
 
 async function insertPrefillElement(insertObject = {}) {
@@ -302,6 +304,7 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", async (ev
     document.querySelectorAll("input").forEach(eachInput => { eachInput.value = ""})
     document.querySelectorAll("textarea").forEach(eachInput => { eachInput.value = ""})
     let requestItemId = ev.relatedTarget.getAttribute("data-bs-itemId")
+    let requestLabelId = ev.relatedTarget.getAttribute("data-bs-labelId")
     let fetchedProductInfo = await fetchStockInfoByItemId(requestItemId)
     document.querySelector("#modalEditLabelid").value = requestItemId
     document.querySelector("#editModalSubmitBtn").disabled = true
@@ -337,6 +340,7 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", async (ev
     }
 
     document.querySelector("#editModalSubmitBtn").addEventListener("click", async (ev) => {
+        let fetchedPrefillInfo = fetchedProductInfo.prefill[0]
         document.querySelector("#editModalSubmitBtn").disabled = true
         document.querySelector("#editModalSubmitBtn").textContent = "Updating"
         let updateTarget = {}
@@ -359,13 +363,13 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", async (ev
         try {
             // 直接insert新数据到库中，然后删除旧数据即可
             let insertResult = await insertToPollinglog([fetchedPrefillInfo])
-            let deleteResult = await deletePrefillData(ev.relatedTarget.getAttribute("data-bs-labelId"))
+            let deleteResult = await deletePrefillData(requestLabelId)
             bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
             createAlert("success","Product has been successfully patched.")
-            await redrawTable(true)
         } catch (e) {
             console.error(`Error while Patching Data:`, e)
         }
+        await redrawTable(true)
     })
 })
 
@@ -383,6 +387,7 @@ document.querySelector("#removeModal").addEventListener("show.bs.modal", functio
     }
     //     No label ID captures, may request for removeAll / remove Duplicate
     document.querySelector("#removeModal_btnConfirm").disabled = false
+    document.querySelector("#removeModal_btnCancel").disabled = false
     document.querySelector("#removeModal_btnConfirm").textContent = "Confirm"
 })
 document.querySelector("#removeModal_btnConfirm").addEventListener("click", async function (ev) {

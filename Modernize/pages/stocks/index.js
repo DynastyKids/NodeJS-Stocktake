@@ -261,7 +261,7 @@ document.querySelector("#removeModal").querySelector("#removeModal_btnConfirm").
     document.querySelector("#removeModal_btnConfirm").textContent = "Updating"
 
     let localTime = new Date();
-    if (document.querySelector("#removeModal_check").checked){ // 检查用户是否自定义了时间
+    if (document.querySelector("#removeModal_setManualTimeCheck").checked){ // 检查用户是否自定义了时间
         try {
             localTime = document.querySelector("#removeModal_datetime").value ? new Date(document.querySelector("#removeModal_datetime").value) : new Date()
         } catch (e) {
