@@ -262,6 +262,13 @@ document.querySelector("#removeModal").addEventListener("show.bs.modal", functio
     document.querySelector("#removeModal_labelid").value = itemId
     document.querySelector("#removeModal_btnConfirm").disabled = false
     document.querySelector("#removeModal_btnConfirm").textContent = "Confirm"
+
+    for (let i = 0; i < fullResultSet.length; i++) {
+        if ((fullResultSet[i]._id).toString() === itemId){
+            console.log(fullResultSet[i])
+            document.querySelector("#removeModal .modal-body p").textContent = `Are you sure to remove ${fullResultSet[i].productName} with label ending in ${fullResultSet[i].productLabel.slice(-7)}?`
+        }
+    }
 })
 
 document.querySelector("#removeModal").querySelector("#removeModal_btnConfirm").addEventListener("click", async function (ev) {
@@ -317,13 +324,19 @@ document.querySelector("#removeModal").querySelector("#removeModal_btnConfirm").
 
 let revertModal = document.querySelector("#revertModal")
 revertModal.addEventListener("show.bs.modal", function (ev) {
-    var lableID = ev.relatedTarget.getAttribute("data-bs-itemId")
+    var itemId = ev.relatedTarget.getAttribute("data-bs-itemId")
     let hiddenInput = revertModal.querySelector("#revertLabelid")
-    hiddenInput.value = lableID
+    hiddenInput.value = itemId
 
     document.querySelector("#revertLocation").value = ev.relatedTarget.getAttribute("data-bs-shelf")
     document.querySelector("#revertModal_btnConfirm").disabled = false
     document.querySelector("#revertModal_btnConfirm").textContent = "Confirm"
+
+    for (let i = 0; i < fullResultSet.length; i++) {
+        if ((fullResultSet[i]._id).toString() === itemId){
+            document.querySelector("#revertModal .modal-body p").textContent = `Are you sure to revert delete of ${fullResultSet[i].productName} with label ending in ${fullResultSet[i].productLabel.slice(-7)}?`
+        }
+    }
 })
 revertModal.querySelector("#revertModal_btnConfirm").addEventListener("click", async function (ev) {
     ev.preventDefault()
