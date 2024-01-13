@@ -291,7 +291,7 @@ async function insertToPollinglog(content) {
     try {
         await client.connect();
         const pollingSession = client.db(targetDB).collection("pollinglog");
-        await pollingSession.insertMany(content)
+        result = await pollingSession.insertMany(content)
     } catch (e) {
         console.error(`Insert Stock Error when process:;`, e)
     } finally {
@@ -300,11 +300,15 @@ async function insertToPollinglog(content) {
     return result
 }
 
+let editModalObjects = {}
 document.querySelector("#editModal").addEventListener("show.bs.modal", async (ev) => {
+    editModalObjects = {}
     document.querySelectorAll("input").forEach(eachInput => { eachInput.value = ""})
     document.querySelectorAll("textarea").forEach(eachInput => { eachInput.value = ""})
     let requestItemId = ev.relatedTarget.getAttribute("data-bs-itemId")
     let requestLabelId = ev.relatedTarget.getAttribute("data-bs-labelId")
+    editModalObjects.itemId = requestItemId
+    editModalObjects.labelId = requestLabelId
     let fetchedProductInfo = await fetchStockInfoByItemId(requestItemId)
     document.querySelector("#modalEditLabelid").value = requestItemId
     document.querySelector("#editModalSubmitBtn").disabled = true
@@ -312,6 +316,7 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", async (ev
     document.querySelector("#editModal .modal-title").textContent = `Loading Product Information`
     if (fetchedProductInfo.prefill.length > 0) {
         let fetchedPrefillInfo = fetchedProductInfo.prefill[0]
+        editModalObjects.prefillInfos = fetchedProductInfo.prefill[0]
         let productModelInfo = await fetchProductInformation(fetchedPrefillInfo.productCode)
         document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${fetchedPrefillInfo.productName}`
         document.querySelector("#editModal .modal-body #productInfoText").textContent = `${fetchedPrefillInfo.productCode} - ${fetchedPrefillInfo.productName}`
@@ -338,39 +343,47 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", async (ev
             document.querySelector("#modelEditDefaultPrice").style = "display: none"
         }
     }
+})
+document.querySelector("#editModalSubmitBtn").addEventListener("click", async (ev) => {
+    let fetchedPrefillInfo = editModalObjects.prefillInfos
+    document.querySelector("#editModalSubmitBtn").disabled = true
+    document.querySelector("#editModalSubmitBtn").textContent = "Updating"
+    let updateTarget = {}
+    if (document.querySelector("#modalEditQuantity").value) {
+        fetchedPrefillInfo.quantity = document.querySelector("#modalEditQuantity").value
+    }
+    if (document.querySelector("#modalEditUnit").value) {
+        fetchedPrefillInfo.quantityUnit = document.querySelector("#modalEditUnit").value
+    }
+    if (document.querySelector("#modalEditBestbefore").value) {
+        fetchedPrefillInfo.bestbefore = document.querySelector("#modalEditBestbefore").value
+    }
+    if (document.querySelector("#modelEditLocation").value) {
+        fetchedPrefillInfo.shelfLocation = document.querySelector("#modelEditLocation").value
+    }
+    if (document.querySelector("#modelEditPOnumber").value) {
+        fetchedPrefillInfo.POnumber = document.querySelector("#modelEditPOnumber").value
+    }
+    try{
+        if(document.querySelector("input[name='modalEdit_quarantineRatio']:checked").value){
+            fetchedPrefillInfo.quarantine = parseInt(document.querySelector("input[name='modalEdit_quarantineRatio']:checked").value)
+        }
+    } catch (e) {
+        console.log("Original Property does not have quarantine Ratio")
+        fetchedPrefillInfo.quarantine = 0
+    }
 
-    document.querySelector("#editModalSubmitBtn").addEventListener("click", async (ev) => {
-        let fetchedPrefillInfo = fetchedProductInfo.prefill[0]
-        document.querySelector("#editModalSubmitBtn").disabled = true
-        document.querySelector("#editModalSubmitBtn").textContent = "Updating"
-        let updateTarget = {}
-        if (document.querySelector("#modalEditQuantity").value) {
-            fetchedPrefillInfo.quantity = document.querySelector("#modalEditQuantity").value
-        }
-        if (document.querySelector("#modalEditUnit").value) {
-            fetchedPrefillInfo.quantityUnit = document.querySelector("#modalEditUnit").value
-        }
-        if (document.querySelector("#modalEditBestbefore").value) {
-            fetchedPrefillInfo.bestbefore = document.querySelector("#modalEditBestbefore").value
-        }
-        if (document.querySelector("#modelEditLocation").value) {
-            fetchedPrefillInfo.shelfLocation = document.querySelector("#modelEditLocation").value
-        }
-        if (document.querySelector("#modelEditPOnumber").value) {
-            fetchedPrefillInfo.POnumber = document.querySelector("#modelEditPOnumber").value
-        }
-
-        try {
-            // 直接insert新数据到库中，然后删除旧数据即可
-            let insertResult = await insertToPollinglog([fetchedPrefillInfo])
-            let deleteResult = await deletePrefillData(requestLabelId)
-            bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
-            createAlert("success","Product has been successfully patched.")
-        } catch (e) {
-            console.error(`Error while Patching Data:`, e)
-        }
-        await redrawTable(true)
-    })
+    try {
+        // 直接insert新数据到库中，然后删除旧数据即可
+        let insertResult = await insertToPollinglog([fetchedPrefillInfo])
+        let deleteResult = await deletePrefillData(editModalObjects.labelId)
+        console.log(insertResult, deleteResult)
+        bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
+        createAlert("success","Product has been successfully patched.")
+    } catch (e) {
+        console.error(`Error while Patching Data:`, e)
+    }
+    await redrawTable(true)
 })
 
 document.querySelector("#removeModal").addEventListener("show.bs.modal", function (ev) {

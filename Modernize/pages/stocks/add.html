@@ -71,50 +71,48 @@
                         <a class="mb-0 ms-2" href="#" id="act_reset">Reset Form</a>
                     </div>
                 </div>
-            </div>
-            <div class="card">
                 <div class="card-body" id="div_datatable">
                     <h5 class="card-title fw-semibold mb-2">Fill the below table for products</h5>
                     <form id="form_product">
                         <div class="row">
-                            <div class="col-sm-12 col-12 mb-2">
+                            <div class="col-md-4 col-sm-12 col-12 mb-2">
                                 <label for="inpt_labelid">Label ID</label>
                                 <input type="text" class="form-control" id="inpt_labelid" placeholder="Label ID">
                             </div>
-                            <div class="col-sm-6 mb-2">
+                            <div class="col-md-4 col-sm-6 mb-2">
                                 <label for="inpt_prodCode">Product Code</label>
                                 <input class="form-control" id="inpt_prodCode" placeholder="Select from list" value="" required="">
                                 <div class="invalid-feedback"></div>
                             </div>
-                            <div class="col-sm-6 mb-2">
+                            <div class="col-md-4 col-sm-6 mb-2">
                                 <label for="inpt_prodName">Product Label Name</label>
                                 <input type="text" class="form-control" id="inpt_prodName" placeholder="Label name" value="" required="">
                             </div>
-                            <div class="col-sm-6 mb-2">
+                            <div class="col-md-3 col-sm-6 mb-2">
                                 <label for="inpt_quantity">Quantity</label>
                                 <input type="number" class="form-control" id="inpt_quantity" placeholder="Quantity" value="">
                             </div>
-                            <div class="col-sm-6 col-6 mb-2">
+                            <div class="col-md-3 col-sm-6 col-6 mb-2">
                                 <label for="inpt_unit">Unit</label>
                                 <input class="form-control" id="inpt_unit" placeholder="Unit" list="unitlists" required="" >
                             </div>
-                            <div class="col-sm-6 col-6 mb-2">
+                            <div class="col-md-3 col-sm-6 col-6 mb-2">
                                 <label for="inpt_purchaseorder">Purchase Order No.</label>
                                 <input type="text" class="form-control" id="inpt_purchaseorder" placeholder="Purchase Order Number">
                             </div>
-                            <div class="col-sm-6 col-6 mb-2">
+                            <div class="col-md-3 col-sm-6 col-6 mb-2">
                                 <label for="inpt_bestbefore">Best before</label>
                                 <input type="date" class="form-control" id="inpt_bestbefore">
                             </div>
-                            <div class="col-sm-6 col-6 mb-2">
+                            <div class="col-md-3 col-sm-6 col-6 mb-2">
                                 <label for="inpt_sessionid">Session ID</label>
                                 <input type="text" class="form-control" id="inpt_sessionid" placeholder="Session ID" value="STOCK">
                             </div>
-                            <div class="col-sm-6 col-6 mb-2">
+                            <div class="col-md-3 col-sm-6 col-6 mb-2">
                                 <label for="inpt_shelflocation">Location</label>
                                 <input type="text" class="form-control" id="inpt_shelflocation" placeholder="Location">
                             </div>
-                            <div class="col-sm-6 col-6 mb-2">
+                            <div class="col-md-3 col-sm-6 col-6 mb-2">
                                 <label for="inpt_unitprice">Unit Price</label>
                                 <input type="number" step="0.01" class="form-control" id="inpt_unitprice"
                                        placeholder="Unit Price">
@@ -142,11 +140,11 @@
                                     <label class="form-check-label" for="radio_quarantineFinished">Inspected Finished</label>
                                 </div>
                             </div>
-                            <div class="form-check mr-sm-2 col-12">
+                            <div class="form-check mr-sm-2 col-sm-6 col-12">
                                 <input type="checkbox" class="form-check-input" id="check_itemRemoved">
                                 <label class="form-check-label" for="check_itemRemoved">Item has been Removed</label>
                             </div>
-                            <div class="form-check mr-sm-2 col-12">
+                            <div class="form-check mr-sm-2 col-sm-6 col-12">
                                 <input type="checkbox" class="form-check-input" id="check_manualTime">
                                 <label class="form-check-label" for="check_manualTime">Set Log timestamp manually</label>
                             </div>
