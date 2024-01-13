@@ -265,7 +265,6 @@ document.querySelector("#removeModal").addEventListener("show.bs.modal", functio
 
     for (let i = 0; i < fullResultSet.length; i++) {
         if ((fullResultSet[i]._id).toString() === itemId){
-            console.log(fullResultSet[i])
             document.querySelector("#removeModal .modal-body p").textContent = `Are you sure to remove ${fullResultSet[i].productName} with label ending in ${fullResultSet[i].productLabel.slice(-7)}?`
         }
     }
