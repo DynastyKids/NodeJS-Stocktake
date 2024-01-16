@@ -82,16 +82,28 @@ document.addEventListener("DOMContentLoaded",async () => {
     
     // Card 4 - Apex Chart 3 Inventory Report
     // 创建一个循环，循环到第一个pollinglog时候的数据的年份，然后添加对应的财年选项，每次用户选定财年后再拉取数据
-    let earliestLog = getEarliestTransactionLog();
-    earliestLog = (earliestLog.length > 0 ? new Date(earliestLog[0].loggingTime) : new Date())
-    // 计算该财年的时间，然后制作对应的选项列表，并给对应的选项列表创建方法
-    for (var i= earliestLog.getFullYear(); i < new Date().getFullYear()+1; i++){
+    let earliestLogs = await getEarliestTrans();
+    let earliestYear = new Date().getFullYear()
+    if (earliestLogs.createTime.length > 0 ){
+        if (new Date(earliestLogs.createTime[0].createTime).getFullYear() < earliestYear){
+            earliestYear = new Date(earliestLogs.createTime[0].createTime).getFullYear()
+        }
+    }
+    if (earliestLogs.loggingTime.length > 0 ){
+        if (new Date(earliestLogs.loggingTime[0].loggingTime).getFullYear() < earliestYear){
+            earliestYear = new Date(earliestLogs.loggingTime[0].loggingTime).getFullYear()
+        }
+    }
+
+    for (var i= new Date().getFullYear() ; i >= earliestYear ; i--){ //创建年份选项
         var newFYoption = document.createElement("option")
         newFYoption.value = i;
         newFYoption.textContent = "Year "+i
         document.querySelector("#inv_optionslist").append(newFYoption);
     }
 
+    // 根据用户选定的年份Fetch对应年份的相关数据，如果createTime, loggingTime, RemoveTime三选一有符合条件的数据即可加入序列等待处理
+    // fetch相关年份的数据后，函数内按照月份处理，并返回2套数组，一套为Import Value，一套为Export Value
     let fetchInventoryData = await fetchInventoryGraphData()
     console.log(fetchInventoryData)
     let maxy = 0
@@ -622,17 +634,18 @@ async function lastXmonthsPollinglog(months = 24,forced = false){
     return pollinglogs
 }
 
-async function getEarliestTransactionLog() {
+async function getEarliestTrans(){
     let client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true
         }
     });
-    let result = []
+    let result = {createTime:"",loggingTime:""}
     try {
         await client.connect()
         let session = await client.db(dbname).collection("pollinglog");
-        result = await session.find({loggingTime: {$exists: true, $ne: null}}).sort({loggingTime: 1}).limit(1).toArray()
+        result.createTime = await session.find({createTime: {$exists: true, $ne: null}}).sort({createTime: 1}).limit(1).toArray()
+        result.loggingTime = await session.find({loggingTime: {$exists: true, $ne: null}}).sort({loggingTime: 1}).limit(1).toArray()
     } catch (e) {
         console.error(`Error on CheckDBConnection: ${e}`)
     } finally {
