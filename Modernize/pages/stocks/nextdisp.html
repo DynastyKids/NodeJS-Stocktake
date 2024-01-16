@@ -98,6 +98,45 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeModalLabel">Remove Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure to REMOVE Item from shelf?</p>
+                <form>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="removeModal_setManualTimeCheck">
+                                <label class="form-check-label" for="removeModal_setManualTimeCheck">
+                                    Set remove time manually
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12" id="removeModal_time" style="display: none">
+                            <label>Remove Time</label>
+                            <input type="datetime-local" class="form-control" id="removeModal_datetime" value="">
+                        </div>
+                        <div class="col-12" style="display: none">
+                            <label>Label ID</label>
+                            <input type="text" class="form-control" id="removeModal_labelid" hidden value="">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="removeModal_btnCancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="removeModal_btnConfirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script> window.$ = window.jQuery = require('jquery');</script>
 <script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/sidebarmenu.js"></script>
