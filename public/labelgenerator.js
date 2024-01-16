@@ -1,6 +1,7 @@
 let rowNumber = 1
 let productsData = [] //在生成Label时候也可以使用
 let toast = document.querySelector("#toastDiv")
+let refreshTimeout;
 document.addEventListener("DOMContentLoaded", function (ev) {
     if (window.location.protocol === "http:") {
         const redirectUrl = "https://" + window.location.hostname + ":3001"+window.location.pathname;
@@ -23,7 +24,20 @@ document.addEventListener("DOMContentLoaded", function (ev) {
             }
         }
     })
+
+    window.addEventListener('mousemove', resetTimer, false);
+    window.addEventListener('mousedown', resetTimer, false);
+    window.addEventListener('keypress', resetTimer, false);
+    window.addEventListener('scroll', resetTimer, false);
+    resetTimer();
 });
+
+function resetTimer(defaultTime = 300) {
+    clearTimeout(refreshTimeout);
+    refreshTimeout = setTimeout(() => {
+        window.location.reload();
+    }, 1000 * defaultTime);
+}
 
 async function fetchProducts(forced = false){
     if (forced=== false && productsData.length > 0){
