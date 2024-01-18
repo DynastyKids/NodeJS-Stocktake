@@ -4,7 +4,6 @@ const {ServerApiVersion, Decimal128, ObjectId} = require('mongodb');
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
-const path = require('path');
 
 var $ = require('jquery');
 var DataTable = require('datatables.net-responsive-bs5')(window, $);

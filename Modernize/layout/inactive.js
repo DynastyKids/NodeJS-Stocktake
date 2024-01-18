@@ -1,13 +1,12 @@
 try{
     const {MongoClient, ServerApiVersion} = require("mongodb");
     const Storage = require("electron-store");
-    const newStorage = new Storage();
 } finally {
-//     Nothing
+//     Nothings
 }
-
-let dburi = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
-let dbtargetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
+const newStorage2 = new Storage();
+let dburi = newStorage2.get("mongoURI") ? newStorage2.get("mongoURI") : "mongodb://localhost:27017"
+let dbtargetDB = newStorage2.get("mongoDB") ? newStorage2.get("mongoDB") : "production"
 let productsDisplay = []
 
 let inactiveModal = document.createElement("div")
@@ -25,7 +24,7 @@ inactiveModalCotent.className = "modal-content"
 
 let inactiveModalHeader = document.createElement("div")
 inactiveModalHeader.className = "modal-header"
-inactiveModalHeader.innerHTML = `<h5 class="modal-title" id="exampleModalToggleLabel2">Inactive Screensaver</h5>
+inactiveModalHeader.innerHTML = `<h5 class="modal-title" id="exampleModalToggleLabel2">Screensaver - Next Dispatch</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>`
 
 let inactiveModalBody = document.createElement("div")
@@ -155,7 +154,7 @@ let inactivityTime = function (setTime = 120) {  // Default screen saver started
     document.onkeypress = resetTimer;
 
     function openModal() {
-        fetchProducts()
+        inactive_fetchProducts()
         setTimeout(function () {
             let tableBodyContainer = document.querySelector('#table-body-container');
             let tableBody = document.querySelector('#table-body');
@@ -197,15 +196,15 @@ document.addEventListener("DOMContentLoaded", function(){
 })
 
 // Using Code from Nextdisp2.js
-async function fetchProducts() {
-    let client = new MongoClient(dburi, {
+async function inactive_fetchProducts() {
+    let dbclient = new MongoClient(dburi, {
         serverApi: {version: ServerApiVersion.v1, strict: true, deprecationErrors: true,
             useNewUrlParser: true, useUnifiedTopology: true}
     });
 
     try {
-        await client.connect();
-        const sessions = client.db(dbtargetDB).collection("pollinglog");
+        await dbclient.connect();
+        const sessions = dbclient.db(dbtargetDB).collection("pollinglog");
         const query = {removed: 0};
         const options = {'productCode': 1, 'bestbefore': 1, 'productLabel': 1};
         const cursor = sessions.find(query).sort(options);
@@ -219,11 +218,11 @@ async function fetchProducts() {
                 seenProducts.add(product);
             }
         });
-        productsDisplay = build2DProductArray(seenProducts)
+        productsDisplay = inactive_buildProductArr(seenProducts)
     } catch (e) {
         console.error(e)
     } finally {
-        await client.close()
+        await dbclient.close()
         let htmlContent = '';
         productsDisplay.forEach(item => {
             if (item.bestbeforeArray.length > 0 && item.LocationArray.length > 0 && item.bestbeforeArray[0]) {
@@ -243,7 +242,7 @@ async function fetchProducts() {
         document.querySelector("#table-body").innerHTML = htmlContent
     }
 }
-function build2DProductArray(productList) {
+function inactive_buildProductArr(productList) {
     let productArray = []
     productList.forEach(item => {
         if (productArray.length > 0 && item.productCode !== "") {
