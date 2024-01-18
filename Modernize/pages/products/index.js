@@ -5,7 +5,13 @@ const ObjectID = require("mongodb").ObjectId
 var $ = require("jquery");
 const DataTable = require('datatables.net-responsive-bs5')(window, $);
 
-let table;
+let table=new DataTable('#productTable', {
+    responsive: true,
+    pageLength: 15,
+    lengthMenu: [10, 15, 25, 50, 75, 100],
+    columns: [{"width": "40%"}, null, null, null, null],
+    order: [0, 'asc']
+});
 let dataset = [];
 const Storage = require("electron-store");
 const i18next = require("i18next");
@@ -14,25 +20,17 @@ const newStorage = new Storage();
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
-window.onload = async () => {
-    table = new DataTable('#productTable', {
-        responsive: true,
-        pageLength: 15,
-        lengthMenu: [10, 15, 25, 50, 75, 100],
-        columns: [{"width": "40%"}, null, null, null, null],
-        order: [0, 'asc'],
-        data: await fetchTablesData()
-    });
-}
-
-async function fetchProducts(conditionObject) {
+document.addEventListener("DOMContentLoaded", async (ev) => {
     document.querySelector("#loadingStatus").style.removeProperty("display")
+    table.rows.add(await fetchTablesData()).draw()
+    document.querySelector("#loadingStatus").style.display = "none"
+})
+
+async function fetchProducts() {
     let results = []
     let client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
-            strict: true,
-            deprecationErrors: true,
             useNewUrlParser: true,
             useUnifiedTopology: true
         }
@@ -41,16 +39,11 @@ async function fetchProducts(conditionObject) {
     let options = {sort: {productCode: 1}};
     try {
         await client.connect();
-        if (conditionObject) {
-            results = await sessions.find(conditionObject, options).toArray();
-        } else {
-            results = await sessions.find({}, options).toArray();
-        }
+        results = await sessions.find({}, options).toArray();
     } catch (e) {
         console.error("Fetching error:", e)
     } finally {
         await client.close();
-        document.querySelector("#loadingStatus").style.display = "none"
     }
     return results
 }
@@ -61,8 +54,6 @@ async function fetchUnusedStocks(conditionObject) {
     let client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
-            strict: true,
-            deprecationErrors: true,
             useNewUrlParser: true,
             useUnifiedTopology: true
         }
@@ -175,8 +166,6 @@ async function findOneRecordById(recordId) {
     let client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
-            strict: true,
-            deprecationErrors: true,
             useNewUrlParser: true,
             useUnifiedTopology: true
         }
@@ -351,8 +340,6 @@ async function updateRecordById(recordId, updateData) {
     let client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
-            strict: true,
-            deprecationErrors: true,
             useNewUrlParser: true,
             useUnifiedTopology: true
         }
@@ -373,7 +360,8 @@ async function updateRecordById(recordId, updateData) {
 document.querySelector("#act_reloadTable").addEventListener("click", async (ev) => {
     if (table) {
         table.clear().draw()
-        let results = await fetchTablesData();
-        table.rows.add(results).draw()
+        document.querySelector("#loadingStatus").style.removeProperty("display")
+        table.rows.add(await fetchTablesData()).draw()
+        document.querySelector("#loadingStatus").style.display = "none"
     }
 })
