@@ -55,9 +55,12 @@
             </div>
             <div id="alertAnchor"></div>
             <div class="card">
+                <div class="card-body" id="loadingStatus">
+                    <span class="spinner-border" role="status" id="loadingSpinners"></span>
+                    <span class="" id="loadingTableText">Loading data...</span>
+                </div>
                 <div class="card-body">
                     <h5 class="card-title fw-semibold mb-4">Actions</h5>
-
                     <div class="list-group-item-action">
                         <div class="row mb-0 ms-2">
                             <div class="col-6" id="switchDiv">
@@ -76,12 +79,7 @@
                         <a class="mb-0 ms-2" href="aggregate_print.html">Aggregate View</a>
                         <a class="mb-0 ms-2" href="#" id="act_pause">Pause Timer</a>
                     </div>
-                </div>
-                <div class="card-body" id="loadingStatus">
-                    <span class="spinner-border" role="status" id="loadingSpinners"></span>
-                    <span class="" id="loadingTableText">Loading data...</span>
-                </div>
-                <div class="card-body" id="div_datatable">
+
                     <table class="table table-responsive" id="table">
                         <thead>
                         <tr>
@@ -91,7 +89,7 @@
                             <th scope="col">Best before</th>
                             <th scope="col">Location</th>
                             <th scope="col"><small>Add Time</small><br><small>Remove Time</small></th>
-                            <th scope="col">Stock ID<br><small>PO #</small></th>
+                            <th scope="col">Stock ID<br><small>PO # - Sequence</small></th>
                             <th scope="col">Action</th>
                         </tr>
                         </thead>
@@ -127,18 +125,18 @@
     <div class="modal-dialog model-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="removeModalLabel">Remove Item</h5>
+                <h5 class="modal-title" id="removeModalLabel">Remove Item - mark used</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-2">Are you sure to REMOVE Item from shelf?</p>
+                <p class="mb-2"></p>
                 <form>
                     <div class="row">
                         <div class="col-12">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" value="" id="removeModal_setManualTimeCheck">
                                 <label class="form-check-label" for="removeModal_setManualTimeCheck">
-                                    Set remove time manually
+                                    Set timestamp manually
                                 </label>
                             </div>
                         </div>
@@ -164,11 +162,11 @@
     <div class="modal-dialog model-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="revertModalLabel">Add Item?</h5>
+                <h5 class="modal-title" id="revertModalLabel">Revert mark used Operation</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-2">Are you sure to put back Item from shelf?</p>
+                <p class="mb-2"></p>
                 <form>
                     <input type="text" class="form-control" id="revertLabelid" hidden value="">
                     <div class="col-12">
@@ -269,9 +267,39 @@
                 </form>
                 <p></p>
             </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <div>
+                    <button type="button" class="btn btn-danger" id="editModal_deleteBtn" data-bs-target="#deleteModal" data-bs-toggle="modal">Delete</button>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="editModal_submitBtn" disabled>Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure to delete this record? Target data will be permanently removed from database.</p>
+                <form>
+                    <div class="row">
+                        <div class="col-12" style="display: none">
+                            <input type="text" class="form-control" id="deleteModal_labelid" hidden value="">
+                        </div>
+                    </div>
+                </form>
+            </div>
             <div class="modal-footer">
+                <button type="button" class="btn btn-info" id="deleteModal_btnReturn" data-bs-target="#editModal" data-bs-toggle="modal" data-bs-itemId="">Back to Edit</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="editModalSubmitBtn" disabled>Submit</button>
+                <button type="button" class="btn btn-danger" id="deleteModal_btnConfirm">Confirm</button>
             </div>
         </div>
     </div>
