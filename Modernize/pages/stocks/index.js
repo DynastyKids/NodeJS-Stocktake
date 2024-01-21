@@ -39,13 +39,8 @@ document.querySelector("#switchCheck").addEventListener("change", function(ev){
 })
 
 function refreshCheckSwitch(){
-    if (document.querySelector("#switchCheck").checked){
-        document.querySelector("#switchDiv span").textContent = "Showing all stocks."
-        loadStockInfoToTable(true)
-    } else {
-        document.querySelector("#switchDiv span").textContent = "Showing current stocks only"
-        loadStockInfoToTable(false)
-    }
+    loadStockInfoToTable()
+    document.querySelector("#switchDiv span").textContent = `${document.querySelector("#switchCheck").checked ? "Showing all stocks." : "Showing current stocks only"}`
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
@@ -74,7 +69,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             document.querySelector("#act_pause").innerText = "Resume Timer";
         } else {
             document.querySelector("#act_pause").innerText = "Pause Timer";
-            loadStockInfoToTable(true)
+            loadStockInfoToTable()
         }
     })
 });
@@ -232,7 +227,7 @@ document.querySelector("#editModal_submitBtn").addEventListener("click", async (
     if (result.acknowledged){
         setTimeout(function(){
             bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
-            loadStockInfoToTable(true)
+            loadStockInfoToTable()
         },3000)
     } else {
         document.querySelector("#editModal .modal-body p").textContent = "Error on Update"
@@ -442,7 +437,7 @@ document.querySelector("#filterdate").addEventListener("change", (ev)=>{
 });
 
 
-function loadStockInfoToTable(fetchAll = document.querySelector("#switchCheck").check) {
+function loadStockInfoToTable(fetchAll = document.querySelector("#switchCheck").checked) {
     let requestAllData = fetchAll ? fetchAll : false
     const URLqueries = new URLSearchParams(window.location.search)
     requestAllData = (URLqueries.get('q') ? true : requestAllData) // 该query存在则拉取所有数据
@@ -531,11 +526,7 @@ async function getAllStockItems(findall = false) {
 }
 
 document.querySelector("#filterdate").addEventListener("change", (ev)=>{
-    if (document.querySelector("#switchCheck").checked){
-        loadStockInfoToTable(true)
-    } else {
-        loadStockInfoToTable(false)
-    }
+    loadStockInfoToTable()
 });
 
 function createAlert(status, text, time = 5000){
