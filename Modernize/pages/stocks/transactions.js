@@ -11,15 +11,14 @@ var DataTable = require('datatables.net-responsive-bs5')(window, $);
 
 document.addEventListener("DOMContentLoaded",async function () {
     let productRecords = await getRecords()
-    // document.querySelector("#inpt_endDate").value = new Date().getDate()
     let today = new Date()
     document.querySelector("#inpt_endDate").value = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`
     let lastyear = new Date()
     lastyear.setFullYear(new Date().getFullYear() - 1)
     document.querySelector("#inpt_startDate").value = `${lastyear.getFullYear()}-${lastyear.getMonth() + 1}-${lastyear.getDate()}`
 
-    console.log(productRecords)
     inflateTable(productRecords.products, productRecords.productlogs)
+    document.querySelector("#loadingStatus").style = "display: none"
 })
 
 document.querySelector("#btn_filter").addEventListener("click",async (ev) => {
