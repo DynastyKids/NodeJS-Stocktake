@@ -634,8 +634,6 @@ router.get("/v1/preload", async (req, res) => {
             }
             response.data = originResult
         }
-
-        console.log(`Get Prefill: Result length: ${result.length}; Filtered Length:${response.data.length}`)
     } catch (e) {
         console.error("Error when fetching preload Data:", e)
         response.message = e
@@ -726,63 +724,39 @@ router.post("/v1/preload/remove", async (req, res) => {
 function createLogObject(sessioncode, iteminfo) {
     var mongodata = {
         sessions: [sessioncode],
-        productCode: "",
         quantity: 0,
-        quantityUnit: "",
-        shelfLocation: "",
-        POnumber: "",
-        productName: "",
-        bestbefore: "",
         productLabel: "",
         labelBuild: 3,
         removed: 0,
+        quarantine: 0,
         loggingTime: new Date(),
         createTime: new Date(),
-        locationRecords: []
     }
     try {
         if (isBase64String(iteminfo)) {
             var productInfo = JSON.parse(atob(iteminfo));
-            if (productInfo.hasOwnProperty("Code")) {
-                mongodata.productCode = productInfo.Code
-            }
-            if (productInfo.hasOwnProperty("Qty")) {
-                mongodata.quantity = parseInt(productInfo.Qty)
-            }
-            if (productInfo.hasOwnProperty("LabelId")) {
-                mongodata.productLabel = productInfo.LabelId
-            }
-            if (productInfo.hasOwnProperty("Prod")) {
-                mongodata.productName = productInfo.Prod
-                if (String(productInfo.Prod).toLowerCase().includes("jelly") || String(productInfo.Prod).toLowerCase().includes("popping")
-                    || String(productInfo.Prod).toLowerCase().includes("syrup")) {
-                    mongodata.quantityUnit = "carton"
+            // Create元素时候全数填充
+            Object.keys(productInfo).forEach(eachKey =>{
+                if (eachKey === "Code"){
+                    mongodata.productCode = productInfo.Code
+                } else if(eachKey === "Qty"){
+                    mongodata.quantity = parseInt(productInfo.Qty)
+                } else if (eachKey === "LabelId"){
+                    mongodata.productLabel = productInfo.LabelId
+                } else if (eachKey === "Prod"){
+                    mongodata.productName = productInfo.Prod
+                } else if( eachKey === "POnumber"){
+                    mongodata.POnumber = productInfo.POnumber;
+                } else if(eachKey === "Bestbefore"){
+                    mongodata.bestbefore = productInfo.Bestbefore
+                } else if(eachKey === "Unit"){
+                    mongodata.quantityUnit = String(productInfo.Unit).toLowerCase()
+                } else if(eachKey === "Build"){
+                    mongodata.labelBuild = parseInt(productInfo.Build);
+                } else {
+                    mongodata[eachKey] = productInfo[eachKey]
                 }
-            }
-            if (productInfo.hasOwnProperty("POnumber")) {
-                mongodata.POnumber = productInfo.POnumber;
-            }
-            if (productInfo.hasOwnProperty("POnumber2")) {
-                mongodata.POnumber2 = productInfo.POnumber2;
-            }
-            // V2 and before end at here
-            if (productInfo.hasOwnProperty("Build") && productInfo.Build === 3) {
-                mongodata.labelBuild = 3;
-                // V3 or later, using all info provided
-                console.log("Item label is V3");
-            }
-
-            if (productInfo.hasOwnProperty("Unit") && typeof (productInfo.Unit) == "string") {
-                mongodata.quantityUnit = String(productInfo.Unit).toLowerCase().replace("ctns", "carton")
-                    .replace("btls", "bottle");
-            }
-            if (productInfo.hasOwnProperty("Bestbefore")) {
-                mongodata.bestbefore = productInfo.Bestbefore;
-            }
-            if (productInfo.hasOwnProperty("shelfLocation")) {
-                mongodata.shelfLocation = productInfo.shelfLocation;
-                mongodata.locationRecords.push({datetime: new Date(), location: productInfo.shelfLocation})
-            }
+            })
         }
     } catch (error) {
         console.error(error);
