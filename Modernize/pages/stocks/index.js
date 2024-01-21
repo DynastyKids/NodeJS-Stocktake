@@ -19,7 +19,7 @@ let table = new DataTable('#table', {
     responsive: true,
     pageLength: 25,
     lengthMenu:[10,15,25,50,100],
-    columns: [{"width": "25%"}, {"width": "10%"},null, {"width": "15%"}, null, null, {"width": "20%"}, null],
+    columns: [{"width": "25%"}, {"width": "15%"},null, null, null, {"width": "20%"}, null],
     order: [[2, 'asc']],
     columnDefs: [
         {
@@ -27,7 +27,7 @@ let table = new DataTable('#table', {
             visible: false,
             searchable: false
         },
-    ]
+    ],
 });
 let shouldRefresh = true;
 const countdownFrom = 60;
@@ -448,6 +448,7 @@ function loadStockInfoToTable(fetchAll = document.querySelector("#switchCheck").
     requestAllData = (URLqueries.get('q') ? true : requestAllData) // 该query存在则拉取所有数据
     getAllStockItems(requestAllData).then(result => {
         if (result.acknowledged) {
+            table.clear().draw()
             let results = result.resultSet
             fullResultSet = result.resultSet
             table.clear().draw()
@@ -460,18 +461,19 @@ function loadStockInfoToTable(fetchAll = document.querySelector("#switchCheck").
                         continue;
                     }
                 }
-
                 table.row.add([
-                    `${(element.hasOwnProperty("productCode") ? element.productCode : "")} - ${element.productName}`+
-                    (element.hasOwnProperty("comments") || element.hasOwnProperty("quarantine") ? `<br><span>`+
+                    `<a href="#" data-bs-ponumber="${(element.productCode ? element.productCode : "")}" class="table_action_search">
+                        ${(element.productCode ? element.productCode : "")}</a>`+
+                    (element.hasOwnProperty("comments") || element.hasOwnProperty("quarantine") ? `<span>`+
                         (element.hasOwnProperty("comments") && element.comments.length > 0 ? `<i class="ti ti-message-dots"></i>`: "") +
                         (element.hasOwnProperty("quarantine") && element.quarantine === 1 ?
                             `<i class="ti ti-zoom-question"></i>`
                             : (element.quarantine === -1 ? `<i class="ti ti-zoom-check-filled"></i>`: "")) +
-                        `</span>` : "" ),
-                    `${element.hasOwnProperty("quantity") ? element.quantity + " " + (element.quantityUnit ? element.quantityUnit : "") : ""}`,
-                    (element.bestbefore ? new Date(element.bestbefore).getTime() : ""),
+                        `</span>` : "" )
+                    + "<br>" + `${element.productName ? (element.productName.length > 30 ? String(element.productName).substring(0,32)+'...' : element.productName) : ""}` ,
                     (element.bestbefore ? new Date(element.bestbefore).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' }) : ""),
+                    (element.bestbefore ? new Date(element.bestbefore).getTime() : ""),
+                    `${element.hasOwnProperty("quantity") ? element.quantity + " " + (element.quantityUnit ? element.quantityUnit.replace("carton","ctn").replace("bottle","btl") : "") : ""}`+'<br>'+
                     (element.shelfLocation ? `<a href=../stocks/location.html?location=${element.shelfLocation}>${element.shelfLocation}</a>`: '') ,
                     `<small>${(element.hasOwnProperty("createTime") ? "A:"+new Date(element.createTime).toLocaleDateString('en-AU',{ timeZone: 'Australia/Sydney' }) : "")}</small>`+
                     `<small>${(element.hasOwnProperty("removeTime") && element.removed === 1 ? "<br>R:"+new Date(element.removeTime).toLocaleDateString('en-AU',{ timeZone: 'Australia/Sydney' }) : "")}</small>`,
@@ -490,10 +492,10 @@ function loadStockInfoToTable(fetchAll = document.querySelector("#switchCheck").
             createAlert("danger", "Disagree fetched data", 5000)
         }
     }).then(function(){
-        document.querySelectorAll(".table_action_search").forEach(eachPO=>{
-            eachPO.addEventListener("click",function(ev){
+        document.querySelectorAll(".table_action_search").forEach(eachElement=>{
+            eachElement.addEventListener("click",function(ev){
                 ev.preventDefault()
-                table.search(eachPO.getAttribute("data-bs-ponumber")).draw()
+                table.search(eachElement.getAttribute("data-bs-ponumber")).draw()
             })
         })
     })
