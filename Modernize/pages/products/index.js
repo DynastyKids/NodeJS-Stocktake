@@ -258,7 +258,7 @@ editModal.addEventListener('show.bs.modal', async (ev) => {
             editModal.querySelector("#editRowModalinput_palletQty").value = (originProduct.palletQty ? originProduct.palletQty : "")
             editModal.querySelector("#editRowModalinput_unit").value = (originProduct.unit ? originProduct.unit : "")
 
-            editModal.querySelector("#editRowModalinput_weight").value = (originProduct.productCode ? originProduct.productCode : "")
+            editModal.querySelector("#editRowModalinput_weight").value = (originProduct.weight ? originProduct.weight : "")
             editModal.querySelector("#editRowModalinput_length").value = (originProduct.sizeLength ? originProduct.sizeLength : "")
             editModal.querySelector("#editRowModalinput_width").value = (originProduct.sizeWidth ? originProduct.sizeWidth : "")
             editModal.querySelector("#editRowModalinput_height").value = (originProduct.sizeHeight ? originProduct.sizeHeight : "")
@@ -295,32 +295,25 @@ document.querySelector("#modelEditSubmitBtn").addEventListener("click", async (e
         productCode: (String(editModal.querySelector("#editRowModalinput_productCode").value).length > 0 ? editModal.querySelector("#editRowModalinput_productCode").value : ""),
         labelname: String(editModal.querySelector("#editRowModalinput_labelName").value).length > 0 ? editModal.querySelector("#editRowModalinput_labelName").value : "",
         description: String(editModal.querySelector("#editRowModalinput_description").value).length > 0 ? editModal.querySelector("#editRowModalinput_description").value : "",
-
-        cartonQty: String(editModal.querySelector("#editRowModalinput_cartonQty").value).length > 0 ? (isNumber(parseInt(editModal.querySelector("#editRowModalinput_cartonQty").value)) ?
-            parseInt(editModal.querySelector("#editRowModalinput_cartonQty").value) : "") : "" ,
-        palletQty:  String(editModal.querySelector("#editRowModalinput_palletQty").value).length > 0 ? (isNumber(parseInt(editModal.querySelector("#editRowModalinput_palletQty").value)) ?
-            parseInt(editModal.querySelector("#editRowModalinput_palletQty").value) : "") : "",
+        cartonQty: String(editModal.querySelector("#editRowModalinput_cartonQty").value).length > 0 ? parseInt(editModal.querySelector("#editRowModalinput_cartonQty").value) : "" ,
+        palletQty:  String(editModal.querySelector("#editRowModalinput_palletQty").value).length > 0 ? parseInt(editModal.querySelector("#editRowModalinput_palletQty").value) : "",
         unit: String(editModal.querySelector("#editRowModalinput_unit").value).length > 0 ? editModal.querySelector("#editRowModalinput_unit").value : "",
-        weight: String(editModal.querySelector("#editRowModalinput_weight").value).length > 0 ? (isNumber(editModal.querySelector("#editRowModalinput_weight").value) ?
-            parseFloat(editModal.querySelector("#editRowModalinput_weight").value) : "") : "",
-
-        sizeLength: String(editModal.querySelector("#editRowModalinput_length").value).length > 0 ? (isNumber(editModal.querySelector("#editRowModalinput_length").value) ?
-            parseFloat(editModal.querySelector("#editRowModalinput_length").value) : ""): "",
-        sizeWidth: String(editModal.querySelector("#editRowModalinput_width").value).length > 0 ? (isNumber(editModal.querySelector("#editRowModalinput_width").value) ?
-            parseFloat(editModal.querySelector("#editRowModalinput_width").value) : ""): "",
-        sizeHeight: String(editModal.querySelector("#editRowModalinput_height").value).length > 0 ? (isNumber(editModal.querySelector("#editRowModalinput_height").value) ?
-            parseFloat(editModal.querySelector("#editRowModalinput_height").value) : "") : "",
-
+        weight: String(editModal.querySelector("#editRowModalinput_weight").value).length > 0 ? parseFloat(editModal.querySelector("#editRowModalinput_weight").value)  : "",
+        sizeLength: String(editModal.querySelector("#editRowModalinput_length").value).length > 0 ? parseFloat(editModal.querySelector("#editRowModalinput_length").value) : "",
+        sizeWidth: String(editModal.querySelector("#editRowModalinput_width").value).length > 0 ? parseFloat(editModal.querySelector("#editRowModalinput_width").value) : "",
+        sizeHeight: String(editModal.querySelector("#editRowModalinput_height").value).length > 0 ? parseFloat(editModal.querySelector("#editRowModalinput_height").value)  : "",
         vendorCode: String(document.querySelector("#editRowModalinput_vendorCode").value).length > 0 ? document.querySelector("#editRowModalinput_vendorCode").value : "",
         unitPrice: String(document.querySelector("#editRowModalinput_purcPrice").value).length > 0 ? Decimal128.fromString(document.querySelector("#editRowModalinput_purcPrice").value): ""
     }
+    console.log(result)
+    let patchElement = {}
     Object.keys(result).forEach(eachKey=>{
-        if (result[eachKey] === ""){
-            delete result[eachKey]
+        if (result[eachKey] !== ""){
+            patchElement[eachKey] = result[eachKey]
         }
     })
 
-    let updateResult = await updateRecordById((editModalTarget._id).toString(), result)
+    let updateResult = await updateRecordById((editModalTarget._id).toString(), patchElement)
     //     当最后确认提交成功则dismiss并回弹成功信息
     if (updateResult.ok === 1 || updateResult.acknowledged) {
         bootstrap.Modal.getInstance(editModal).hide()
