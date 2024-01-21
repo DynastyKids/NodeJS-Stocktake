@@ -1,16 +1,17 @@
-// import axios from "axios";
-
 let rowNumber = 1
 let productsData = [] //在生成Label时候也可以使用
 let toast = document.querySelector("#toastDiv")
 document.addEventListener("DOMContentLoaded", function (ev) {
+    let idleTimer;
+
     if (window.location.protocol === "http:") {
         const redirectUrl = "https://" + window.location.hostname + ":3001"+window.location.pathname;
         window.location.replace(redirectUrl)
     }
 
-    axios.get('/api/v1/products', true)
-        .then(function (response) {
+    fetchProducts().then(response=>{
+        console.log(response.data)
+        if (response.data.acknowledged) {
             document.querySelector("#toastDiv .toast-body").innerText = "Product list has fetched successfully"
             document.querySelector("#toastDiv").classList.add("bg-success");
             document.querySelector("#toastDiv").classList.remove("bg-warning");
@@ -22,40 +23,129 @@ document.addEventListener("DOMContentLoaded", function (ev) {
                 });
                 (new bootstrap.Toast(toast)).show();
             }
-        })
-        .catch(function (response) {
-            document.querySelector("#toastDiv .toast-body").innerText = "There are some problem encountered when fetching products lists"
+        }
+    })
+    
+    function resetTimer() {
+        // 清除现有的计时器
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+            window.location.reload();
+        }, 1000*300);
+    }
+
+    window.addEventListener('mousemove', resetTimer, false);
+    window.addEventListener('keypress', resetTimer, false);
+    resetTimer();
+});
+
+async function fetchProducts(forced = false){
+    if (forced=== false && productsData.length > 0){
+        return {acknowledged: true, data:productsData}
+    } else {
+        try {
+            let response = await axios.get('/api/v1/products', true)
+            return (response ? response : {acknowledged: false, data:[]})
+        } catch (e) {
+            document.querySelector("#toastDiv .toast-body").innerText = "Error(s) encountered when fetching products lists"
             document.querySelector("#toastDiv").classList.add("bg-warning");
             document.querySelector("#toastDiv").classList.remove("bg-success");
             (new bootstrap.Toast(toast)).show();
-            console.error(response);
-        })
-});
+            return (response ? response : {acknowledged: false, data:[]})
+            console.error("Error when fetching Products List:",e)
+        }
+    }
+}
 
 document.querySelector("#table_addRow").addEventListener("click", function (ev) {
-    var newRow = `
-        <tr class="rowRecords">
-            <td class="rowid d-none d-sm-table-cell">${rowNumber}</td>
-            <td class="d-inline-block d-sm-table-cell">
-                <input type="text" list="productSuggestions" class="form-control inputProdname" placeholder="Product name">
-            </td>
-            <td class="d-inline-block d-sm-table-cell">
-                <input type="number" min="0" class="form-control" placeholder="quantity">
-            </td>
-            <td class="d-inline-block d-sm-table-cell">
-                <input type="text" size="10" list="unitSuggestions" class="form-control" placeholder="unit">
-            </td>
-            <td class="d-inline-block d-sm-table-cell">
-                <input type="date" class="form-control" placeholder="Bestbefore">
-            </td>
-            <td class="d-inline-block d-sm-table-cell">
-                <input type="number" class="form-control" min="1" step="1" value="1">
-            </td>
-            <td class="d-inline-block d-sm-table-cell">
-                <button class="btn btn-danger deleteRow"><i class="ti ti-trash"></i></button>
-            </td>
-        </tr>
-        `
+    let newRow = document.createElement("tr")
+    newRow.className = "rowRecords"
+
+    var rowNumberElement = document.createElement("td")
+    rowNumberElement.className = "rowid d-none d-sm-table-cell"
+    rowNumberElement.textContent = rowNumber
+    newRow.append(rowNumberElement)
+
+    var productNametd = document.createElement("td")
+    productNametd.className = "d-inline-block d-sm-table-cell"
+    var productNameInput = document.createElement("input")
+    productNameInput.type="text"
+    productNameInput.className="rowInput form-control inputProdname"
+    productNameInput.placeholder="Select a product or type in your custom name"
+    productNameInput.setAttribute("list","productSuggestions")
+    productNameInput.addEventListener("change",(ev)=>{
+        if (productsData.length > 0){
+            for (let i = 0; i < productNameInput.list.options.length; i++) {
+                if (productNameInput.list.options[i].value === productNameInput.value){
+                    try{
+                       let targetOption = productNameInput.list.options[i]
+                        if (targetOption.getAttribute("data-qty") !== null && newRow.querySelector(".qtyInput").value.toString().length <= 0){
+                            newRow.querySelector(".qtyInput").value = targetOption.getAttribute("data-qty")
+                        }
+                        if(targetOption.getAttribute("data-unit") !== null && newRow.querySelector(".unitInput").value.toString().length <= 0){
+                            newRow.querySelector(".unitInput").value = targetOption.getAttribute("data-unit")
+                        }
+                    } catch (e) {
+                        console.log("Item does not have qty and unit properties.")
+                    }
+                    break;
+                }
+            }
+        }
+    })
+    productNametd.append(productNameInput)
+    newRow.append(productNametd)
+
+    var productQuantitytd = document.createElement("td")
+    productQuantitytd.className = "d-inline-block d-sm-table-cell"
+    var productQuantityInput = document.createElement("input")
+    productQuantityInput.type = "number"
+    productQuantityInput.className = "rowInput form-control qtyInput"
+    productQuantityInput.min = "0"
+    productQuantityInput.step = "1"
+    productQuantityInput.placeholder = "Quantity of product"
+    productQuantitytd.append(productQuantityInput)
+    newRow.append(productQuantitytd)
+
+    var productUnittd = document.createElement("td")
+    productUnittd.className = "d-inline-block d-sm-table-cell"
+    var productUnitInput = document.createElement("input")
+    productUnitInput.type = "text"
+    productUnitInput.size = "10"
+    productUnitInput.setAttribute("list","unitSuggestions")
+    productUnitInput.className = "rowInput form-control unitInput"
+    productUnitInput.placeholder = "Unit"
+    productUnittd.append(productUnitInput)
+    newRow.append(productUnittd)
+
+    var productBestbeforetd = document.createElement("td")
+    productBestbeforetd.className = "d-inline-block d-sm-table-cell"
+    var productBestbeforeInput = document.createElement("input")
+    productBestbeforeInput.type = "date"
+    productBestbeforeInput.className = "rowInput form-control"
+    productBestbeforetd.append(productBestbeforeInput)
+    newRow.append(productBestbeforetd)
+
+    var productCopiestd = document.createElement("td")
+    productCopiestd.className = "d-inline-block d-sm-table-cell"
+    var productCopiesInput = document.createElement("input")
+    productCopiesInput.type = "number"
+    productCopiesInput.className = "rowInput form-control"
+    productCopiesInput.placeholder = "Copies"
+    productCopiesInput.min = "1"
+    productCopiesInput.step = "1"
+    productCopiesInput.value = "1"
+    productCopiestd.append(productCopiesInput)
+    newRow.append(productCopiestd)
+
+    var productButtontd = document.createElement("td")
+    productButtontd.className = "d-inline-block d-sm-table-cell"
+    var productButtonInput = document.createElement("button")
+    productButtonInput.className = "btn btn-danger deleteRow"
+    productButtonInput.innerHTML = `<i class="ti ti-trash"></i>`
+    productButtontd.append(productButtonInput)
+    newRow.append(productButtontd)
+
     rowNumber += 1;
     $('table tbody').append(newRow);
 })
@@ -154,26 +244,31 @@ document.querySelector("#table_submit").addEventListener("click", function (ev) 
             stockInfo.productLabel = (new Date()).toISOString().replaceAll("-", "").split("T")[0] + labelHash.substring(0,7)
 
             doc.setFontSize(90).setFont("Helvetica", 'normal');
-            doc.text(stockInfo.quantity + "  " + stockInfo.quantityUnit, 15, doc.internal.pageSize.getHeight() - 180, {lineHeightFactor: 1});
+            doc.text(stockInfo.quantity + "  " + stockInfo.quantityUnit, 45, doc.internal.pageSize.getHeight() - 190, {lineHeightFactor: 0.9});
 
             doc.setFontSize(90).setFont("Helvetica", 'normal')
-            doc.text(stockInfo.bestbefore, 15, doc.internal.pageSize.getHeight() - 90, {lineHeightFactor: 1});
+            doc.text(stockInfo.bestbefore, 15, doc.internal.pageSize.getHeight() - 115, {lineHeightFactor: 0.9});
 
             doc.addImage(QRCodeObjectGenerateV3(stockInfo), "PNG", doc.internal.pageSize.getWidth() - 255, doc.internal.pageSize.getHeight() - 255, 250, 250)
 
             //新增右上角标签号标记
-            doc.setFontSize(48).setFont("courier", 'bold')
-            doc.text(`${stockInfo.productLabel.slice(-7)}`, 20, doc.internal.pageSize.getHeight() - 50, {lineHeightFactor: 0.75,});
+            doc.setFontSize(72).setFont("courier", 'bold')
+            doc.text(`${stockInfo.productLabel.toUpperCase().slice(-7)}`, 15, doc.internal.pageSize.getHeight() - 55, {lineHeightFactor: 0.85});
 
             doc.setFontSize(36).setFont("courier", 'bold')
-            doc.text(`${stockInfo.productLabel.slice(-7)}`, doc.internal.pageSize.getWidth() - 20, 36, {lineHeightFactor: 0.75, align: "right"});
+            doc.text(`${stockInfo.POnumber.toString().length > 1 ? stockInfo.POnumber + " /" : ""} ${stockInfo.productLabel.toUpperCase().slice(-7)}`, doc.internal.pageSize.getWidth() - 20, 25, {lineHeightFactor: 0.75, align: "right"});
 
-            doc.setFontSize(10).setFont(undefined, 'normal')
+            doc.setFontSize(72).setFont("Helvetica", 'bold')
+            doc.text(`${sequence.toString()}`, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 20, {lineHeightFactor: 0.9, align: "center"})
+
+            doc.setFontSize(12).setFont("Helvetica", 'normal')
             let bottomVerfiyText = ["V3_Electron", "P:"+stockInfo.POnumber,
                 "C:"+stockInfo.productCode, "Q:"+stockInfo.quantity + stockInfo.quantityUnit,
                 "E:" + (stockInfo.bestbefore ? stockInfo.bestbefore.replaceAll("-", "") : "*")]
             doc.text(bottomVerfiyText.toString(), 20, doc.internal.pageSize.getHeight() - 30, {lineHeightFactor: 0.8});
-            doc.text("L:"+stockInfo.productLabel, 20, doc.internal.pageSize.getHeight() - 20, {lineHeightFactor: 0.8});
+
+            let bottomTextPart2 = ["L:"+stockInfo.productLabel.toUpperCase(),"Seq:"+sequence.toString()]
+            doc.text(bottomTextPart2.toString(), 20, doc.internal.pageSize.getHeight() - 20, {lineHeightFactor: 0.8});
 
             if (document.querySelector("#preloadCheckbox").checked) {
                 prefillItem({item: stockInfo})
