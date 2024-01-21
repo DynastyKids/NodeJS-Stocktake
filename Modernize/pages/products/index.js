@@ -16,6 +16,7 @@ let dataset = [];
 const Storage = require("electron-store");
 const i18next = require("i18next");
 const {initRenderer} = require("electron-store");
+const {isNumber} = require("lodash");
 const newStorage = new Storage();
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
@@ -26,51 +27,72 @@ document.addEventListener("DOMContentLoaded", async (ev) => {
     document.querySelector("#loadingStatus").style.display = "none"
 })
 
-async function fetchProducts() {
-    let results = []
-    let client = new MongoClient(uri, {
-        serverApi: {
-            version: ServerApiVersion.v1,
-            useNewUrlParser: true,
-            useUnifiedTopology: true
+let productsList = []
+let stocksList = []
+let stocksListSeperated = []
+async function fetchProducts(forced = true) {
+    let result = []
+    if (forced || productsList.length <= 0){
+        let client = new MongoClient(uri, {
+            serverApi: {
+                version: ServerApiVersion.v1,
+                useNewUrlParser: true,
+                useUnifiedTopology: true
+            }
+        });
+        let sessions = client.db(targetDB).collection("products");
+        let options = {sort: {productCode: 1}};
+        try {
+            await client.connect();
+            result = await sessions.find({}, options).toArray();
+            productsList = result
+        } catch (e) {
+            console.error("Fetching error:", e)
+        } finally {
+            await client.close();
         }
-    });
-    let sessions = client.db(targetDB).collection("products");
-    let options = {sort: {productCode: 1}};
-    try {
-        await client.connect();
-        results = await sessions.find({}, options).toArray();
-    } catch (e) {
-        console.error("Fetching error:", e)
-    } finally {
-        await client.close();
+    } else {
+        result = productsList
     }
-    return results
+    return result
+}
+
+async function fetchStocks(forced = false, limitData = 100000){
+    if (stocksList.length <= 0 || forced){
+        document.querySelector("#loadingStatus").style.removeProperty("display")
+        let client = new MongoClient(uri, {
+            serverApi: {
+                version: ServerApiVersion.v1,
+                useNewUrlParser: true,
+                useUnifiedTopology: true
+            }
+        });
+        try {
+            await client.connect();
+            stocksList = await client.db(targetDB).collection("pollinglog").find({}).limit(limitData).toArray();
+        } catch (e) {
+            console.error("Fetching error:", e)
+        } finally {
+            await client.close();
+            document.querySelector("#loadingStatus").style.display = "none"
+        }
+    }
+    return stocksList
 }
 
 async function fetchUnusedStocks(conditionObject) {
-    let stocks = []
-    let products = []
-    let client = new MongoClient(uri, {
-        serverApi: {
-            version: ServerApiVersion.v1,
-            useNewUrlParser: true,
-            useUnifiedTopology: true
+    let stocks = await fetchStocks(false)
+    let products = await fetchProducts(false)
+    let newStockList = []
+    for (let stock of stocks) {
+        if (stock.removed === 0){
+            newStockList.push(stock)
         }
-    });
-    try {
-        await client.connect();
-        stocks = await client.db(targetDB).collection("pollinglog").find({removed: 0}, {sort: {productCode: 1}}).toArray();
-        products = await client.db(targetDB).collection("products").find({active: 1}).toArray();
-    } catch (e) {
-        console.error("Fetching error:", e)
-    } finally {
-        await client.close();
-        document.querySelector("#loadingStatus").style.display = "none"
     }
+
     // Merging Stocks
     let mergedResult = {}
-    stocks.forEach(eachResult => {
+    newStockList.forEach(eachResult => {
         //     Convert from carton to unit
         for (let i = 0; i < products.length; i++) {
             if (eachResult.productCode === products[i].productCode) {
@@ -102,31 +124,19 @@ async function fetchUnusedStocks(conditionObject) {
 }
 
 async function fetchUsedStock(){
-    let stocks = []
-    let client = new MongoClient(uri, {
-        serverApi: {
-            version: ServerApiVersion.v1,
-            strict: true,
-            deprecationErrors: true,
-            useNewUrlParser: true,
-            useUnifiedTopology: true
+    let stocks = await fetchStocks(false)
+    let newStockList = []
+    for (let stock of stocks) {
+        if (stock.removed === 1){
+            newStockList.push(stock)
         }
-    });
-    try {
-        await client.connect();
-        stocks = await client.db(targetDB).collection("pollinglog").find({removed: 1}).limit(100000).toArray();
-    } catch (e) {
-        console.error("Fetching error:", e)
-    } finally {
-        await client.close();
     }
-    return stocks
+    return newStockList
 }
-
 
 async function fetchTablesData() {
     let stocksLevel = await fetchUnusedStocks();
-    let results = await fetchProducts();
+    let results = await fetchProducts(true);
     let usedStocks = await fetchUsedStock();
     dataset = []
     for (const eachItem of results) {
@@ -155,7 +165,7 @@ async function fetchTablesData() {
             `${(eachItem.unitPrice ? eachItem.unitPrice : "")}`,
             `
                 <a href="#" data-bs-toggle="modal" data-bs-target="#editRowModal" data-bs-itemid="${eachItem._id.toHexString()}">Edit</a>
-                <a href="#" data-bs-toggle="modal" data-bs-target="#deleteRowModal" data-bs-productname="${eachItem.labelname}" data-bs-itemid="${eachItem._id.toHexString()}" data-bs-state="${eachItem.active}">${(eachItem.active ? "Remove" : "Revert (Add)")}</a>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-productname="${eachItem.labelname}" data-bs-itemId="${eachItem._id.toHexString()}" data-bs-state="${eachItem.active}">${(eachItem.active ? "Remove" : "Revert (Add)")}</a>
             `
         ]);
     }
@@ -183,157 +193,142 @@ async function findOneRecordById(recordId) {
     return results
 }
 
-
-// 删除条目弹窗
-document.querySelector("#deleteRowModal").addEventListener('show.bs.modal', (ev) => {
-    let itemId = ev.relatedTarget.getAttribute("data-bs-itemid");
-    let itemStatus = ev.relatedTarget.getAttribute("data-bs-state");
-    let result;
-    // console.log("Delete Model: Delete Clicked", itemId, itemStatus)
-
-    if (itemStatus === "true") {
-        document.querySelector("#deleteRowModal .modal-title span").textContent = `delete?`
-        document.querySelector("#deleteRowModal .modal-body span").textContent = `delete ${ev.relatedTarget.getAttribute("data-bs-productname")}?`
-        document.querySelector("#deleteModalConfirmBtn").className = 'btn btn-danger'
-        document.querySelector("#deleteModalConfirmBtn").textContent = "Disable"
-        document.querySelector("#deleteModalConfirmBtn").disabled = false
-    } else {
-        document.querySelector("#deleteRowModal .modal-title span").textContent = `Add Back?`
-        document.querySelector("#deleteRowModal .modal-body span").textContent = `add back ${ev.relatedTarget.getAttribute("data-bs-productname")}?`
-        document.querySelector("#deleteModalConfirmBtn").className = 'btn btn-info'
-        document.querySelector("#deleteModalConfirmBtn").textContent = "Enable"
-        document.querySelector("#deleteModalConfirmBtn").disabled = false
-    }
-
-    document.querySelector("#deleteModalConfirmBtn").addEventListener("click", async (ev) => {
-        document.querySelector("#deleteModalConfirmBtn").disabled = true
-        document.querySelector("#deleteModalConfirmBtn").textContent = "Updating"
-        result = (itemStatus === "true" ? await updateRecordById(itemId, {"active": false}) : await updateRecordById(itemId, {"active": true}))
-        if (result.acknowledged || result.ok === 1) {
-            await fetchTablesData()
-        } else {
-            document.querySelector("#deleteRowModal .modal-body p").innerText = "Error happened while on updates."
+let removeModalTarget = {}
+let removeModal = document.querySelector("#removeModal")
+removeModal.addEventListener("show.bs.modal", async function (ev) {
+    var itemId = ev.relatedTarget.getAttribute("data-bs-itemId")
+    var productsList = await fetchProducts()
+    removeModal.querySelector("#removeModal_btnConfirm").disabled = false
+    removeModal.querySelector("#removeModal_btnConfirm").textContent = "Confirm"
+    
+    for (let i = 0; i < productsList.length; i++) {
+        if (itemId === (productsList[i]._id).toString()) {
+            console.log(itemId, productsList[i], itemId === productsList[i])
+            removeModalTarget = productsList[i]
+            removeModal.querySelector(".modal-body p").textContent = `Are you sure to mark '${productsList[i].labelname}' ${productsList[i].active && productsList[i].active === 1 ? "inactive" : "active" }?`
+            break;
         }
-        bootstrap.Modal.getInstance(document.querySelector("#deleteRowModal")).hide()
-    });
+    }
 })
 
+removeModal.querySelector("#removeModal_btnConfirm").addEventListener("click", async function (){
+    let result = {acknowledged: false}
+    for (let i = 0; i < productsList.length; i++) {
+        if ((removeModalTarget._id).toString() === (productsList[i]._id).toString()) {
+            result = await updateRecordById(removeModalTarget._id, {active: (productsList[i].active && productsList[i].active === 1 ? 0 : 1) })
+            break;
+        }
+    }
+    if (result.ok){
+        bootstrap.Modal.getInstance(removeModal).hide()
+        await redrawDataTable()
+        createAlert("success", `${removeModalTarget.labelname} has been successfully marked as ${(productsList[i].active && productsList[i].active === 1 ? "inactive" : "active")}`)
+    }
+})
+
+
 //修改弹窗，和原有的页面跳转暂时保持平行
-document.querySelector("#editRowModal").addEventListener('show.bs.modal', async (ev) => {
+let editModal = document.querySelector("#editRowModal")
+let editModalTarget = {}
+editModal.addEventListener('show.bs.modal', async (ev) => {
     let itemId = ev.relatedTarget.getAttribute("data-bs-itemid")
     let originProduct = await findOneRecordById(itemId)
     // 2023-10-11新增加Edit为Modal弹窗，通过弹窗直接修改对应参数，Add部分保持不变，旧的Edit/add通用页面继续保留
 
     //初始化设置，默认设置submit btn为不可用，清空所有input
-    document.querySelector("#modelEditSubmitBtn").disabled = true;
-    document.querySelector("#modelEditSubmitBtn").textContent = "Fetching...";
-    document.querySelectorAll("#editRowModal .modal-body input").forEach(item => {
+    editModal.querySelector("#modelEditSubmitBtn").disabled = true;
+    editModal.querySelector("#modelEditSubmitBtn").textContent = "Fetching...";
+    editModal.querySelectorAll(".modal-body input").forEach(item => {
         item.disabled = true
         item.value = ""
     })
-    document.querySelector("#editRowModalLabel").textContent = "Loading Data ..."
-    document.querySelector("#expiredateCheck").checked = false
+    editModal.querySelector("#editRowModalLabel").textContent = "Loading Data ..."
+    editModal.querySelector("#expiredateCheck").checked = false
     try {
-        document.querySelector("#editRowModalinput_productId").value = itemId
+        editModal.querySelector("#editRowModalinput_productId").value = itemId
         //     回填数据到输入框，对输入框解除disabled
+        editModalTarget = originProduct
         if (originProduct) {
-            document.querySelector("#editRowModalLabel").textContent = `Edit Product Infos ${originProduct.productCode ? " for " + originProduct.productCode + (originProduct.labelname ? " - " + originProduct.labelname : "") : ""}`
-            document.querySelector("#editRowModalinput_productCode").value = (originProduct.productCode ? originProduct.productCode : "")
-            document.querySelector("#editRowModalinput_labelName").value = (originProduct.labelname ? originProduct.labelname : "")
-            document.querySelector("#editRowModalinput_description").value = (originProduct.description ? originProduct.description : "")
+            editModal.querySelector("#editRowModalLabel").textContent = `Edit Product Infos ${originProduct.productCode ? " for " + originProduct.productCode + (originProduct.labelname ? " - " + originProduct.labelname : "") : ""}`
+            editModal.querySelector("#editRowModalinput_productCode").value = (originProduct.productCode ? originProduct.productCode : "")
+            editModal.querySelector("#editRowModalinput_labelName").value = (originProduct.labelname ? originProduct.labelname : "")
+            editModal.querySelector("#editRowModalinput_description").value = (originProduct.description ? originProduct.description : "")
 
-            document.querySelector("#editRowModalinput_cartonQty").value = (originProduct.cartonQty ? originProduct.cartonQty : "")
-            document.querySelector("#editRowModalinput_palletQty").value = (originProduct.palletQty ? originProduct.palletQty : "")
-            document.querySelector("#editRowModalinput_unit").value = (originProduct.unit ? originProduct.unit : "")
+            editModal.querySelector("#editRowModalinput_cartonQty").value = (originProduct.cartonQty ? originProduct.cartonQty : "")
+            editModal.querySelector("#editRowModalinput_palletQty").value = (originProduct.palletQty ? originProduct.palletQty : "")
+            editModal.querySelector("#editRowModalinput_unit").value = (originProduct.unit ? originProduct.unit : "")
 
-            document.querySelector("#editRowModalinput_weight").value = (originProduct.productCode ? originProduct.productCode : "")
-            document.querySelector("#editRowModalinput_length").value = (originProduct.sizeLength ? originProduct.sizeLength : "")
-            document.querySelector("#editRowModalinput_width").value = (originProduct.sizeWidth ? originProduct.sizeWidth : "")
-            document.querySelector("#editRowModalinput_height").value = (originProduct.sizeHeight ? originProduct.sizeHeight : "")
+            editModal.querySelector("#editRowModalinput_weight").value = (originProduct.productCode ? originProduct.productCode : "")
+            editModal.querySelector("#editRowModalinput_length").value = (originProduct.sizeLength ? originProduct.sizeLength : "")
+            editModal.querySelector("#editRowModalinput_width").value = (originProduct.sizeWidth ? originProduct.sizeWidth : "")
+            editModal.querySelector("#editRowModalinput_height").value = (originProduct.sizeHeight ? originProduct.sizeHeight : "")
 
-            document.querySelector("#editRowModalinput_vendorCode").value = (originProduct.vendorCode ? originProduct.vendorCode : "")
-            document.querySelector("#editRowModalinput_purcPrice").value = (originProduct.unitPrice ? originProduct.unitPrice : "")
+            editModal.querySelector("#editRowModalinput_vendorCode").value = (originProduct.vendorCode ? originProduct.vendorCode : "")
+            editModal.querySelector("#editRowModalinput_purcPrice").value = (originProduct.unitPrice ? originProduct.unitPrice : "")
             // document.querySelector("#editRowModalinput_sellPrice").value = (result.sellPrice ? result.sellPrice : "")
             if (originProduct.withBestbefore && originProduct.withBestbefore === 1) {
-                document.querySelector("#expiredateCheck").checked = true
+                editModal.querySelector("#expiredateCheck").checked = true
             } else {
-                document.querySelector("#expiredateCheck").checked = false
+                editModal.querySelector("#expiredateCheck").checked = false
             }
         }
 
-        document.querySelectorAll("#editRowModal .modal-body input").forEach(item => {
+        editModal.querySelectorAll(".modal-body input").forEach(item => {
             item.disabled = false
         })
-        document.querySelector("#modelEditSubmitBtn").disabled = false
-        document.querySelector("#modelEditSubmitBtn").textContent = "Submit";
+        editModal.querySelector("#modelEditSubmitBtn").disabled = false
+        editModal.querySelector("#modelEditSubmitBtn").textContent = "Submit";
     } catch (e) {
         console.error("Error on editRowModal:", e)
     }
+})
 
-    //当用户编辑完成后，开始提交
-    document.querySelector("#modelEditSubmitBtn").addEventListener("click", async (ev) => {
-        document.querySelectorAll("#editRowModal .modal-body input").forEach(eachInputbox => {
-            eachInputbox.disabled = true
-        })
-        document.querySelector("#modelEditSubmitBtn").disabled = true
-        document.querySelector("#modelEditSubmitBtn").textContent = "Updating";
+//当用户编辑完成后，开始提交
+document.querySelector("#modelEditSubmitBtn").addEventListener("click", async (ev) => {
+    editModal.querySelectorAll(".modal-body input").forEach(eachInputbox => {
+        eachInputbox.disabled = true
+    })
+    editModal.querySelector("#modelEditSubmitBtn").disabled = true
+    editModal.querySelector("#modelEditSubmitBtn").textContent = "Updating";
 
-        let result = {}
-        if (originProduct.hasOwnProperty("productCode") || String(document.querySelector("#editRowModalinput_productCode").value).length > 0){
-            result.productCode = document.querySelector("#editRowModalinput_productCode").value
-        }
-        if (originProduct.hasOwnProperty("labelname") || String(document.querySelector("#editRowModalinput_labelName").value).length > 0){
-            result.labelname = document.querySelector("#editRowModalinput_labelName").value
-        }
-        if (originProduct.hasOwnProperty("description") || String(document.querySelector("#editRowModalinput_description").value).length > 0){
-            result.description = document.querySelector("#editRowModalinput_description").value
-        }
+    let result = {
+        productCode: (String(editModal.querySelector("#editRowModalinput_productCode").value).length > 0 ? editModal.querySelector("#editRowModalinput_productCode").value : ""),
+        labelname: String(editModal.querySelector("#editRowModalinput_labelName").value).length > 0 ? editModal.querySelector("#editRowModalinput_labelName").value : "",
+        description: String(editModal.querySelector("#editRowModalinput_description").value).length > 0 ? editModal.querySelector("#editRowModalinput_description").value : "",
 
-        if (originProduct.hasOwnProperty("cartonQty") || String(document.querySelector("#editRowModalinput_cartonQty").value).length > 0){
-            result.cartonQty = (isNaN(parseInt(document.querySelector("#editRowModalinput_cartonQty").value)) ?
-                parseInt(document.querySelector("#editRowModalinput_cartonQty").value) : "")
-        }
-        if (originProduct.hasOwnProperty("palletQty") || String(document.querySelector("#editRowModalinput_palletQty").value).length > 0){
-            result.palletQty = (isNaN(parseInt(document.querySelector("#editRowModalinput_palletQty").value)) ?
-                parseInt(document.querySelector("#editRowModalinput_palletQty").value) : "")
-        }
-        if (originProduct.hasOwnProperty("unit") || String(document.querySelector("#editRowModalinput_unit").value).length > 0){
-            result.unit = document.querySelector("#editRowModalinput_unit").value
-        }
+        cartonQty: String(editModal.querySelector("#editRowModalinput_cartonQty").value).length > 0 ? (isNumber(parseInt(editModal.querySelector("#editRowModalinput_cartonQty").value)) ?
+            parseInt(editModal.querySelector("#editRowModalinput_cartonQty").value) : "") : "" ,
+        palletQty:  String(editModal.querySelector("#editRowModalinput_palletQty").value).length > 0 ? (isNumber(parseInt(editModal.querySelector("#editRowModalinput_palletQty").value)) ?
+            parseInt(editModal.querySelector("#editRowModalinput_palletQty").value) : "") : "",
+        unit: String(editModal.querySelector("#editRowModalinput_unit").value).length > 0 ? editModal.querySelector("#editRowModalinput_unit").value : "",
+        weight: String(editModal.querySelector("#editRowModalinput_weight").value).length > 0 ? (isNumber(editModal.querySelector("#editRowModalinput_weight").value) ?
+            parseFloat(editModal.querySelector("#editRowModalinput_weight").value) : "") : "",
 
-        if (originProduct.hasOwnProperty("weight") || String(document.querySelector("#editRowModalinput_weight").value).length > 0){
-            result.weight = (isNaN(parseInt(document.querySelector("#editRowModalinput_weight").value)) ?
-                parseInt(document.querySelector("#editRowModalinput_weight").value) : "")
-        }
-        if (originProduct.hasOwnProperty("sizeLength") || String(document.querySelector("#editRowModalinput_length").value).length > 0){
-            result.sizeLength = (isNaN(parseInt(document.querySelector("#editRowModalinput_length").value)) ?
-                parseInt(document.querySelector("#editRowModalinput_length").value) : "")
-        }
-        if (originProduct.hasOwnProperty("sizeWidth") || String(document.querySelector("#editRowModalinput_width").value).length > 0){
-            result.sizeWidth = (isNaN(parseInt(document.querySelector("#editRowModalinput_width").value)) ?
-                parseInt(document.querySelector("#editRowModalinput_width").value) : "")
-        }
-        if (originProduct.hasOwnProperty("sizeHeight") || String(document.querySelector("#editRowModalinput_height").value).length > 0){
-            result.sizeHeight = (isNaN(parseInt(document.querySelector("#editRowModalinput_height").value)) ?
-                parseInt(document.querySelector("#editRowModalinput_height").value) : "")
-        }
+        sizeLength: String(editModal.querySelector("#editRowModalinput_length").value).length > 0 ? (isNumber(editModal.querySelector("#editRowModalinput_length").value) ?
+            parseFloat(editModal.querySelector("#editRowModalinput_length").value) : ""): "",
+        sizeWidth: String(editModal.querySelector("#editRowModalinput_width").value).length > 0 ? (isNumber(editModal.querySelector("#editRowModalinput_width").value) ?
+            parseFloat(editModal.querySelector("#editRowModalinput_width").value) : ""): "",
+        sizeHeight: String(editModal.querySelector("#editRowModalinput_height").value).length > 0 ? (isNumber(editModal.querySelector("#editRowModalinput_height").value) ?
+            parseFloat(editModal.querySelector("#editRowModalinput_height").value) : "") : "",
 
-        if (originProduct.hasOwnProperty("vendorCode") || String(document.querySelector("#editRowModalinput_vendorCode").value).length > 0){
-            result.vendorCode = document.querySelector("#editRowModalinput_vendorCode").value
-        }
-        if (originProduct.hasOwnProperty("unitPrice") || String(document.querySelector("#editRowModalinput_purcPrice").value).length > 0){
-            result.unitPrice = Decimal128.fromString(document.querySelector("#editRowModalinput_purcPrice").value)
-        }
-
-        let updateResult = await updateRecordById(itemId, result)
-        //     当最后确认提交成功则dismiss并回弹成功信息
-        if (updateResult.ok === 1 || updateResult.acknowledged) {
-            bootstrap.Modal.getInstance(document.querySelector("#editRowModal")).hide()
-            await fetchTablesData()
-        } else {
-            document.querySelector("#deleteRowModal .modal-body p").innerText = "Error happened while on updates."
+        vendorCode: String(document.querySelector("#editRowModalinput_vendorCode").value).length > 0 ? document.querySelector("#editRowModalinput_vendorCode").value : "",
+        unitPrice: String(document.querySelector("#editRowModalinput_purcPrice").value).length > 0 ? Decimal128.fromString(document.querySelector("#editRowModalinput_purcPrice").value): ""
+    }
+    Object.keys(result).forEach(eachKey=>{
+        if (result[eachKey] === ""){
+            delete result[eachKey]
         }
     })
+
+    let updateResult = await updateRecordById((editModalTarget._id).toString(), result)
+    //     当最后确认提交成功则dismiss并回弹成功信息
+    if (updateResult.ok === 1 || updateResult.acknowledged) {
+        bootstrap.Modal.getInstance(editModal).hide()
+        createAlert("success", `Product information changes has been successfully saved`)
+        await redrawDataTable()
+    } else {
+        document.querySelector("#deleteRowModal .modal-body p").innerText = "Error happened while on updates."
+    }
 })
 
 async function updateRecordById(recordId, updateData) {
@@ -365,3 +360,50 @@ document.querySelector("#act_reloadTable").addEventListener("click", async (ev) 
         document.querySelector("#loadingStatus").style.display = "none"
     }
 })
+
+async function redrawDataTable() {
+    if (table) {
+        table.clear().draw()
+        document.querySelector("#loadingStatus").style.removeProperty("display")
+        table.rows.add(await fetchTablesData()).draw()
+        document.querySelector("#loadingStatus").style.display = "none"
+    }
+}
+
+function createAlert(status, text, time = 5000){
+    let alertAnchor = document.querySelector("#alertAnchor")
+    let alertElement = document.createElement("div")
+    alertElement.className= "alert alert-primary alert-dismissible bg-success text-white border-0 fade show";
+    alertElement.role = "alert";
+    let svgImage = document.createElement("svg")
+    svgImage.className = "bi flex-shrink-0 me-2"
+    svgImage.width = 24
+    svgImage.height = 24
+    svgImage.role = "img"
+    svgImage.ariaLabel = "Info: "
+    svgImage.innerHTML = `<use xlink:href="#info-fill"/>`
+
+    let texts = document.createElement("span")
+    texts.innerHTML = text ? text : ""
+    if (status === "success"){
+        alertElement.className= "alert alert-success alert-dismissible bg-success text-white border-0 fade show"
+        svgImage.ariaLabel = "Success: "
+        svgImage.innerHTML = `<use xlink:href="#check-circle-fill"/>`
+    } else if (status === "danger"){
+        alertElement.className= "alert alert-danger alert-dismissible bg-danger text-white border-0 fade show"
+        svgImage.ariaLabel = "Danger: "
+        svgImage.innerHTML = `<use xlink:href="#exclamation-triangle-fill"/>`
+    } else if (status === "secondary"){
+        alertElement.className= "alert alert-secondary alert-dismissible bg-secondary text-white border-0 fade show"
+        svgImage.ariaLabel = "Info: "
+        svgImage.innerHTML = `<use xlink:href="#info-fill"/>`
+    }
+    alertElement.append(svgImage)
+    alertElement.append(text)
+    alertAnchor.append(alertElement)
+    setTimeout(function () {
+        if (alertElement){
+            alertElement.style.display = 'none'
+        }
+    }, isNaN(time) ? 3000 : time)
+}
