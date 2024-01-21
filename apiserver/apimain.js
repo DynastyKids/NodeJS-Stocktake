@@ -14,7 +14,7 @@ const {ServerApiVersion, Decimal128} = require("mongodb");
 const cors = require("cors")
 
 const Storage = require("electron-store");
-const {isNumber} = require("lodash");
+const {isNumber, isObject} = require("lodash");
 
 const newStorage = new Storage();
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
@@ -427,7 +427,7 @@ router.post("/v1/stocks/update", async (req, res) => {
         },
     });
 
-    let upsertFlag = (req.query.hasOwnProperty("upsert") && req.query.upsert ? true : false)
+    let upsertFlag = (req.query.hasOwnProperty("upsert") && req.query.upsert)
 
     if (!req.body || !req.body.item) {
         response.message = "Missing item informations"
@@ -439,42 +439,37 @@ router.post("/v1/stocks/update", async (req, res) => {
             // 检查各种字段中是否由需要的对应参数，如果没有则补齐
             // 默认使用字段时间并转换为时间对象，如果字段未提供默认使用当前时间
             let updateItems = req.body.item
-            if (upsertFlag){  // 新插入数据需要检查时间戳是否齐全，既有数据则跳过
-                updateItems.createTime = updateItems.hasOwnProperty("createTime") ? new Date(updateItems.createTime) : new Date()
-            }
-
-            // 强制更新loggingTime为当前最后更改的时间
-            updateItems.loggingTime = updateItems.hasOwnProperty("loggingTime") ? new Date(updateItems.loggingTime) : new Date()
-            updateItems.removed = updateItems.hasOwnProperty("removed") ? updateItems.removed : 0 // 默认设定为未使用
-            if (updateItems.hasOwnProperty("removed") && parseInt(updateItems.removed) === 1) {
-                updateItems.removeTime = updateItems.hasOwnProperty("removeTime") ? new Date(updateItems.removeTime) : new Date()
-            }
-            try{
-                updateItems.delete("productLabel")
-            } catch (e) {
-            //     ProductLabel has been removed
-            }
-
-            // 18DEC23 - 该部分交由终端用户对比生成，终端用户应先get产品，然后根据需要主动填入shelfLocations部分
-            // if (updateItems.hasOwnProperty("shelfLocations")) {
-            //     updateObject = {$set: updateItems, $push: {"locationRecords": {datetime: new Date(), location: updateItems.shelfLocations}}}
-            // }
-
-            // 18DEC23 - locationRecords部分API仅作检查,如果存在则尝试转换数据类型为时间类型
-            if (updateItems.hasOwnProperty("locationRecords") && Array.isArray(updateItems.locationRecords)){
-                updateItems.locationRecords.forEach(eachRecords =>{
-                    if(eachRecords.hasOwnProperty("datetime") && typeof eachRecords.datetime === 'string'){
-                        eachRecords.datetime = new Date(eachRecords.datetime)
-                    }
-                })
-            }
-            console.log(updateItems)
-            updateObject = {$set: updateItems}
             try {
+                if (upsertFlag){  // 新插入数据需要检查时间戳是否齐全，既有数据则跳过
+                    updateItems.createTime = updateItems.hasOwnProperty("createTime") ? new Date(updateItems.createTime) : new Date()
+                }
+                // 强制更新loggingTime为当前最后更改的时间
+                updateItems.loggingTime = updateItems.hasOwnProperty("loggingTime") ? new Date(updateItems.loggingTime) : new Date()
+                updateItems.removed = updateItems.hasOwnProperty("removed") ? updateItems.removed : 0 // 默认设定为未使用
+                if (updateItems.hasOwnProperty("removed") && parseInt(updateItems.removed) === 1) {
+                    updateItems.removeTime = updateItems.hasOwnProperty("removeTime") ? new Date(updateItems.removeTime) : new Date()
+                }
+                if (updateItems.hasOwnProperty("unitPrice")){
+                    updateItems.unitPrice = Decimal128.fromString(updateItems.unitPrice)
+                }
+
+                if (updateItems.hasOwnProperty("productLabel")){
+                    delete updateItems.productLabel
+                }
+                if (updateItems.hasOwnProperty("_id")) {
+                    delete updateItems._id
+                }
+
                 await dbclient.connect()
                 const session = dbclient.db(targetDB).collection("pollinglog");
 
-                let result = await session.updateOne(filter, updateObject, {upsert: true})
+                let originData = await session.find(filter).toArray()
+                let originElement = await session.find(filter).toArray()
+                let result = await session.updateOne(filter, {$set: updateItems}, {upsert: true})
+                if (originElement.length === 1){
+                    await session.updateOne(filter,{$push: {changelog: compareChanges(originElement[0],updateItems)}})
+                }
+                
                 if (result.acknowledged) {
                     response.acknowledged = true
                     response.data = result
@@ -492,6 +487,22 @@ router.post("/v1/stocks/update", async (req, res) => {
     }
     res.json(response)
 })
+
+function compareChanges(oldObject, newObject){
+    let changelog =  {datetime: new Date(), events:[]}
+    if (isObject(oldObject) && isObject(newObject)){
+        for (let eachKey of Object.keys(newObject)) {
+            if (newObject.hasOwnProperty("eachKey")){
+                if (oldObject[eachKey] !== newObject[eachKey]){
+                    changelog.events.push({field: eachKey, before: oldObject[eachKey]})
+                }
+            } else {
+                changelog.events.push({field: eachKey, before: null})
+            }
+        }
+    }
+    return changelog
+}
 
 /*
  * STOCKS
@@ -585,58 +596,48 @@ router.get("/v1/preload", async (req, res) => {
     try {
         await dbclient.connect()
         const session = dbclient.db(targetDB).collection("preloadlog");
-        const options = {$sort: {productCode: 1, bestbefore: -1, productLabel: -1}, projection: {"_id": 0}}
-        let result = await session.find({}, options).toArray()
+
+        let result = await session.find({}).toArray()
         response.data = result
         response.acknowledged = true
-        //     去掉相同的重复条目
-        let filteredResult = filterDuplicate(['productLabel', 'productCode'], result)
-        response.data = filteredResult
 
-        // 根据Query筛选
-        if (req.query.removed) {
-            //
-        } else {
-            response.data.forEach(eachitem => {
-                if (eachitem.removed === 0) {
-                    filteredResult.push(eachitem)
-                }
-            })
-            response.data = filteredResult
+        if (req.query){ // 如果用户提供了筛选条件，则筛选符合条件的内容**不区分大小写
+            let originResult = result
+            if (req.query.product && req.query.product.length >= 3) { //Product
+                let filteredResult = []
+                originResult.forEach(eachitem => {
+                    if (eachitem.productCode.toLowerCase().includes(String(req.query.product).toLowerCase())) {
+                        filteredResult.push(eachitem)
+                    }
+                })
+                originResult = filteredResult
+            }
+
+            if (req.query.location && req.query.location.length >= 2) { // Location
+                let filteredResult = []
+                originResult.forEach(eachitem => {
+                    if (eachitem.shelfLocation.toLowerCase().includes(String(req.query.location).toLowerCase())) {
+                        filteredResult.push(eachitem)
+                    }
+                })
+                originResult = filteredResult
+            }
+
+            if (req.query.label && req.query.label.length >= 3) { // Label
+                let filteredResult = []
+                originResult.forEach(eachitem => {
+                    if (eachitem.productLabel.toLowerCase().includes(String(req.query.label).toLowerCase())) {
+                        filteredResult.push(eachitem)
+                    }
+                })
+                originResult = filteredResult
+            }
+            response.data = originResult
         }
 
-        if (req.query && req.query.product && req.query.product.length >= 3) { //Product
-            let filteredResult = []
-            response.data.forEach(eachitem => {
-                if (eachitem.productCode.toLowerCase().includes(String(req.query.product).toLowerCase())) {
-                    filteredResult.push(eachitem)
-                }
-            })
-            response.data = filteredResult
-        }
-
-        if (req.query && req.query.location && req.query.location.length >= 2) { // Location
-            let filteredResult = []
-            response.data.forEach(eachitem => {
-                if (eachitem.shelfLocation.toLowerCase().includes(String(req.query.location).toLowerCase())) {
-                    filteredResult.push(eachitem)
-                }
-            })
-            response.data = filteredResult
-        }
-
-        if (req.query && req.query.label && req.query.label.length >= 3) { // Label
-            let filteredResult = []
-            response.data.forEach(eachitem => {
-                if (eachitem.productLabel.toLowerCase().includes(String(req.query.label).toLowerCase())) {
-                    filteredResult.push(eachitem)
-                }
-            })
-            response.data = filteredResult
-        }
-
-        console.log(`Get Prefill: Result length: ${result.length}; Filtered Length:${response.length}`)
+        console.log(`Get Prefill: Result length: ${result.length}; Filtered Length:${response.data.length}`)
     } catch (e) {
+        console.error("Error when fetching preload Data:", e)
         response.message = e
     } finally {
         await dbclient.close()
@@ -819,7 +820,6 @@ router.get("/v1/stocks", async (req, res) => {
             findingQuery.productCode = {$regex: new RegExp(stockProduct),$options: "i"}
         }
 
-        console.log(findingQuery)
         response = await sessions.find(findingQuery, {projection: {"_id": 0}}).toArray()
         res.status(200)
     } catch (err) {
