@@ -10,39 +10,6 @@
 </head>
 <body>
 <div class="container-fluid">
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="../index.html">Stock-take Electron</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
-                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/index.html"><i class="ti ti-home"></i>Home</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="ti ti-tools"></i>Features
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="../labelgenerator.html">Generate Labels</a></li>
-                            <li><a class="dropdown-item" href="#">Check prefill labels (Unavailable)</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="stocks.html">Stock Management</a></li>
-                            <li><a class="dropdown-item" href="#">Add Stock (Unavailable)</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Scan QR Code(Unavailable)</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/api"><i class="ti ti-api"></i>Swagger Portal (OpenAPI)</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
     <div class="container-fluid">
         <h1>Current Stocks</h1>
         <br>
@@ -54,27 +21,28 @@
                 </ol>
             </nav>
             <div id="alertAnchor"></div>
-
+            <div id="loadingAnimation" style="display: flex">
+                <div class="loader"></div>
+                <p>Fetching Stock Data, Please Wait</p>
+            </div>
             <table id="table" class="table " style="width: 100%">
                 <thead class="thead-light">
                 <tr>
-                    <th>Code / Product</th>
-                    <th>Quantity</th>
+                    <th>Code<br>Product Name</th>
+                    <th>Quantity<br>Location</th>
                     <th>Best Before</th>
                     <th>Best Before</th>
-                    <th>Location</th>
-                    <th>Stock ID<br>Adding Time</th>
+                    <th>Stock ID<br>Purchase Order #</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
                 <tfoot class="tfoot-light">
                 <tr>
-                    <th>Code / Product</th>
-                    <th>Quantity</th>
+                    <th>Code<br>Product Name</th>
+                    <th>Quantity<br>Location</th>
                     <th>Best Before</th>
                     <th>Best Before</th>
-                    <th>Location</th>
-                    <th>Stock ID<br>Adding Time</th>
+                    <th>Stock ID<br>Purchase Order #</th>
                     <th>Actions</th>
                 </tr>
                 </tfoot>
@@ -128,30 +96,55 @@
                                 <span id="labelIDText"></span>
                             </div>
                         </div>
-                        <input type="text" class="form-control col-6" id="modalEditLabelid" hidden value="">
-                        <div class="col-6 col-md-4">
-                            <label for="modalEditQuantity" class="form-label">Product Quantity:</label>
-                            <input type="number" class="form-control col-6" id="modalEditQuantity" value="">
+                        <input type="text" class="form-control col-6" id="editModal_labelId" hidden value="">
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_quantity" class="form-label">Product Quantity:</label>
+                            <input type="number" class="form-control col-6" id="editModal_quantity" value="">
                         </div>
-                        <div class="col-6 col-md-4">
-                            <label for="modalEditUnit" class="form-label">Product Unit:</label>
-                            <input type="text" class="form-control col-6" id="modalEditUnit" value="">
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_unit" class="form-label">Product Unit:</label>
+                            <input type="text" class="form-control col-6" id="editModal_unit" value="">
                         </div>
-                        <div class="col-6 col-md-4">
-                            <label for="modalEditBestbefore" class="form-label">Best Before:</label>
-                            <input type="date" class="form-control col-6" id="modalEditBestbefore" value="">
+                        <div class="col-12 col-sm-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_bestbefore" class="form-label">Best Before:</label>
+                            <input type="date" class="form-control col-6" id="editModal_bestbefore" value="">
                         </div>
-                        <div class="col-6 col-md-4">
-                            <label for="modelEditLocation" class="form-label">Location:</label>
-                            <input type="text" class="form-control col-6" id="modelEditLocation" value="">
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_location" class="form-label">Location:</label>
+                            <input type="text" class="form-control col-6" id="editModal_location" value="">
                         </div>
-                        <div class="col-12 col-md-8 row">
-                            <div class="col-6">
-                                <input type="checkbox" class="form-check-input" id="modelCheckboxRemoved">
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_unitPrice" class="form-label">Unit Price:</label>
+                            <input type="text" class="form-control col-6" id="editModal_unitPrice" value="">
+                        </div>
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_ponumber" class="form-label">Purchase Order Ref:</label>
+                            <input type="text" class="form-control col-6" id="editModal_ponumber" value="">
+                        </div>
+                        <div class="row col-12 d-flex mt-2 mb-2">
+                            <div class="col-12 form-label">Item require Quarantine?</div>
+                            <div class="" style="display: flex">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="editModal_quarantineRatio" id="editModal_quarantineYes" value="1">
+                                    <label class="form-check-label" for="editModal_quarantineYes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="editModal_quarantineRatio" id="editModal_quarantineNo" value="0" checked>
+                                    <label class="form-check-label" for="editModal_quarantineNo">No</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="editModal_quarantineRatio" id="editModal_quarantineFinished" value="-1">
+                                    <label class="form-check-label" for="editModal_quarantineFinished">Inspected Finished</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row col-12 d-flex mt-2 mb-2">
+                            <div class="col-12">
+                                <input type="checkbox" class="form-check-input" id="editModal_removeCheck">
                                 <label class="form-label">Product has been removed?</label>
                             </div>
-                            <div class="col-6" id="group_removeTime" style="display: none">
-                                <label for="inpt_removeTime" class="form-label">Remove Time:</label>
+                            <div class="col" id="group_removeTime" style="display: none">
+                                <label for="inpt_removeTime" class="form-label">Custom Remove Time:</label>
                                 <input type="datetime-local" class="form-control col-6" id="inpt_removeTime" value="">
                             </div>
                         </div>
@@ -161,7 +154,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="editModalSubmitBtn" disabled>Submit</button>
+                <button type="button" class="btn btn-primary" id="editModal_btnSubmit" disabled>Submit</button>
             </div>
         </div>
     </div>
@@ -203,39 +196,43 @@
         </div>
     </div>
 </div>
-<div class="modal fade" id="revertModal" tabindex="-1" aria-labelledby="revertModalLabel" aria-hidden="true">
-    <div class="modal-dialog model-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="revertModalLabel">Add Item?</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Are you sure to put back Item from shelf?
-                <form>
-                    <input type="text" class="form-control" id="revertLabelid" hidden value="">
-                    <div class="col-12">
-                        <label for="revertLocation" class="form-label">Shelf Location:</label>
-                        <input type="text" class="form-control col-6" id="revertLocation" value="">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="revertModalYes">Confirm</button>
-            </div>
-        </div>
-    </div>
-</div>
 <script src="../library/jquery-3.7.1.min.js"></script>
 <script src="../library/bootstrap.bundle.min.js"></script>
 <script src="../library/datatables/datatables.js"></script>
 <script src="stocks.js"></script>
+<script src="../loadNavbar.js"></script>
 </body>
 <style>
     .table_actions {
         padding-left: .25rem;
         padding-right: .25rem;
+    }
+    
+/*    Loading Animation*/
+    .loader {
+        width: 40px;
+        aspect-ratio: 1;
+        --c:no-repeat radial-gradient(farthest-side,#514b82 92%,#0000);
+        background:
+                var(--c) 50%  0,
+                var(--c) 50%  100%,
+                var(--c) 100% 50%,
+                var(--c) 0    50%;
+        background-size: 7px 7px;
+        animation: l18 1s infinite;
+        position: relative;
+    }
+    .loader::before {
+        content:"";
+        position: absolute;
+        inset:0;
+        margin: 3px;
+        background: repeating-conic-gradient(#0000 0 35deg,#514b82 0 90deg);
+        -webkit-mask: radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 0);
+        border-radius: 50%;
+    }
+    @keyframes l18 {
+        100%{transform: rotate(.5turn)}
     }
 </style>
 </html>
