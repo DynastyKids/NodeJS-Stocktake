@@ -14,7 +14,7 @@ const {main} = require("@popperjs/core");
 const portfinder = require('portfinder');
 portfinder.basePort = 3000;
 let currentPort = 3000;
-require('electron-reload')(__dirname);
+require('electron-reload')([path.join(__dirname, '/Bootstrap5'), path.join(__dirname, '/Modernize')]);
 
 const Store = require('electron-store');
 Store.initRenderer()

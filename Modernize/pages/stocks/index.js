@@ -93,7 +93,7 @@ let editModalObject = {}
 document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
     //弹出后先填充表格
     editModalObject = {}
-    let requestLabelId = ev.relatedTarget.getAttribute("data-bs-itemId")
+    let requestLabelId = ev.relatedTarget.getAttribute("data-bs-itemid")
     editModalObject.labelId = requestLabelId
     document.querySelector("#editModal_submitBtn").disabled = true
     document.querySelector("#editModal_submitBtn").textContent = "Submit"
@@ -106,7 +106,7 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
             document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${stockList[i].productName} | StockID: ${stockList[i].productLabel.slice(-7)}`
             document.querySelector("#editModal .modal-body #productInfoText").textContent = `${stockList[i].productCode} - ${stockList[i].productName}`
             document.querySelector("#editModal .modal-body #labelIDText").textContent = `${stockList[i].productLabel}`
-            document.querySelector("#editModal #editModal_deleteBtn").setAttribute("data-bs-itemId", stockList[i]._id)
+            document.querySelector("#editModal #editModal_deleteBtn").setAttribute("data-bs-itemid", stockList[i]._id)
             document.querySelector("#modalEditQuantity").value = (stockList[i].hasOwnProperty("quantity") ? stockList[i].quantity : "")
             document.querySelector("#modalEditUnit").value = (stockList[i].hasOwnProperty("quantityUnit") ? stockList[i].quantityUnit : "")
             document.querySelector("#modalEditBestbefore").value = (stockList[i].hasOwnProperty("bestbefore") ? stockList[i].bestbefore : "")
@@ -260,7 +260,7 @@ document.querySelector("#removeModal_setManualTimeCheck").addEventListener("chan
 })
 
 document.querySelector("#removeModal").addEventListener("show.bs.modal", function (ev) {
-    var itemId = ev.relatedTarget.getAttribute("data-bs-itemId")
+    var itemId = ev.relatedTarget.getAttribute("data-bs-itemid")
     document.querySelector("#removeModal_labelid").value = itemId
     document.querySelector("#removeModal_btnConfirm").disabled = false
     document.querySelector("#removeModal_btnConfirm").textContent = "Confirm"
@@ -325,7 +325,7 @@ document.querySelector("#removeModal").querySelector("#removeModal_btnConfirm").
 
 let revertModal = document.querySelector("#revertModal")
 revertModal.addEventListener("show.bs.modal", function (ev) {
-    var itemId = ev.relatedTarget.getAttribute("data-bs-itemId")
+    var itemId = ev.relatedTarget.getAttribute("data-bs-itemid")
     let hiddenInput = revertModal.querySelector("#revertLabelid")
     hiddenInput.value = itemId
 
@@ -341,7 +341,7 @@ revertModal.addEventListener("show.bs.modal", function (ev) {
 })
 revertModal.querySelector("#revertModal_btnConfirm").addEventListener("click", async function (ev) {
     ev.preventDefault()
-    let labelId =  ev.relatedTarget.getAttribute("data-bs-itemId")
+    let labelId =  ev.relatedTarget.getAttribute("data-bs-itemid")
     let model = bootstrap.Modal.getInstance(document.querySelector("#revertModal"));
     let client = new MongoClient(uri, {
         serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
@@ -377,7 +377,7 @@ revertModal.querySelector("#revertModal_btnConfirm").addEventListener("click", a
 
 let deleteModal = document.querySelector("#deleteModal")
 deleteModal.addEventListener("show.bs.modal", (ev)=>{
-    var itemId = ev.relatedTarget.getAttribute("data-bs-itemId")
+    var itemId = ev.relatedTarget.getAttribute("data-bs-itemid")
     deleteModal.querySelector("#deleteModal_labelid").value = itemId
     deleteModal.querySelector("#deleteModal_btnReturn").setAttribute("data-bs-itemid", itemId)
     deleteModal.querySelector(".modal-footer").querySelectorAll("button").forEach(eachButton=>{
@@ -480,12 +480,12 @@ function loadStockInfoToTable(fetchAll = document.querySelector("#switchCheck").
                     `<small>${(element.productLabel ? element.productLabel : "")}</small>`+
                     `<small><a href="#" data-bs-ponumber="${(element.POnumber ? element.POnumber : "")}" class="table_action_search">
                         ${(element.POnumber ? "<br>"+element.POnumber : "")}${(element.sequence ? "-"+element.sequence : "")}</a></small>`,
-                    `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-itemId="${element._id}" >View/Edit</a>` +
+                    `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-itemid="${element._id}" >View/Edit</a>` +
                     (element.removed < 1 ? `
-                    <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-itemId="${element._id}">Mark used</a>
+                    <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-itemid="${element._id}">Mark used</a>
                     ` : `<a href="#" class="table_actions table_action_revert" data-bs-toggle="modal" data-bs-target="#revertModal" 
-                        data-bs-itemId="${element._id}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}">Revert</a>`) +
-                    `<a href="#" class="table_actions table_action_print" data-bs-itemId="${element._id}">Print Label</a>`
+                        data-bs-itemid="${element._id}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}">Revert</a>`) +
+                    `<a href="#" class="table_actions table_action_print" data-bs-itemid="${element._id}">Print Label</a>`
                 ]).draw(false);
             }
             createAlert("success", "Table has been updated", 3000)
@@ -501,100 +501,134 @@ function loadStockInfoToTable(fetchAll = document.querySelector("#switchCheck").
         })
 
     //     Regenerate Label
-        document.querySelectorAll(".table_action_print").forEach(eachElement =>{
-            eachElement.addEventListener("click", function (ev){
+        document.querySelectorAll(".table_action_print").forEach(eachElement => {
+            eachElement.addEventListener("click", function (ev) {
                 try {
-                    let elementDatabaseId = eachElement.getAttribute("data-bs-itemId")
-                    var doc = new jsPDF({
-                        orientation: 'landscape',
-                        unit: 'px',
-                        format: 'a4',
-                        compress: true
-                    })
-                    for (let i = 0; i < stockList.length; i++) {
-                        if (new ObjectId(stockList[i]._id).toString() === elementDatabaseId) {
-                            let generateElement = stockList[i]
-                            if (generateElement.hasOwnProperty("_id")) {
-                                delete generateElement._id
-                            }
-                            if (generateElement.hasOwnProperty("changelog")) {
-                                delete generateElement.changelog
-                            }
-                            if (generateElement.hasOwnProperty("locationRecords")) {
-                                delete generateElement.locationRecords
-                            }
-                            if (generateElement.hasOwnProperty("createTime")) {
-                                delete generateElement.createTime
-                            }
-                            if (generateElement.hasOwnProperty("loggingTime")) {
-                                delete generateElement.loggingTime
-                            }
-
-                            var initTextSize = 100
-                            doc.setFontSize(initTextSize).setFont("Helvetica", "normal")
-                            var productnameText = generateElement.productName ? generateElement.productName.slice(0, 30) : ""
-                            while (doc.getTextDimensions(productnameText).w > doc.internal.pageSize.getWidth() - 40) {
-                                initTextSize -= 5;
-                                doc.setFontSize(initTextSize).setFont("Helvetica", 'normal')
-                            }
-                            if (generateElement.productName.length <= 30) {
-                                while (doc.getTextDimensions(productnameText).w > doc.internal.pageSize.getWidth() - 40) {
-                                    initTextSize -= 5;
-                                    doc.setFontSize(initTextSize).setFont("Helvetica", 'normal')
-                                }
-                                doc.text(generateElement.productName, doc.internal.pageSize.getWidth() / 2, 90, {lineHeightFactor: 0.9, align: "center"})
-                            } else {
-                                while (doc.getTextDimensions(productnameText).w > doc.internal.pageSize.getWidth() - 40) {
-                                    initTextSize -= 5;
-                                    doc.setFontSize(initTextSize).setFont("Helvetica", 'normal')
-                                }
-                                doc.text(`${generateElement.productCode} - ${generateElement.productName.slice(0, 40)}...`, 15, 75, {
-                                    lineHeightFactor: 1.1,
-                                    align: "left",
-                                    maxWidth: doc.internal.pageSize.width - 30
-                                })
-                                generateElement.productName = `${generateElement.productCode} - ${generateElement.productName.slice(0, 40)}...`
-                            }
-
-                            let unitText = (generateElement.quantityUnit ? generateElement.quantityUnit.toLowerCase() : "")
-
-                            doc.setFontSize(90).setFont("Helvetica", 'normal');
-                            doc.text(`${generateElement.quantity ? generateElement.quantity : ""} ${generateElement.quantityUnit ? generateElement.quantityUnit.toLowerCase() : ""}`,
-                                15, doc.internal.pageSize.getHeight() - 190, {lineHeightFactor: 0.9});
-                            doc.setFontSize(90).setFont("Helvetica", 'normal')   // ↙Bestbefore
-                            doc.text(generateElement.bestbefore ? generateElement.bestbefore : "", 15, doc.internal.pageSize.getHeight() - 115, {lineHeightFactor: 0.9});
-                            doc.setFontSize(72).setFont("courier", 'bold')     // ↙Label
-                            doc.text(`${generateElement.productLabel ? generateElement.productLabel.slice(-7): ""}`, 15, doc.internal.pageSize.getHeight() - 55, {lineHeightFactor: 0.85});
-                            doc.setFontSize(36).setFont("courier", 'bold')      //  ↗Label
-                            doc.text(`${generateElement.POnumber ? generateElement.POnumber : ""} / ${generateElement.productLabel.toUpperCase().substring(0, 7)}`, doc.internal.pageSize.getWidth() - 20, 25, {
-                                lineHeightFactor: 0.75,
-                                align: "right"
-                            });
-
-                            let qrSize = 250
-                            let qrBase64 = QRCodeObjectGenerateV3(generateElement)
-                            doc.addImage(qrBase64, "PNG", doc.internal.pageSize.getWidth() - qrSize, doc.internal.pageSize.getHeight() - qrSize, qrSize, qrSize)
-
-                            doc.setFontSize(12).setFont("Helvetica", 'normal')
-                            let bottomVerfiyText = ["V3_Node", "P:" + (generateElement.POnumber ? generateElement.POnumber : " "),
-                                "C:" + (generateElement.productCode ? generateElement.productCode : " "), "Q:" + (generateElement.quantity ? generateElement.quantity : " ") + unitText,
-                                "E:" + (generateElement.bestbefore ? generateElement.bestbefore.replaceAll("-", "") : "*")]
-                            doc.text(bottomVerfiyText.toString(), 20, doc.internal.pageSize.getHeight() - 30, {lineHeightFactor: 0.8});
-                            let bottomTextPart2 = ["L:" + (generateElement.productLabel ? generateElement.productLabel : "")]
-                            doc.text(bottomTextPart2.toString(), 20, doc.internal.pageSize.getHeight() - 20, {lineHeightFactor: 0.8});
-                            let filename = `GeneratedLabel.pdf`
-                            doc.save(filename, {returnPromise: true}).then(() => {
-                                ipcRenderer.send('print-pdf', filename)
-                            });
-                            break;// After finished generate PDF
-                        }
-                    }
+                    let elementDatabaseId = eachElement.getAttribute("data-bs-itemid")
+                    generateLabelToPDF(elementDatabaseId)
                 } catch (e) {
                     console.error("Error when attempting generate label:", e)
                 }
             })
         })
+        
+        table.on("draw", function(){
+            document.querySelectorAll(".table_action_print").forEach(eachElement => {
+                eachElement.addEventListener("click", function (ev) {
+                    try {
+                        let elementDatabaseId = eachElement.getAttribute("data-bs-itemid")
+                        generateLabelToPDF(elementDatabaseId)
+                    } catch (e) {
+                        console.error("Error when attempting generate label:", e)
+                    }
+                })
+            })
+        })
     })
+}
+
+function generateLabelToPDF(elementDatabaseId){
+    try {
+        var doc = new jsPDF({
+            orientation: 'landscape',
+            unit: 'px',
+            format: 'a4',
+            compress: true
+        })
+        for (let i = 0; i < stockList.length; i++) {
+            if (new ObjectId(stockList[i]._id).toString() === elementDatabaseId) {
+                let generateElement = stockList[i]
+                if (generateElement.hasOwnProperty("_id")) {
+                    delete generateElement._id
+                }
+                if (generateElement.hasOwnProperty("changelog")) {
+                    delete generateElement.changelog
+                }
+                if (generateElement.hasOwnProperty("locationRecords")) {
+                    delete generateElement.locationRecords
+                }
+                if (generateElement.hasOwnProperty("createTime")) {
+                    delete generateElement.createTime
+                }
+                if (generateElement.hasOwnProperty("loggingTime")) {
+                    delete generateElement.loggingTime
+                }
+
+                var initTextSize = 100
+                doc.setFontSize(initTextSize).setFont("Helvetica", "normal")
+                var productnameText = generateElement.productName ? generateElement.productName.slice(0, 30) : ""
+                while (doc.getTextDimensions(productnameText).w > doc.internal.pageSize.getWidth() - 40) {
+                    initTextSize -= 5;
+                    doc.setFontSize(initTextSize).setFont("Helvetica", 'normal')
+                }
+                if (generateElement.productName.length <= 30) {
+                    while (doc.getTextDimensions(productnameText).w > doc.internal.pageSize.getWidth() - 40) {
+                        initTextSize -= 5;
+                        doc.setFontSize(initTextSize).setFont("Helvetica", 'normal')
+                    }
+                    doc.text(generateElement.productName, doc.internal.pageSize.getWidth() / 2, 90, {lineHeightFactor: 0.9, align: "center"})
+                } else {
+                    while (doc.getTextDimensions(productnameText).w > doc.internal.pageSize.getWidth() - 40) {
+                        initTextSize -= 5;
+                        doc.setFontSize(initTextSize).setFont("Helvetica", 'normal')
+                    }
+                    doc.text(`${generateElement.productCode} - ${generateElement.productName.slice(0, 40)}...`, 15, 75, {
+                        lineHeightFactor: 1.1,
+                        align: "left",
+                        maxWidth: doc.internal.pageSize.width - 30
+                    })
+                    generateElement.productName = `${generateElement.productCode} - ${generateElement.productName.slice(0, 40)}...`
+                }
+
+                let unitText = (generateElement.quantityUnit ? generateElement.quantityUnit.toLowerCase() : "")
+                let UnitConvert = [
+                    {unit: "bag", abberv: "bag", display: "bags"},
+                    {unit: "box", abberv: "box", display: "boxes"},
+                    {unit: "bottle", abberv: "btl", display: "btls"},
+                    {unit: "carton", abberv: "ctn", display: "ctns"},
+                    {unit: "pair", abberv: "pair", display: "pairs"},
+                    {unit: "piece", abberv: "pc", display: "pcs"},
+                    {unit: "roll", abberv: "roll", display: "rolls"}
+                ]
+                var unitResult = UnitConvert.find(element => element.unit.includes(unitText.toLowerCase()) || element.abberv.includes(unitText.toLowerCase()))
+                if (unitResult) {
+                    unitText = unitResult.display
+                }
+
+                doc.setFontSize(90).setFont("Helvetica", 'normal');
+                doc.text(`${generateElement.quantity ? generateElement.quantity : ""} ${generateElement.quantityUnit ? generateElement.quantityUnit.toLowerCase() : ""}`,
+                    20, doc.internal.pageSize.getHeight() - 190, {lineHeightFactor: 0.9});
+                doc.setFontSize(90).setFont("Helvetica", 'normal')   // ↙Bestbefore
+                doc.text(generateElement.bestbefore ? generateElement.bestbefore : "", 15, doc.internal.pageSize.getHeight() - 115, {lineHeightFactor: 0.9});
+                doc.setFontSize(72).setFont("courier", 'bold')     // ↙Label
+                doc.text(`${generateElement.productLabel ? generateElement.productLabel.slice(-7): ""}`, 15, doc.internal.pageSize.getHeight() - 55, {lineHeightFactor: 0.85});
+                doc.setFontSize(36).setFont("courier", 'bold')      //  ↗Label
+                doc.text(`${generateElement.POnumber ? generateElement.POnumber : ""} / ${generateElement.productLabel.toUpperCase().substring(0, 7)}`, doc.internal.pageSize.getWidth() - 20, 30, {
+                    lineHeightFactor: 0.75,
+                    align: "right"
+                });
+
+                let qrSize = 250
+                let qrBase64 = QRCodeObjectGenerateV3(generateElement)
+                doc.addImage(qrBase64, "PNG", doc.internal.pageSize.getWidth() - qrSize, doc.internal.pageSize.getHeight() - qrSize, qrSize, qrSize)
+
+                doc.setFontSize(12).setFont("Helvetica", 'normal')
+                let bottomVerfiyText = ["V3_Node", "P:" + (generateElement.POnumber ? generateElement.POnumber : " "),
+                    "C:" + (generateElement.productCode ? generateElement.productCode : " "), "Q:" + (generateElement.quantity ? generateElement.quantity : " ") + unitText,
+                    "E:" + (generateElement.bestbefore ? generateElement.bestbefore.replaceAll("-", "") : "*")]
+                doc.text(bottomVerfiyText.toString(), 20, doc.internal.pageSize.getHeight() - 30, {lineHeightFactor: 0.8});
+                let bottomTextPart2 = ["L:" + (generateElement.productLabel ? generateElement.productLabel : "")]
+                doc.text(bottomTextPart2.toString(), 20, doc.internal.pageSize.getHeight() - 20, {lineHeightFactor: 0.8});
+                let filename = `GeneratedLabel.pdf`
+                doc.save(filename, {returnPromise: true}).then(() => {
+                    ipcRenderer.send('print-pdf', filename)
+                });
+                break;// After finished generate PDF
+            }
+        }
+    } catch (e) {
+        console.error("Error when attempting generate label:", e)
+    }
 }
 
 function QRCodeObjectGenerateV3(qrObject){
