@@ -141,7 +141,7 @@ document.querySelector("#editModal_submitBtn").addEventListener("click", async (
         setObject.quantity = parseInt(document.querySelector("#modalEditQuantity").value)
         if ((originProperty.hasOwnProperty("quantity") && originProperty.quantity !== document.querySelector("#modalEditQuantity").value)
             || !originProperty.hasOwnProperty("quantity")){
-            changedObject.events.push({field:"quantity", before:parseInt(originProperty.quantity), datetime: new Date()})
+            changedObject.events.push({field:"quantity", before:parseInt(originProperty.quantity)})
         }
     }
 
@@ -149,7 +149,7 @@ document.querySelector("#editModal_submitBtn").addEventListener("click", async (
         setObject.quantityUnit = document.querySelector("#modalEditUnit").value
         if ((originProperty.hasOwnProperty("quantityUnit") && originProperty.quantityUnit !== document.querySelector("#modalEditUnit").value)
             || !originProperty.hasOwnProperty("quantityUnit") ){
-            changedObject.events.push({field:"quantityUnit", before:originProperty.quantityUnit, datetime: new Date()})
+            changedObject.events.push({field:"quantityUnit", before:originProperty.quantityUnit})
         }
     }
 
@@ -157,7 +157,7 @@ document.querySelector("#editModal_submitBtn").addEventListener("click", async (
         setObject.bestbefore = document.querySelector("#modalEditBestbefore").value
         if ((originProperty.hasOwnProperty("bestbefore") && originProperty.bestbefore !== document.querySelector("#modalEditBestbefore").value)
             || !originProperty.hasOwnProperty("bestbefore")){
-            changedObject.events.push({field:"bestbefore", before: originProperty.bestbefore, datetime: new Date()})
+            changedObject.events.push({field:"bestbefore", before: originProperty.bestbefore})
         }
     }
 
@@ -165,7 +165,7 @@ document.querySelector("#editModal_submitBtn").addEventListener("click", async (
         setObject.shelfLocation = document.querySelector("#modelEditLocation").value
         if ((originProperty.hasOwnProperty("shelfLocation") && originProperty.shelfLocation !== document.querySelector("#modelEditLocation").value)
             || !originProperty.hasOwnProperty("shelfLocation")){
-            changedObject.events.push({field:"shelfLocation", before: originProperty.shelfLocation, datetime: new Date()})
+            changedObject.events.push({field:"shelfLocation", before: originProperty.shelfLocation})
         }
     }
 
@@ -173,7 +173,7 @@ document.querySelector("#editModal_submitBtn").addEventListener("click", async (
         setObject.POnumber = document.querySelector("#modelEditPOnumber").value
         if ((originProperty.hasOwnProperty("POnumber") && originProperty.POnumber !== document.querySelector("#modelEditPOnumber").value)
             || !originProperty.hasOwnProperty("POnumber")){
-            changedObject.events.push({field:"POnumber", before: originProperty.POnumber, datetime: new Date()})
+            changedObject.events.push({field:"POnumber", before: originProperty.POnumber})
         }
     }
 
@@ -181,7 +181,15 @@ document.querySelector("#editModal_submitBtn").addEventListener("click", async (
         setObject.unitPrice = Decimal128.fromString(document.querySelector("#modelEditUnitprice").value)
         if ((originProperty.hasOwnProperty("unitPrice") && originProperty.unitPrice !== document.querySelector("#modelEditUnitprice").value)
             || !originProperty.hasOwnProperty("unitPrice")){
-            changedObject.events.push({field:"unitPrice", before: originProperty.unitPrice, datetime: new Date()})
+            changedObject.events.push({field:"unitPrice", before: originProperty.unitPrice})
+        }
+    }
+
+    if (document.querySelector("#modelEditCreateTime").value.toString().length > 0){
+        setObject.createTime = new Date(document.querySelector("#modelEditCreateTime").value)
+        if ((originProperty.hasOwnProperty("createTime") && originProperty.createTime !== document.querySelector("#modelEditCreateTime").value)
+            || !originProperty.hasOwnProperty("createTime")){
+            changedObject.events.push({field:"createTime", before: originProperty.createTime})
         }
     }
 
@@ -189,19 +197,17 @@ document.querySelector("#editModal_submitBtn").addEventListener("click", async (
         setObject.removed = parseInt("0")
     } else if(originProperty.removed === 0 && document.querySelector("#modelEditCheckRemoved").checked){
         setObject.removed = parseInt("1")
-        changedObject.events.push({field:"removed", before: 0, datetime: new Date()})
+        changedObject.events.push({field:"removed", before: 0})
     } else if (originProperty.removed === 1 && !document.querySelector("#modelEditCheckRemoved").checked){
         setObject.removed = parseInt("0")
-        changedObject.events.push({field:"removed", before: 1, datetime: new Date()})
+        changedObject.events.push({field:"removed", before: 1})
     }
 
     try{
         if(document.querySelector("input[name='modalEdit_quarantineRatio']:checked").value){
             setObject.quarantine = parseInt(document.querySelector("input[name='modalEdit_quarantineRatio']:checked").value)
             changedObject.events.push({
-                field:"quarantineRatio",
-                before: (originProperty.hasOwnProperty("quarantine") ? parseInt(originProperty.quarantine) : null),
-                datetime: new Date()
+                field:"quarantineRatio", before: (originProperty.hasOwnProperty("quarantine") ? parseInt(originProperty.quarantine) : null)
             })
         }
     } catch (e) {
@@ -384,12 +390,11 @@ deleteModal.querySelector("#deleteModal_btnConfirm").addEventListener("click", (
     })
     deleteModal.querySelector("#deleteModal_btnConfirm").textContent = `Please Wait`
     deleteStockitemById(String(deleteModal.querySelector("#deleteModal_labelid").value),"").then(result =>{
-        console.log(result)
+        bootstrap.Modal.getInstance(deleteModal).hide()
+        loadStockInfoToTable()
         if (result.acknowledged){
-            bootstrap.Modal.getInstance(deleteModal).hide()
             createAlert("success","Item has been successfully deleted", 3000)
         } else {
-            bootstrap.Modal.getInstance(deleteModal).hide()
             createAlert("warning","Item delete failed, please try again later", 3000)
         }
     })
@@ -451,7 +456,6 @@ function loadStockInfoToTable(fetchAll = document.querySelector("#switchCheck").
             for (let index = 0; index < results.length; index++) {
                 const element = results[index];
                 if (document.querySelector("#filterdate").value !== "") {
-                    console.log(document.querySelector("#filterdate").value)
                     if (element.loggingTime && new Date(element.loggingTime) < new Date(document.querySelector("#filterdate").value)) {
                         continue;
                     }
