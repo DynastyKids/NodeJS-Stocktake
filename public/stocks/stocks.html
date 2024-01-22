@@ -152,9 +152,14 @@
                 </form>
                 <p></p>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="editModal_btnSubmit" disabled>Submit</button>
+            <div class="modal-footer justify-content-between d-flex">
+                <div>
+                    <button type="button" class="btn btn-danger" id="editModal_btnDelete" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#deleteModal" data-bs-labelId="">Delete</button>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="editModal_btnSubmit" disabled>Submit</button>
+                </div>
             </div>
         </div>
     </div>
@@ -192,6 +197,23 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-danger" id="removeModalYes">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">It is not safe to use delete method from here, please use desktop's stock manage page to delete this stock.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-info" id="deleteModal_btnReturn" data-bs-target="#editModal" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-itemId="">Back to Edit</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Dismiss</button>
             </div>
         </div>
     </div>
