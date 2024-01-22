@@ -13,8 +13,9 @@ const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "produc
 
 const {setInterval} = require('timers');
 const i18next = require("i18next");
+const {jsPDF} = require('jspdf');
 
-let fullResultSet = [];
+let stockList = [];
 let table = new DataTable('#table', {
     responsive: true,
     pageLength: 25,
@@ -98,30 +99,30 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
     document.querySelector("#editModal_submitBtn").textContent = "Submit"
     document.querySelector("#editModal .modal-title").textContent = `Loading Product Information`
     let originProperty = {}
-    for (let i = 0; i < fullResultSet.length; i++) {
-        if ((fullResultSet[i]._id).toString() === requestLabelId){
-            originProperty = fullResultSet[i] //找到了目标信息，继续填充
-            editModalObject.originProps = fullResultSet[i]
-            document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${fullResultSet[i].productName} | StockID: ${fullResultSet[i].productLabel.slice(-7)}`
-            document.querySelector("#editModal .modal-body #productInfoText").textContent = `${fullResultSet[i].productCode} - ${fullResultSet[i].productName}`
-            document.querySelector("#editModal .modal-body #labelIDText").textContent = `${fullResultSet[i].productLabel}`
-            document.querySelector("#editModal #editModal_deleteBtn").setAttribute("data-bs-itemId", fullResultSet[i]._id)
-            document.querySelector("#modalEditQuantity").value = (fullResultSet[i].hasOwnProperty("quantity") ? fullResultSet[i].quantity : "")
-            document.querySelector("#modalEditUnit").value = (fullResultSet[i].hasOwnProperty("quantityUnit") ? fullResultSet[i].quantityUnit : "")
-            document.querySelector("#modalEditBestbefore").value = (fullResultSet[i].hasOwnProperty("bestbefore") ? fullResultSet[i].bestbefore : "")
-            document.querySelector("#modelEditLocation").value = (fullResultSet[i].hasOwnProperty("shelfLocation") ? fullResultSet[i].shelfLocation : "")
-            document.querySelector("#modelEditPOnumber").value = (fullResultSet[i].hasOwnProperty("POnumber") ? fullResultSet[i].POnumber : (fullResultSet[i].hasOwnProperty("POIPnumber") ? fullResultSet[i].POIPnumber : ""))
-            document.querySelector("#modelEditUnitprice").value = (fullResultSet[i].hasOwnProperty("unitPrice") ? fullResultSet[i].unitPrice : "")
-            document.querySelector("#modelEditCheckRemoved").checked = (fullResultSet[i].hasOwnProperty("removed") && fullResultSet[i].removed === 1)
-            document.querySelector("#modelEditCreateTime").value = (fullResultSet[i].hasOwnProperty("createTime") ? getDateTimeforInput(fullResultSet[i].createTime) : "")
+    for (let i = 0; i < stockList.length; i++) {
+        if ((stockList[i]._id).toString() === requestLabelId){
+            originProperty = stockList[i] //找到了目标信息，继续填充
+            editModalObject.originProps = stockList[i]
+            document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${stockList[i].productName} | StockID: ${stockList[i].productLabel.slice(-7)}`
+            document.querySelector("#editModal .modal-body #productInfoText").textContent = `${stockList[i].productCode} - ${stockList[i].productName}`
+            document.querySelector("#editModal .modal-body #labelIDText").textContent = `${stockList[i].productLabel}`
+            document.querySelector("#editModal #editModal_deleteBtn").setAttribute("data-bs-itemId", stockList[i]._id)
+            document.querySelector("#modalEditQuantity").value = (stockList[i].hasOwnProperty("quantity") ? stockList[i].quantity : "")
+            document.querySelector("#modalEditUnit").value = (stockList[i].hasOwnProperty("quantityUnit") ? stockList[i].quantityUnit : "")
+            document.querySelector("#modalEditBestbefore").value = (stockList[i].hasOwnProperty("bestbefore") ? stockList[i].bestbefore : "")
+            document.querySelector("#modelEditLocation").value = (stockList[i].hasOwnProperty("shelfLocation") ? stockList[i].shelfLocation : "")
+            document.querySelector("#modelEditPOnumber").value = (stockList[i].hasOwnProperty("POnumber") ? stockList[i].POnumber : (stockList[i].hasOwnProperty("POIPnumber") ? stockList[i].POIPnumber : ""))
+            document.querySelector("#modelEditUnitprice").value = (stockList[i].hasOwnProperty("unitPrice") ? stockList[i].unitPrice : "")
+            document.querySelector("#modelEditCheckRemoved").checked = (stockList[i].hasOwnProperty("removed") && stockList[i].removed === 1)
+            document.querySelector("#modelEditCreateTime").value = (stockList[i].hasOwnProperty("createTime") ? getDateTimeforInput(stockList[i].createTime) : "")
             document.querySelector("#group_removeTime").style = (document.querySelector("#modelEditCheckRemoved").checked ? "" : "display:none")
-            document.querySelector("#modelEditRemoveTime").value = (fullResultSet[i].hasOwnProperty("removeTime") ? getDateTimeforInput(fullResultSet[i].removeTime) : "")
+            document.querySelector("#modelEditRemoveTime").value = (stockList[i].hasOwnProperty("removeTime") ? getDateTimeforInput(stockList[i].removeTime) : "")
 
-            document.querySelector('#modalEdit_quarantineYes').checked = (!!(fullResultSet[i].hasOwnProperty("quarantine") && fullResultSet[i].quarantine === 1))
-            document.querySelector('#modalEdit_quarantineNo').checked = (!!(fullResultSet[i].hasOwnProperty("quarantine") && fullResultSet[i].quarantine === 0))
-            document.querySelector('#modalEdit_quarantineFinished').checked = (!!(fullResultSet[i].hasOwnProperty("quarantine") && fullResultSet[i].quarantine === -1))
+            document.querySelector('#modalEdit_quarantineYes').checked = (!!(stockList[i].hasOwnProperty("quarantine") && stockList[i].quarantine === 1))
+            document.querySelector('#modalEdit_quarantineNo').checked = (!!(stockList[i].hasOwnProperty("quarantine") && stockList[i].quarantine === 0))
+            document.querySelector('#modalEdit_quarantineFinished').checked = (!!(stockList[i].hasOwnProperty("quarantine") && stockList[i].quarantine === -1))
 
-            document.querySelector("#modelEditComments").value = (fullResultSet[i].hasOwnProperty("comments") ? fullResultSet[i].comments : "")
+            document.querySelector("#modelEditComments").value = (stockList[i].hasOwnProperty("comments") ? stockList[i].comments : "")
             document.querySelector("#editModal_submitBtn").disabled = false
             break;
         }
@@ -264,9 +265,9 @@ document.querySelector("#removeModal").addEventListener("show.bs.modal", functio
     document.querySelector("#removeModal_btnConfirm").disabled = false
     document.querySelector("#removeModal_btnConfirm").textContent = "Confirm"
 
-    for (let i = 0; i < fullResultSet.length; i++) {
-        if ((fullResultSet[i]._id).toString() === itemId){
-            document.querySelector("#removeModal .modal-body p").textContent = `Are you sure to mark ${fullResultSet[i].productName} with label ending in ${fullResultSet[i].productLabel.slice(-7)} has been used?`
+    for (let i = 0; i < stockList.length; i++) {
+        if ((stockList[i]._id).toString() === itemId){
+            document.querySelector("#removeModal .modal-body p").textContent = `Are you sure to mark ${stockList[i].productName} with label ending in ${stockList[i].productLabel.slice(-7)} has been used?`
         }
     }
 })
@@ -332,9 +333,9 @@ revertModal.addEventListener("show.bs.modal", function (ev) {
     document.querySelector("#revertModal_btnConfirm").disabled = false
     document.querySelector("#revertModal_btnConfirm").textContent = "Confirm"
 
-    for (let i = 0; i < fullResultSet.length; i++) {
-        if ((fullResultSet[i]._id).toString() === itemId){
-            document.querySelector("#revertModal .modal-body p").textContent = `Are you sure to revert delete of ${fullResultSet[i].productName} with label ending in ${fullResultSet[i].productLabel.slice(-7)}?`
+    for (let i = 0; i < stockList.length; i++) {
+        if ((stockList[i]._id).toString() === itemId){
+            document.querySelector("#revertModal .modal-body p").textContent = `Are you sure to revert delete of ${stockList[i].productName} with label ending in ${stockList[i].productLabel.slice(-7)}?`
         }
     }
 })
@@ -450,7 +451,7 @@ function loadStockInfoToTable(fetchAll = document.querySelector("#switchCheck").
         if (result.acknowledged) {
             table.clear().draw()
             let results = result.resultSet
-            fullResultSet = result.resultSet
+            stockList = result.resultSet
             table.clear().draw()
             table.column(2).order('asc');
             for (let index = 0; index < results.length; index++) {
@@ -483,7 +484,8 @@ function loadStockInfoToTable(fetchAll = document.querySelector("#switchCheck").
                     (element.removed < 1 ? `
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-itemId="${element._id}">Mark used</a>
                     ` : `<a href="#" class="table_actions table_action_revert" data-bs-toggle="modal" data-bs-target="#revertModal" 
-                        data-bs-itemId="${element._id}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}">Revert</a>`)
+                        data-bs-itemId="${element._id}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}">Revert</a>`) +
+                    `<a href="#" class="table_actions table_action_print" data-bs-itemId="${element._id}">Print Label</a>`
                 ]).draw(false);
             }
             createAlert("success", "Table has been updated", 3000)
@@ -493,12 +495,121 @@ function loadStockInfoToTable(fetchAll = document.querySelector("#switchCheck").
     }).then(function(){
         document.querySelectorAll(".table_action_search").forEach(eachElement=>{
             eachElement.addEventListener("click",function(ev){
-                ev.preventDefault()
+                ev.preventDefault()                                                                                                              
                 table.search(eachElement.getAttribute("data-bs-ponumber")).draw()
+            })
+        })
+
+    //     Regenerate Label
+        document.querySelectorAll(".table_action_print").forEach(eachElement =>{
+            eachElement.addEventListener("click", function (ev){
+                try {
+                    let elementDatabaseId = eachElement.getAttribute("data-bs-itemId")
+                    var doc = new jsPDF({
+                        orientation: 'landscape',
+                        unit: 'px',
+                        format: 'a4',
+                        compress: true
+                    })
+                    for (let i = 0; i < stockList.length; i++) {
+                        if (new ObjectId(stockList[i]._id).toString() === elementDatabaseId) {
+                            let generateElement = stockList[i]
+                            if (generateElement.hasOwnProperty("_id")) {
+                                delete generateElement._id
+                            }
+                            if (generateElement.hasOwnProperty("changelog")) {
+                                delete generateElement.changelog
+                            }
+                            if (generateElement.hasOwnProperty("locationRecords")) {
+                                delete generateElement.locationRecords
+                            }
+                            if (generateElement.hasOwnProperty("createTime")) {
+                                delete generateElement.createTime
+                            }
+                            if (generateElement.hasOwnProperty("loggingTime")) {
+                                delete generateElement.loggingTime
+                            }
+
+                            var initTextSize = 100
+                            doc.setFontSize(initTextSize).setFont("Helvetica", "normal")
+                            var productnameText = generateElement.productName ? generateElement.productName.slice(0, 30) : ""
+                            while (doc.getTextDimensions(productnameText).w > doc.internal.pageSize.getWidth() - 40) {
+                                initTextSize -= 5;
+                                doc.setFontSize(initTextSize).setFont("Helvetica", 'normal')
+                            }
+                            if (generateElement.productName.length <= 30) {
+                                while (doc.getTextDimensions(productnameText).w > doc.internal.pageSize.getWidth() - 40) {
+                                    initTextSize -= 5;
+                                    doc.setFontSize(initTextSize).setFont("Helvetica", 'normal')
+                                }
+                                doc.text(generateElement.productName, doc.internal.pageSize.getWidth() / 2, 90, {lineHeightFactor: 0.9, align: "center"})
+                            } else {
+                                while (doc.getTextDimensions(productnameText).w > doc.internal.pageSize.getWidth() - 40) {
+                                    initTextSize -= 5;
+                                    doc.setFontSize(initTextSize).setFont("Helvetica", 'normal')
+                                }
+                                doc.text(`${generateElement.productCode} - ${generateElement.productName.slice(0, 40)}...`, 15, 75, {
+                                    lineHeightFactor: 1.1,
+                                    align: "left",
+                                    maxWidth: doc.internal.pageSize.width - 30
+                                })
+                                generateElement.productName = `${generateElement.productCode} - ${generateElement.productName.slice(0, 40)}...`
+                            }
+
+                            let unitText = (generateElement.quantityUnit ? generateElement.quantityUnit.toLowerCase() : "")
+
+                            doc.setFontSize(90).setFont("Helvetica", 'normal');
+                            doc.text(`${generateElement.quantity ? generateElement.quantity : ""} ${generateElement.quantityUnit ? generateElement.quantityUnit.toLowerCase() : ""}`,
+                                15, doc.internal.pageSize.getHeight() - 190, {lineHeightFactor: 0.9});
+                            doc.setFontSize(90).setFont("Helvetica", 'normal')   // ↙Bestbefore
+                            doc.text(generateElement.bestbefore ? generateElement.bestbefore : "", 15, doc.internal.pageSize.getHeight() - 115, {lineHeightFactor: 0.9});
+                            doc.setFontSize(72).setFont("courier", 'bold')     // ↙Label
+                            doc.text(`${generateElement.productLabel ? generateElement.productLabel.slice(-7): ""}`, 15, doc.internal.pageSize.getHeight() - 55, {lineHeightFactor: 0.85});
+                            doc.setFontSize(36).setFont("courier", 'bold')      //  ↗Label
+                            doc.text(`${generateElement.POnumber ? generateElement.POnumber : ""} / ${generateElement.productLabel.toUpperCase().substring(0, 7)}`, doc.internal.pageSize.getWidth() - 20, 25, {
+                                lineHeightFactor: 0.75,
+                                align: "right"
+                            });
+
+                            let qrSize = 250
+                            let qrBase64 = QRCodeObjectGenerateV3(generateElement)
+                            doc.addImage(qrBase64, "PNG", doc.internal.pageSize.getWidth() - qrSize, doc.internal.pageSize.getHeight() - qrSize, qrSize, qrSize)
+
+                            doc.setFontSize(12).setFont("Helvetica", 'normal')
+                            let bottomVerfiyText = ["V3_Node", "P:" + (generateElement.POnumber ? generateElement.POnumber : " "),
+                                "C:" + (generateElement.productCode ? generateElement.productCode : " "), "Q:" + (generateElement.quantity ? generateElement.quantity : " ") + unitText,
+                                "E:" + (generateElement.bestbefore ? generateElement.bestbefore.replaceAll("-", "") : "*")]
+                            doc.text(bottomVerfiyText.toString(), 20, doc.internal.pageSize.getHeight() - 30, {lineHeightFactor: 0.8});
+                            let bottomTextPart2 = ["L:" + (generateElement.productLabel ? generateElement.productLabel : "")]
+                            doc.text(bottomTextPart2.toString(), 20, doc.internal.pageSize.getHeight() - 20, {lineHeightFactor: 0.8});
+                            let filename = `GeneratedLabel.pdf`
+                            doc.save(filename, {returnPromise: true}).then(() => {
+                                ipcRenderer.send('print-pdf', filename)
+                            });
+                            break;// After finished generate PDF
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error when attempting generate label:", e)
+                }
             })
         })
     })
 }
+
+function QRCodeObjectGenerateV3(qrObject){
+    // base64+JSON格式：https://127.0.0.1?item=base64{JSON字符串}
+    let remoteServerAddress = "http://192.168.0.254:3000/qrstock?item="
+    try {
+        var qrText = remoteServerAddress + btoa(JSON.stringify(qrObject))
+        var qrcode = new QRious({level: "L", size: 300, value: qrText, padding: 5});
+        return qrcode.toDataURL("image/png")
+    } catch (e) {
+        console.error("Error when generating QRCode:",e)
+        return null
+    }
+}
+
 
 async function getAllStockItems(findall = false) {
     document.querySelector("#loadingStatus").style.removeProperty("display")

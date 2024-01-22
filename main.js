@@ -1,4 +1,4 @@
-const {app, BrowserWindow, ipcMain} = require("electron");
+const {app, BrowserWindow, ipcMain, shell} = require("electron");
 const path = require("path");
 const os = require('os');
 
@@ -58,6 +58,12 @@ ipcMain.on('get-user-data-path', (event) => {
 })
 ipcMain.on('open-external', (event, url) => {
     shell.openExternal(url);
+});
+
+ipcMain.on('print-pdf', (event, pdfFilename) => {
+    // shell.openExternal(path.join('file://', path.join(__dirname, pdfFilename)));
+    let win = new BrowserWindow({ show: true });
+    win.loadURL(path.join('file://', path.join(__dirname, pdfFilename)))
 });
 
 let mainWindow;
