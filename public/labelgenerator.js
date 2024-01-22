@@ -24,6 +24,7 @@ document.addEventListener("DOMContentLoaded", function (ev) {
                 (new bootstrap.Toast(toast)).show();
             }
         }
+        document.querySelector("#loadingAnimation").style = "display: none"
     })
     
     function resetTimer() {
