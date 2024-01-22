@@ -61,14 +61,14 @@ let editModal = document.querySelector("#editModal")
 editModal.addEventListener("show.bs.modal", async function (ev) {
     let requestLabelId = ev.relatedTarget.getAttribute("data-bs-labelId")
     editModal.querySelector("#editModal_labelId").value = requestLabelId
-    editModal.querySelector("#editModal_btnSubmit").disabled = true
     editModal.querySelector("#editModal_btnSubmit").textContent = "Submit"
-    editModal.querySelector("#editModal .modal-title").textContent = `Loading Product Information`
-
+    editModal.querySelector(".modal-title").textContent = `Loading Product Information`
+    editModal.querySelector("#editModal_btnDelete").setAttribute("data-bs-labelId",requestLabelId)
     let stockInfo = await fetchStockByLabelid(requestLabelId)
     if (Array.isArray(stockInfo) && stockInfo.length > 0) {
         currentEditModalItem = stockInfo[0]
         writeModalEdit(stockInfo[0])
+        editModal.querySelector("#editModal_btnSubmit").disabled = false
     }
 })
 editModal.querySelector("#editModal_btnSubmit").addEventListener("click", async (ev) => {
@@ -274,6 +274,12 @@ document.querySelector("#removeModalYes").addEventListener("click", async functi
     } else {
         remvoeModal.querySelector("#editModal .modal-body p").textContent = "Error on Update, check console for more info"
     }
+})
+
+let deleteModal = document.querySelector("#deleteModal")
+deleteModal.addEventListener("show.bs.modal", (ev)=>{
+    var itemId = ev.relatedTarget.getAttribute("data-bs-itemId")
+    deleteModal.querySelector("#deleteModal_btnReturn").setAttribute("data-bs-itemId", itemId)
 })
 
 function createAlert(status, alertText){

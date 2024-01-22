@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Label Generator - Warehouse Electron</title>
-    <link href="/library/bootstrap.min.css" rel="stylesheet" />
+    <link href="/library/bootstrap.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="/library/tabler/tabler-icons.min.css">
 </head>
 <body>
@@ -12,7 +12,8 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">Stock-take Electron</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -27,10 +28,14 @@
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="labelgenerator.html">Generate Labels</a></li>
                             <li><a class="dropdown-item" href="#">Check prefill labels (Unavailable)</a></li>
-                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li><a class="dropdown-item" href="stocks/stocks.html">Stock Management</a></li>
                             <li><a class="dropdown-item" href="#">Add Stock (Unavailable)</a></li>
-                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li><a class="dropdown-item" href="#">Scan QR Code(Unavailable)</a></li>
                         </ul>
                     </li>
@@ -56,9 +61,14 @@
                 <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>
+        <div id="loadingAnimation" style="display: flex">
+            <div class="loader"></div>
+            <p>Fetching Products List, Please Wait</p>
+        </div>
         <div class="container-fluid">
             <table class="table">
-                <thead><tr>
+                <thead>
+                <tr>
                     <th class="rowid d-none d-sm-table-cell">No.</th>
                     <th class="d-inline-block d-sm-table-cell">Product Name</th>
                     <th class="d-inline-block d-sm-table-cell">Quantity</th>
@@ -66,7 +76,8 @@
                     <th class="d-inline-block d-sm-table-cell">Expire date</th>
                     <th class="d-inline-block d-sm-table-cell">Copies</th>
                     <th class="d-inline-block d-sm-table-cell"></th>
-                </tr></thead>
+                </tr>
+                </thead>
                 <tbody>
                 </tbody>
             </table>
@@ -91,16 +102,16 @@
                 <hr>
                 <h5>Optional</h5>
                 <div class="row mb-3">
-<!--                    <div  class="col-sm-3 col-6">-->
-<!--                        <label for="fileinput_packaging">Manifest File</label>-->
-<!--                        <input type="file" id="fileinput_manifest" class="form-control">-->
-<!--                    </div>-->
+                    <!--                    <div  class="col-sm-3 col-6">-->
+                    <!--                        <label for="fileinput_packaging">Manifest File</label>-->
+                    <!--                        <input type="file" id="fileinput_manifest" class="form-control">-->
+                    <!--                    </div>-->
                     <div class="col-sm-4 col-12">
                         <label>Purchase Order No.</label>
                         <input type="text" class="form-control" placeholder="" id="input_purchaseorder">
                     </div>
                 </div>
-<!--                <button class="btn btn-secondary" id="file_load">Load File</button>-->
+                <!--                <button class="btn btn-secondary" id="file_load">Load File</button>-->
             </div>
         </div>
         <datalist id="productSuggestions"></datalist>
@@ -127,12 +138,43 @@
 <script src="labelgenerator.js"></script>
 
 <style>
-    @media (max-width: 576px) { /* For small devices */
+    @media (max-width: 576px) {
+        /* For small devices */
         .table thead th.d-block,
         .table tbody td.d-block {
             display: block;
             width: 100%;
             box-sizing: border-box;
+        }
+    }
+
+    /*    Loading Animation*/
+    .loader {
+        width: 40px;
+        aspect-ratio: 1;
+        --c: no-repeat radial-gradient(farthest-side, #514b82 92%, #0000);
+        background: var(--c) 50% 0,
+        var(--c) 50% 100%,
+        var(--c) 100% 50%,
+        var(--c) 0 50%;
+        background-size: 7px 7px;
+        animation: l18 1s infinite;
+        position: relative;
+    }
+
+    .loader::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        margin: 3px;
+        background: repeating-conic-gradient(#0000 0 35deg, #514b82 0 90deg);
+        -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 3px), #000 0);
+        border-radius: 50%;
+    }
+
+    @keyframes l18 {
+        100% {
+            transform: rotate(.5turn)
         }
     }
 </style>
