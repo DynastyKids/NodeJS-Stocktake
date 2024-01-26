@@ -4,7 +4,6 @@ const {ServerApiVersion, ObjectId, Decimal128} = require('mongodb');
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
-const path = require('path');
 
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
@@ -27,10 +26,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     await redrawTable(true)
     await fetchProductsList(true)
 
-
     createDataList(productLists)
-    document.querySelector("#addModal_prodcode").setAttribute("list","productCodeElements")
-    document.querySelector("#addModal_prodname").setAttribute("list","productNameElements")
+    document.querySelector("#modalEdit_productCode").setAttribute("list","productCodeElements")
+    document.querySelector("#modalEdit_productName").setAttribute("list","productNameElements")
 })
 
 async function redrawTable(forced = false) {
@@ -41,13 +39,13 @@ async function redrawTable(forced = false) {
     }
     prefillLists.forEach(eachRow => {
         table.row.add([
-            (eachRow.productCode ? eachRow.productCode : ``) + (eachRow.productCode && eachRow.productName ? ` - ` : ``) + (eachRow.productName ? eachRow.productName : ``),
-            (eachRow.quantity ? eachRow.quantity + ` ` + (eachRow.quantityUnit ? eachRow.quantityUnit : ``) : ``),
-            (eachRow.bestbefore ? new Date(eachRow.bestbefore).toLocaleDateString("en-AU") : ``),
-            (eachRow.POnumber ? eachRow.POnumber : ``)+(eachRow.seq ? `<br><small>${eachRow.seq}</small>` : ``),
-            (eachRow.productLabel ? eachRow.productLabel.substring(0,15) : ``)+(eachRow.createTime ? `<br><small>${new Date(eachRow.createTime).toLocaleString('en-AU')}</small>` : (eachRow.loggingTime ? `<br><small>${new Date(eachRow.loggingTime).toLocaleString('en-AU')}</small>` : ``)),
-            `<a href="#" class="table_actions table_action_remove" data-bs-labelId="${eachRow.productLabel}" data-bs-itemId="${eachRow._id}" data-bs-toggle="modal" data-bs-target="#editModal" style="margin: 0 2px 0 2px">Patch</a>` +
-            `<a href="#" class="table_actions table_action_remove" data-bs-labelId="${eachRow.productLabel}" data-bs-itemId="${eachRow._id}" data-bs-toggle="modal" data-bs-target="#removeModal" style="margin: 0 2px 0 2px">Remove</a>`
+            (eachRow.stock.productCode ? eachRow.stock.productCode : ``) + (eachRow.stock.productCode && eachRow.stock.productName ? ` - ` : ``) + (eachRow.stock.productName ? eachRow.stock.productName : ``),
+            (eachRow.stock.quantity ? eachRow.stock.quantity + ` ` + (eachRow.stock.quantityUnit ? eachRow.stock.quantityUnit : ``) : ``),
+            (eachRow.stock.bestbefore ? new Date(eachRow.stock.bestbefore).toLocaleDateString("en-AU") : ``),
+            (eachRow.stock.POnumber ? eachRow.stock.POnumber : ``)+(eachRow.stock.seq ? `<br><small>${eachRow.stock.seq}</small>` : ``),
+            (eachRow.stock.productLabel ? eachRow.stock.productLabel.substring(0,15) : ``)+(eachRow.stock.createTime ? `<br><small>${new Date(eachRow.stock.createTime).toLocaleString('en-AU')}</small>` : (eachRow.stock.loggingTime ? `<br><small>${new Date(eachRow.stock.loggingTime).toLocaleString('en-AU')}</small>` : ``)),
+            `<a href="#" class="table_actions table_action_remove" data-bs-labelId="${eachRow.stock.productLabel}" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-modalaction="edit" style="margin: 0 2px 0 2px">Patch</a>` +
+            `<a href="#" class="table_actions table_action_remove" data-bs-labelId="${eachRow.stock.productLabel}" data-bs-toggle="modal" data-bs-target="#removeModal" style="margin: 0 2px 0 2px">Remove</a>`
         ]).draw(false)
     })
     document.querySelector("#loadingStatus").style = "display: none"
@@ -55,35 +53,6 @@ async function redrawTable(forced = false) {
 
 document.querySelector("#act_reloadTable").addEventListener("click",async (ev)=>{
     await redrawTable(true)
-})
-
-document.querySelector("#addModal_prodname").addEventListener("input", function(ev){
-    let inputValue = ev.target.value
-    productLists.forEach(eachProduct=>{
-        if (eachProduct.hasOwnProperty("labelname") && eachProduct.labelname === inputValue){
-            if (eachProduct.hasOwnProperty("palletQty")) { document.querySelector("#addModal_quantity").value = eachProduct.palletQty }
-            if (eachProduct.hasOwnProperty("unit")) { document.querySelector("#addModal_produnit").value = eachProduct.unit }
-            if (eachProduct.hasOwnProperty("unitPrice")) { document.querySelector("#addModal_unitprice").value = eachProduct.unitPrice }
-
-            if (eachProduct.hasOwnProperty("productCode") && document.querySelector("#addModal_prodcode").value.toString() !== eachProduct.productCode ){
-                document.querySelector("#addModal_prodcode").value = eachProduct.productCode
-            }
-        }
-    })
-})
-document.querySelector("#addModal_prodcode").addEventListener("input", function(ev){
-    let inputValue = ev.target.value
-    productLists.forEach(eachProduct=>{
-        if (eachProduct.hasOwnProperty("productCode") && eachProduct.productCode === inputValue){
-            if (eachProduct.hasOwnProperty("palletQty")) { document.querySelector("#addModal_quantity").value = eachProduct.palletQty }
-            if (eachProduct.hasOwnProperty("unit")) { document.querySelector("#addModal_produnit").value = eachProduct.unit }
-            if (eachProduct.hasOwnProperty("unitPrice")) { document.querySelector("#addModal_unitprice").value = eachProduct.unitPrice }
-
-            if (eachProduct.hasOwnProperty("labelname") && document.querySelector("#addModal_prodname").value.toString() !== eachProduct.labelname){
-                document.querySelector("#addModal_prodname").value = eachProduct.labelname
-            }
-        }
-    })
 })
 
 function createDataList(productsArray = []){
@@ -109,282 +78,274 @@ function createDataList(productsArray = []){
     document.querySelector("body").append(productNameElements)
 }
 
-document.querySelector("#addModal_labelid").addEventListener("input",async function (ev) {
-    let inputValue = ev.target.value
-    let existResults = await fetchStockInfoByLabel(inputValue)
-    if (existResults.stocks.length > 0){
-    //     Found in exist stocks, disable the form
-        document.querySelector("#addModal_prodcode").value = (existResults.stocks[0].hasOwnProperty("productCode") ? existResults.stocks[0].productCode: "")
-        document.querySelector("#addModal_prodname").value = (existResults.stocks[0].hasOwnProperty("productName") ? existResults.stocks[0].productName: "")
-        document.querySelector("#addModal_ponumber").value = (existResults.stocks[0].hasOwnProperty("POnumber") ? existResults.stocks[0].POnumber: "")
-        document.querySelector("#addModal_quantity").value = (existResults.stocks[0].hasOwnProperty("quantity") ? existResults.stocks[0].quantity: "")
-        document.querySelector("#addModal_produnit").value = (existResults.stocks[0].hasOwnProperty("productCode") ? existResults.stocks[0].productCode: "")
-        document.querySelector("#addModal_bestbefore").value = (existResults.stocks[0].hasOwnProperty("bestbefore") ? existResults.stocks[0].bestbefore: "")
-        document.querySelector("#addModal_location").value = (existResults.stocks[0].hasOwnProperty("shelfLocation") ? existResults.stocks[0].shelfLocation: "")
-        document.querySelector("#addModal_unitprice").value = (existResults.stocks[0].hasOwnProperty("unitPrice") ? existResults.stocks[0].unitPrice: "")
-        document.querySelector("#addModal_btnSubmit").setAttribute("disabled","disabled")
-        if (existResults.prefill[0].hasOwnProperty("quarantine") === 1){ document.querySelector("#addModal_quarantineYes").checked = true }
-        else if (existResults.prefill[0].hasOwnProperty("quarantine") === -1){ document.querySelector("#addModal_quarantineFinished").checked = true }
-        else {document.querySelector("#addModal_quarantineNo").checked = true }
-    } else if(existResults.prefill.length > 0){
-    //     Found prefill stocks, prefill the form and show hint text
-        document.querySelector("#addModal_prodcode").value = (existResults.prefill[0].hasOwnProperty("productCode") ? existResults.prefill[0].productCode: "")
-        document.querySelector("#addModal_prodname").value = (existResults.prefill[0].hasOwnProperty("productName") ? existResults.prefill[0].productName: "")
-        document.querySelector("#addModal_ponumber").value = (existResults.prefill[0].hasOwnProperty("POnumber") ? existResults.prefill[0].POnumber: "")
-        document.querySelector("#addModal_quantity").value = (existResults.prefill[0].hasOwnProperty("quantity") ? existResults.prefill[0].quantity: "")
-        document.querySelector("#addModal_produnit").value = (existResults.prefill[0].hasOwnProperty("productCode") ? existResults.prefill[0].productCode: "")
-        document.querySelector("#addModal_bestbefore").value = (existResults.prefill[0].hasOwnProperty("bestbefore") ? existResults.prefill[0].bestbefore: "")
-        document.querySelector("#addModal_location").value = (existResults.prefill[0].hasOwnProperty("shelfLocation") ? existResults.prefill[0].shelfLocation: "")
-        document.querySelector("#addModal_unitprice").value = (existResults.prefill[0].hasOwnProperty("unitPrice") ? existResults.prefill[0].unitPrice: "")
-        if (existResults.prefill[0].hasOwnProperty("quarantine") === 1){ document.querySelector("#addModal_quarantineYes").checked = true }
-        else if (existResults.prefill[0].hasOwnProperty("quarantine") === -1){ document.querySelector("#addModal_quarantineFinished").checked = true }
-        else {document.querySelector("#addModal_quarantineNo").checked = true}
-    }
-})
-
-document.querySelector("#addModal_btnSubmit").addEventListener("click", async function (ev) {
-    let productElement = {}
-    if (document.querySelector("#addModal_labelid").value.toString().length <= 15) {
-        document.querySelector("#addModal_statusText").textContent = `Product Label is required, format: YYYYMMDD+labelid`
-    } else if (document.querySelector("#addModal_prodcode").value.toString().length <= 0 &&
-        document.querySelector("#addModal_prodname").value.toString().length <= 0) {
-        document.querySelector("#addModal_statusText").textContent = `Missing Product Code / Product Name`
-    } else if (document.querySelector("#addModal_quantity").value.toString().length <= 0 &&
-        document.querySelector("#addModal_produnit").value.toString().length <= 0) {
-        document.querySelector("#addModal_statusText").textContent = `Missing Product quantity / units`
-    } else {
-        document.querySelector("#addModal_btnSubmit").textContent = `Processing`
-        document.querySelector("#addModal_btnSubmit").setAttribute("disabled", "disabled")
-
-        // Building Product Information
-        productElement.productLabel = document.querySelector("#addModal_labelid").value.toString()
-        productElement.productCode = document.querySelector("#addModal_prodcode").value.toString()
-        productElement.productName = document.querySelector("#addModal_prodname").value.toString()
-        productElement.quantity = document.querySelector("#addModal_quantity").value.toString()
-        productElement.quantityUnit = document.querySelector("#addModal_produnit").value.toString()
-        productElement.loggingTime = new Date()
-        productElement.createTime = new Date()
-        productElement.removed = parseInt("0")
-        productElement.quarantine = parseInt(document.querySelector("input[name='addModal_quarantineRatio']:checked").value)
-        if (document.querySelector("#addModal_bestbefore").value.toString().length > 0) {
-            productElement.bestbefore = new Date(document.querySelector("#addModal_bestbefore").value)
+/* 
+*  Edit Modal Realted
+* JAN24 Update: Add Modal has merged with Edit Modal
+* 
+* Req: Item Label ID
+* 
+* */
+let editModalTarget = {}
+let editModal = document.querySelector("#editModal")
+editModal.addEventListener("show.bs.modal", async (ev) => {
+    editModal.querySelector("#modalEdit_statusTxt").textContent = "Loading stock informations..."
+    editModalTarget = {}
+    editModal.querySelectorAll("input").forEach(eachInputElement=>{
+        if (eachInputElement.type === "text" || eachInputElement.type === "number"){
+            eachInputElement.value = ""
         }
-        if (document.querySelector("#addModal_unitprice").value.toString().length > 0) {
-            productElement.unitPrice = Decimal128.fromString(document.querySelector("#addModal_unitprice").value)
-        }
-        if (document.querySelector("#addModal_location").value.toString().length > 0) {
-            productElement.shelfLocation = document.querySelector("#addModal_location").value
-        }
-        if (document.querySelector("#addModal_ponumber").value.toString().length > 0) {
-            productElement.POnumber = document.querySelector("#addModal_ponumber").value
-        }
-        let insertResult = await insertPrefillElement(productElement)
-        console.log(insertResult)
-        bootstrap.Modal.getInstance(document.querySelector("#addModalLabel")).hide()
-    }
 
-    await redrawTable(true)
-})
+    })
+    if (ev.relatedTarget.hasAttribute("data-bs-modalaction")) {
+        editModal.querySelector("#modalEditAdd").value = ev.relatedTarget.getAttribute("data-bs-modalaction")
+        if (ev.relatedTarget.getAttribute("data-bs-modalaction") === "add") { // Adding New product
+            editModal.querySelector("#modalEditAdd").value = "add"
+            editModal.querySelector("#modalEdit_btnSubmit").disabled = false
+            editModal.querySelector("#modalEdit_btnSubmit").textContent = "Submit"
+            editModal.querySelector("#modalEdit_labelid").disabled = false
+            editModal.querySelector("#editModal .modal-title").textContent = `Add new stock prefill information`
+        } else { // Modify based on existing product
+            editModal.querySelector("#modalEditAdd").value = "edit"
+            editModal.querySelector("#modalEdit_btnSubmit").disabled = true
+            editModal.querySelector("#modalEdit_btnSubmit").textContent = "Please Wait"
+            editModal.querySelector("#modalEdit_labelid").disabled = true
+            editModal.querySelector("#editModal .modal-title").textContent = `Loading Product Information`
+            let requestLabelId = ev.relatedTarget.hasAttribute("data-bs-labelId") ?
+                ev.relatedTarget.getAttribute("data-bs-labelId") : ev.relatedTarget.getAttribute("data-bs-labelid")
+            for (const eachElement of prefillLists) {
+                if (eachElement.hasOwnProperty("stock") && eachElement.stock.productLabel === requestLabelId) {
+                    editModalTarget = eachElement
 
-async function insertPrefillElement(insertObject = {}) {
-    let result = {}
-    let client = new MongoClient(uri, {
-        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
-    });
-    try {
-        await client.connect();
-        let session = await client.db(targetDB)
-        result = await session.collection("preloadlog").updateOne({productLabel: insertObject.productLabel}, insertObject, {upsert: true})
-    } catch (e) {
-        console.error(`Fail to insert/upsert for product: ${labelId};`, e)
-    } finally {
-        await client.close()
-    }
-    return result
-}
-
-async function fetchStockInfoByLabel(labelId = null){
-    let result = { prefill:[] , stocks:[] }
-    if (labelId.toString().length > 0){
-        let client = new MongoClient(uri, {
-            serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
-        });
-        try {
-            await client.connect();
-            let session = await client.db(targetDB)
-            result = {
-                prefill: await session.collection("preloadlog").find({productLabel: labelId}).toArray(),
-                stocks: await session.collection("pollinglog").find({productLabel: labelId}).toArray()
+                    editModal_write(eachElement.stock)
+                    editModal.querySelector("#modalEdit_btnSubmit").textContent = "Submit"
+                    editModal.querySelector("#modalEdit_btnSubmit").disabled = false
+                    break;
+                }
             }
-        } catch (e) {
-            console.error(`Fetching stock information error when attempt fetching: ${labelId};`, e)
-        } finally {
-            await client.close()
         }
-    }
-    return result
-}
 
-async function fetchStockInfoByItemId(labelId = null){
-    let result = { prefill:[] , stocks:[] }
-    if (labelId.toString().length > 0){
-        let client = new MongoClient(uri, {
-            serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
-        });
-        try {
-            await client.connect();
-            let session = await client.db(targetDB)
-            result = {
-                prefill: await session.collection("preloadlog").find({_id: new ObjectId(labelId)}).toArray(),
-                stocks: await session.collection("pollinglog").find({_id: new ObjectId(labelId)}).toArray()
+        if (editModal.querySelector("#modelCheck_customTime").checked) {
+            editModal.querySelector("#modelEdit_createTime").style = ""
+            if (editModal.querySelector("#modalEdit_checkRemove").checked) {
+                editModal.querySelector("#modelEdit_removeTime").style = ""
+            } else {
+                editModal.querySelector("#modelEdit_removeTime").style = "display: none"
             }
-        } catch (e) {
-            console.error(`Fetching stock information error when attempt fetching: ${labelId};`, e)
-        } finally {
-            await client.close()
-        }
-    }
-    return result
-}
-
-async function fetchProductInformation(productCode) {
-    let result = []
-    let client = new MongoClient(uri, {
-        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
-    });
-    try {
-        await client.connect();
-        const session = client.db(targetDB).collection("products");
-        result = await session.find({productCode: productCode}).toArray()
-    } catch (e) {
-        console.error(`Fetching product information error on: ${productCode};`, e)
-    } finally {
-        await client.close()
-    }
-    return result
-}
-
-async function deletePrefillData(productLabelId = null) {
-//     Moving filled data from Prefill table to pollinglog Table
-    let result = []
-    let client = new MongoClient(uri, {
-        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
-    });
-    try {
-        await client.connect();
-        const session = client.db(targetDB).collection("preloadlog");
-        result = await session.deleteMany({productLabel: productLabelId})
-    } catch (e) {
-        console.error(`Remove Stock Error when process: ${productLabelId};`, e)
-    } finally {
-        await client.close()
-    }
-    return result
-}
-
-async function insertToPollinglog(content) {
-//     Moving filled data from Prefill table to pollinglog Table
-    let result = []
-    let client = new MongoClient(uri, {
-        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
-    });
-    try {
-        await client.connect();
-        const pollingSession = client.db(targetDB).collection("pollinglog");
-        result = await pollingSession.insertMany(content)
-    } catch (e) {
-        console.error(`Insert Stock Error when process:;`, e)
-    } finally {
-        await client.close()
-    }
-    return result
-}
-
-let editModalObjects = {}
-document.querySelector("#editModal").addEventListener("show.bs.modal", async (ev) => {
-    editModalObjects = {}
-    document.querySelectorAll("input").forEach(eachInput => { eachInput.value = ""})
-    document.querySelectorAll("textarea").forEach(eachInput => { eachInput.value = ""})
-    let requestItemId = ev.relatedTarget.getAttribute("data-bs-itemId")
-    let requestLabelId = ev.relatedTarget.getAttribute("data-bs-labelId")
-    editModalObjects.itemId = requestItemId
-    editModalObjects.labelId = requestLabelId
-    let fetchedProductInfo = await fetchStockInfoByItemId(requestItemId)
-    document.querySelector("#modalEditLabelid").value = requestItemId
-    document.querySelector("#editModalSubmitBtn").disabled = true
-    document.querySelector("#editModalSubmitBtn").textContent = "Submit"
-    document.querySelector("#editModal .modal-title").textContent = `Loading Product Information`
-    if (fetchedProductInfo.prefill.length > 0) {
-        let fetchedPrefillInfo = fetchedProductInfo.prefill[0]
-        editModalObjects.prefillInfos = fetchedProductInfo.prefill[0]
-        let productModelInfo = await fetchProductInformation(fetchedPrefillInfo.productCode)
-        document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${fetchedPrefillInfo.productName}`
-        document.querySelector("#editModal .modal-body #productInfoText").textContent = `${fetchedPrefillInfo.productCode} - ${fetchedPrefillInfo.productName}`
-        document.querySelector("#editModal .modal-body #labelIDText").textContent = `${fetchedPrefillInfo.productLabel}`
-        document.querySelector("#modalEditQuantity").value = (fetchedPrefillInfo.quantity ? fetchedPrefillInfo.quantity :
-            (productModelInfo.length > 0 && productModelInfo[0].hasOwnProperty("quantity") ? productModelInfo[0].quantity : ""))
-        document.querySelector("#modalEditUnit").value = (fetchedPrefillInfo.quantityUnit ? fetchedPrefillInfo.quantityUnit :
-            (productModelInfo.length > 0 && productModelInfo[0].hasOwnProperty("unit") ? productModelInfo[0].unit : ""))
-        document.querySelector("#modalEditBestbefore").value = (fetchedPrefillInfo.bestbefore ? fetchedPrefillInfo.bestbefore : "")
-        document.querySelector("#modelEditLocation").value = (fetchedPrefillInfo.shelfLocation ? fetchedPrefillInfo.shelfLocation : "")
-        document.querySelector("#modelEditPOnumber").value = (fetchedPrefillInfo.POnumber ? fetchedPrefillInfo.POnumber : (fetchedPrefillInfo.POIPnumber ? fetchedPrefillInfo.POIPnumber : ""))
-        document.querySelector("#modelEditUnitprice").value = (fetchedPrefillInfo.unitPrice ? fetchedPrefillInfo.unitPrice :
-            (productModelInfo.length > 0 && productModelInfo[0].hasOwnProperty("unitPrice") ? productModelInfo[0].unitPrice : ""))
-        document.querySelector("#modelCheckboxConsumed").checked = (fetchedPrefillInfo.removed === 1)
-        document.querySelector("#modelEditConsumeTime").value = (fetchedPrefillInfo.removeTime ? fetchedPrefillInfo.removeTime : "")
-        document.querySelector("#editModalSubmitBtn").disabled = false
-
-        if (productModelInfo.length > 0 && productModelInfo[0].hasOwnProperty("unitPrice")) {
-            document.querySelector("#modelEditDefaultPrice").style = ""
-            document.querySelector("#modelEditDefaultPrice").addEventListener("click", (ev) => {
-                document.querySelector("#modelEditUnitprice").value = productModelInfo[0].unitPrice
-            })
         } else {
-            document.querySelector("#modelEditDefaultPrice").style = "display: none"
+            editModal.querySelector("#modelEdit_removeTime").style = "display: none"
+            editModal.querySelector("#modelEdit_createTime").style = "display: none"
+        }
+    }
+    editModal.querySelector("#modalEdit_statusTxt").textContent = "Ready"
+})
+editModal.querySelector("#modalEdit_labelid").addEventListener("change",async function (ev) {
+    editModal.querySelector("#modalEdit_statusTxt").textContent = "Checking existing stocks records"
+    // After change, found on existing stock list to see if
+    let inputValue = ev.target.value
+    let existResults = await fetchStockInfoByLabelId(inputValue)
+    if (existResults.stocks.length >= 1){
+        editModal.querySelector("#modalEditAdd").value = "edit"
+        editModal.querySelector(".modal-title").textContent = `Duplicate Stock: ${(existResults.stocks[0].hasOwnProperty("productName") ? existResults.stocks[0].productName: "")}`
+        editModal_write(existResults.stocks[0])
+        editModal.querySelector("#modalEdit_btnSubmit").disabled = true
+        editModal.querySelector("#modalEdit_btnSubmit").textContent = "Duplicate in-stock info"
+    }
+    editModal.querySelector("#modalEdit_statusTxt").textContent = "Ready"
+})
+editModal.querySelector("#modalEdit_labelid").addEventListener("input",async function (ev) {
+    editModal.querySelector("#modalEdit_labelid").value.replaceAll(" ","")
+    editModal.querySelector("#modalEdit_statusTxt").textContent = "Checking existing "
+    let inputValue = ev.target.value
+    var found = false
+    for (const prefill of prefillLists) {
+        if (prefill.stock.productLabel === inputValue){
+            editModal.querySelector("#modalEditAdd").value = "edit"
+            editModalTarget = prefill
+            editModal.querySelector(".modal-title").textContent = `Edit Stock: ${editModalTarget.stock.productName}`
+            editModal_write(editModalTarget.stock)
+
+            editModal.querySelector("#modalEdit_btnSubmit").textContent = "Submit"
+            editModal.querySelector("#modalEdit_btnSubmit").disabled = false
+            found = true
+            break;
+        }
+    }
+    editModal.querySelector("#modalEdit_statusTxt").textContent = "Ready"
+    return found
+})
+editModal.querySelector("#modalEdit_productCode").addEventListener("input", function(ev){
+    let inputValue = ev.target.value
+    productLists.forEach(eachProduct=>{
+        if (eachProduct.hasOwnProperty("productCode") && eachProduct.productCode === inputValue){
+            if (eachProduct.hasOwnProperty("palletQty")) { document.querySelector("#modalEdit_quantity").value = eachProduct.palletQty ? parseInt(eachProduct.palletQty) : "" }
+            if (eachProduct.hasOwnProperty("unit")) { document.querySelector("#modalEdit_quantityUnit").value = eachProduct.unit }
+            if (eachProduct.hasOwnProperty("unitPrice")) { document.querySelector("#modalEdit_unitPrice").value = parseFloat(eachProduct.unitPrice) }
+
+            if (eachProduct.hasOwnProperty("labelname") && document.querySelector("#modalEdit_productName").value.toString() !== eachProduct.labelname){
+                document.querySelector("#modalEdit_productName").value = eachProduct.labelname
+            }
+        }
+    })
+})
+editModal.querySelector("#modalEdit_productName").addEventListener("input", function(ev){
+    let inputValue = ev.target.value
+    productLists.forEach(eachProduct=>{
+        if (eachProduct.hasOwnProperty("labelname") && eachProduct.labelname === inputValue){
+            if (eachProduct.hasOwnProperty("palletQty")) { document.querySelector("#modalEdit_quantity").value = eachProduct.palletQty ? parseInt(eachProduct.palletQty) : "" }
+            if (eachProduct.hasOwnProperty("unit")) { document.querySelector("#modalEdit_quantityUnit").value = eachProduct.unit }
+            if (eachProduct.hasOwnProperty("unitPrice")) { document.querySelector("#modalEdit_unitPrice").value = parseFloat(eachProduct.unitPrice) }
+            if (eachProduct.hasOwnProperty("productCode")){ document.querySelector("#modalEdit_productCode").value = eachProduct.productCode }
+        }
+    })
+})
+editModal.querySelector("#modalEditDefaultPrice").addEventListener("click", (ev) => {
+    if (editModalTarget.hasOwnProperty("productCode")){
+        for (const product of productLists) {
+            if (product.productCode === editModalTarget.productCode){
+                document.querySelector("#modalEdit_unitPrice").value = product.unitPrice
+            }
         }
     }
 })
-document.querySelector("#editModalSubmitBtn").addEventListener("click", async (ev) => {
-    let fetchedPrefillInfo = editModalObjects.prefillInfos
-    document.querySelector("#editModalSubmitBtn").disabled = true
-    document.querySelector("#editModalSubmitBtn").textContent = "Updating"
-    let updateTarget = {}
-    if (document.querySelector("#modalEditQuantity").value) {
-        fetchedPrefillInfo.quantity = document.querySelector("#modalEditQuantity").value
-    }
-    if (document.querySelector("#modalEditUnit").value) {
-        fetchedPrefillInfo.quantityUnit = document.querySelector("#modalEditUnit").value
-    }
-    if (document.querySelector("#modalEditBestbefore").value) {
-        fetchedPrefillInfo.bestbefore = document.querySelector("#modalEditBestbefore").value
-    }
-    if (document.querySelector("#modelEditLocation").value) {
-        fetchedPrefillInfo.shelfLocation = document.querySelector("#modelEditLocation").value
-    }
-    if (document.querySelector("#modelEditPOnumber").value) {
-        fetchedPrefillInfo.POnumber = document.querySelector("#modelEditPOnumber").value
-    }
+editModal.querySelector("#editModalResetBtn").addEventListener("click",(ev)=>{
+    editModal.querySelector("#modalEdit_statusTxt").textContent = "Clear Forms"
+    editModalTarget = {}
+    editModal.querySelectorAll("input").forEach(eachInput=>{
+        if (eachInput.type === "text" || eachInput.type === "number" || eachInput.type === "date"){
+             eachInput.value = ""
+        }
+    })
+    editModal.querySelector("textarea").textContent=``
+    editModal.querySelector("#modalEdit_statusTxt").textContent = "Ready"
+})
+editModal.querySelector("#editModalSave").addEventListener("click", async (ev) => {
+    editModal.querySelector("#modalEdit_statusTxt").textContent = "Processing Data"
+    let result = {}
+    let productInformation = editModal_read()
     try{
-        if(document.querySelector("input[name='modalEdit_quarantineRatio']:checked").value){
-            fetchedPrefillInfo.quarantine = parseInt(document.querySelector("input[name='modalEdit_quarantineRatio']:checked").value)
+        if (productInformation.hasOwnProperty("productLabel")){
+            result.delete = await preloadlog_delete(productInformation.productLabel)
+            result.add = await preloadlog_add(productInformation)
+        }
+        if (result.delete.acknowledged && result.add.acknowledged){
+            bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
+        } else if (!result.delete.acknowledged){
+            editModal.querySelector("#modalEdit_statusTxt").textContent = `Failed on ${!result.delete.acknowledged ? "delete old data": ""} / ${!result.add.acknowledged ? "pushing new data": ""}`
         }
     } catch (e) {
-        console.log("Original Property does not have quarantine Ratio")
-        fetchedPrefillInfo.quarantine = 0
-    }
-
-    try {
-        // 直接insert新数据到库中，然后删除旧数据即可
-        let insertResult = await insertToPollinglog([fetchedPrefillInfo])
-        let deleteResult = await deletePrefillData(editModalObjects.labelId)
-        console.log(insertResult, deleteResult)
-        bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
-        createAlert("success","Product has been successfully patched.")
-    } catch (e) {
-        console.error(`Error while Patching Data:`, e)
+        console.error("Error occurred when saving data at edit modal: ",e)
+        editModal.querySelector("#modalEdit_statusTxt").textContent = "Error occurred when saving data at edit modal, check console for details"
     }
     await redrawTable(true)
 })
+editModal.querySelector("#modalEdit_btnSubmit").addEventListener("click", async (ev) => {
+    editModal.querySelector("#modalEdit_statusTxt").textContent = "Processing Data"
+    editModal.querySelector("#modalEdit_btnSubmit").disabled = true
+    editModal.querySelector("#modalEdit_btnSubmit").textContent = "Updating"
+    let result = {action: editModal.querySelector("#modalEditAdd").value, delete: {}, add: {}}
+    try{
+        let productInformation = editModal_read()
+        if (editModal.querySelector("#modalEditAdd").value === "edit"){
+            editModal.querySelector("#modalEdit_btnSubmit").textContent = "Popping out data from pre-load collection"
+            result.delete = await preloadlog_delete(productInformation.productLabel)
+            if (!result.delete.acknowledged){
+                createAlert("warning","Stock information in prefill collection was failed to remove.")
+            }
+        }
+        editModal.querySelector("#modalEdit_btnSubmit").textContent = "Pushing stock to collection."
+        result.add = await pollinglog_add(productInformation)
+    } catch (e) {
+        console.error("Error occurred when submitting data at edit modal: ", e)
+        editModal.querySelector("#modalEdit_statusTxt").textContent = "Error occurred when submitting data at edit modal, check console for details."
+    }
+
+    if (result.add.acknowledged){
+        bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
+        createAlert("success","Stock information has successfully added to current stock collection.")
+    }
+    await redrawTable(true)
+})
+
+editModal.querySelector("#modalEdit_checkRemove").addEventListener("change", (ev)=>{
+    if(editModal.querySelector("#modalEdit_checkRemove").checked && editModal.querySelector("#modelCheck_customTime").checked){
+        editModal.querySelector("#group_consumeTime").style = ""
+    } else {
+        editModal.querySelector("#group_consumeTime").style = "display:none"
+    }
+})
+
+editModal.querySelector("#modelCheck_customTime").addEventListener("change", (ev)=>{
+    if (editModal.querySelector("#modelCheck_customTime").checked){
+        editModal.querySelector("#modelEdit_createTime").style = ""
+        if(editModal.querySelector("#modalEdit_checkRemove").checked){
+            editModal.querySelector("#group_consumeTime").style = ""
+        } else {
+            editModal.querySelector("#group_consumeTime").style = "display: none"
+        }
+    } else {
+        editModal.querySelector("#modelEdit_createTime").style = "display: none"
+        editModal.querySelector("#group_consumeTime").style = "display: none"
+    }
+
+})
+
+function editModal_read(){
+    let element = {}
+    editModal.querySelectorAll("input").forEach(eachInput=>{
+        var targetField = eachInput.getAttribute("data-bs-targetField")
+        if (targetField != null){
+            if (targetField === "quarantine" && eachInput.checked){
+                element[targetField] = parseInt(editModal.querySelector("input[data-bs-targetField='quarantine']:checked").value)
+            } else if (targetField === "removed"){
+                element[targetField] = eachInput.checked ? 1 : 0
+            } else if (targetField === "removedTime" && element.removed && element.removed === 1){
+                element[targetField] = new Date(eachInput.value)
+            } else if (targetField === "quantity"){
+                element[targetField] = parseInt(eachInput.value)
+            } else if (targetField === "unitPrice"){
+                element[targetField] = Decimal128.fromString(String(eachInput.value))
+            } else {
+                element[targetField] = String(eachInput.value)
+            }
+        }
+    })
+    if(editModal.querySelector("textarea").textContent.toString().length > 0){
+        element.notes = editModal.querySelector("textarea").textContent
+    }
+
+    Object.keys(element).forEach(eachKey =>{
+        if (String(element[eachKey]).length <= 0){
+            delete element[eachKey]
+        }
+    })
+
+    return element
+}
+function editModal_write(element){
+    editModal.querySelectorAll("input").forEach(eachInput=> {
+        var targetField = eachInput.getAttribute("data-bs-targetField")
+
+        if (targetField === "quarantine" && element.quarantine === 1){
+            if (element.quarantine === 1){
+                document.querySelector("#modalEdit_quarantineYes").checked = true
+            } else if (element.quarantine === -1){
+                document.querySelector("#modalEdit_quarantineFinished").checked = true
+            } else {
+                document.querySelector("#modalEdit_quarantineNo").checked = true
+            }
+        } else if (targetField === "removed"){
+            editModal.querySelector("#modelEdit_removeTime").checked =  (element.removed === 1)
+        } else {
+            eachInput.value = element.hasOwnProperty(targetField) ? element[targetField] : ""
+        }
+
+        if (targetField === "quantity" && element.hasOwnProperty("quantity")){
+            eachInput.value = parseInt(element[targetField])
+        } else if (element.hasOwnProperty(targetField)){
+            eachInput.value = element[targetField]
+        }
+    })
+}
 
 document.querySelector("#removeModal").addEventListener("show.bs.modal", function (ev) {
     if (ev.relatedTarget) {
@@ -396,7 +357,6 @@ document.querySelector("#removeModal").addEventListener("show.bs.modal", functio
             }
         })
         document.querySelector("#removeModal_labelid").value = ev.relatedTarget.getAttribute("data-bs-labelId")
-        document.querySelector("#removeModal_itemid").value = ev.relatedTarget.getAttribute("data-bs-itemId")
     }
     //     No label ID captures, may request for removeAll / remove Duplicate
     document.querySelector("#removeModal_btnConfirm").disabled = false
@@ -437,9 +397,9 @@ document.querySelector("#removeModal_btnConfirm").addEventListener("click", asyn
         createAlert("info", `Checking databases, this may take a while`, 5000)
         for (let i = 0; i < prefillList.length; i++) {
             document.querySelector("#removeModal_StatusText").textContent = `Checking duplicate items. Processing ${i} of ${prefillList.length} items.`
-            let stocksResults = await fetchStockInfoByLabel(prefillList[i].productLabel)
+            let stocksResults = await fetchStockInfoByLabelId(prefillList[i].productLabel)
             if (stocksResults.stocks.length > 0){
-                await deletePrefillData(prefillList[i].productLabel)
+                await preloadlog_delete(prefillList[i].productLabel)
             }
         }
         createAlert("success", `Prefill Duplicate data check has finished`, 5000)
@@ -448,7 +408,7 @@ document.querySelector("#removeModal_btnConfirm").addEventListener("click", asyn
         createAlert("info", `Clear Databases`, 5000)
         for (let i = 0; i < prefillList.length; i++) {
             document.querySelector("#removeModal_StatusText").textContent = `Delete all items. Deleting ${i} of ${prefillList.length} items.`
-            await deletePrefillData(prefillList[i].productLabel)
+            await preloadlog_delete(prefillList[i].productLabel)
         }
         createAlert("success", `Prefill Duplicate data check has finished`, 5000)
     }
@@ -516,6 +476,84 @@ async function fetchProductsList(forced = false) {
             productLists = result
         } catch (e) {
             console.error("Error when fetching preload data: ", e)
+        } finally {
+            await client.close()
+        }
+    }
+    return result
+}
+
+async function fetchStockInfoByLabelId(labelId = null){
+    let result = { prefill:[] , stocks:[] }
+    if (labelId.toString().length > 0){
+        let client = new MongoClient(uri, {
+            serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+        });
+        try {
+            await client.connect();
+            let session = await client.db(targetDB)
+            result = {
+                stocks: await session.collection("pollinglog").find({productLabel: labelId}).toArray()
+            }
+        } catch (e) {
+            console.error(`Fetching stock information error when attempt fetching: ${labelId};`, e)
+        } finally {
+            await client.close()
+        }
+    }
+    return result
+}
+
+async function preloadlog_add(stockObject = {}){
+    let result = {acknowledged:false, insertedId: null} // Using MongoDB response sample
+    if(Object.keys(stockObject).length > 0){
+        let client = new MongoClient(uri, {
+            serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+        });
+        try {
+            await client.connect();
+            const session = client.db(targetDB).collection("preloadlog");
+            result = await session.insertOne({loggingTime:new Date(),stock: stockObject})
+        } catch (e) {
+            console.error(`Adding preload stock Error:`, e)
+        } finally {
+            await client.close()
+        }
+    }
+    return result
+}
+
+async function preloadlog_delete(productLabelId = null) {
+    let result = {acknowledged:false, deletedCount: 0} // Using MongoDB response sample
+    let client = new MongoClient(uri, {
+        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
+    try {
+        await client.connect();
+        const session = client.db(targetDB).collection("preloadlog");
+        result = await session.deleteMany({"stock.productLabel": productLabelId})
+    } catch (e) {
+        console.error(`Remove preload stock Error:`, e)
+    } finally {
+        await client.close()
+    }
+    return result
+}
+
+async function pollinglog_add(stockObject) {
+    let result = {acknowledged: false, matchedCount: 0, modifiedCount: 0 }     // For UpdateMany field
+    // let result = {acknowledged: false, insertedIds: []} // for InsertMany method
+    if (Object.keys(stockObject).length > 0){
+        let client = new MongoClient(uri, {
+            serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+        });
+        try {
+            await client.connect();
+            const pollingSession = client.db(targetDB).collection("pollinglog");
+            result = await pollingSession.updateMany({productLabel: stockObject.productLabel}, {$set:stockObject}, {upsert: true})
+            // result = await pollingSession.insertMany(stockObject)
+        } catch (e) {
+            console.error(`Insert Stock Error when process:;`, e)
         } finally {
             await client.close()
         }

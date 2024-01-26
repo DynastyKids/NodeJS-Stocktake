@@ -647,49 +647,57 @@ router.get("/v1/preload", async (req, res) => {
  * Preload - POST方法
  *
  * 允许用户预填充产品信息（由Chrome 插件或者WarehouseElectron前端）
+ * Update方法更新为删除旧数据后重新添加新数据，因为TimeSeries不支持直接update
  */
 router.post("/v1/preload/update", async (req, res) => {
     let response = {acknowledged: false, data: [], message: ""};
     let dbclient = new MongoClient(uri, {
         serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true},
     });
-    if (req.body.hasOwnProperty("item") && req.body.item.hasOwnProperty("productLabel")) {
-        // 手动组装符合条件的元素，并使用updateOne+Upsert插入
-        let itemContent = {
-            productLabel: req.body.item.productLabel,
-            removed: 0,
-            createTime: req.body.item.hasOwnProperty("createTime") ? new Date(req.body.item.createTime) : new Date(),
-            loggingTime: new Date(),
-            labelBuild: 3,
-        }
-        if (req.body.item.hasOwnProperty("productCode")) { itemContent.productCode = (req.body.item.productCode) }
-        if (req.body.item.hasOwnProperty("quantity")) { itemContent.quantity = parseInt(req.body.item.quantity) }
-        if (req.body.item.hasOwnProperty("quantityUnit")) { itemContent.quantityUnit = req.body.item.quantityUnit }
-        if (req.body.item.hasOwnProperty("shelfLocation")) { itemContent.shelfLocation = (req.body.item.shelfLocation) }
-
-        if (req.body.item.hasOwnProperty("POnumber")) { itemContent.POnumber = (req.body.item.POnumber) }
-        else if (req.body.item.hasOwnProperty("POIPnumber")) { itemContent.POnumber = (req.body.item.POIPnumber) }
-
-        if (req.body.item.hasOwnProperty("productName")) { itemContent.productName = (req.body.item.productName) }
-        if (req.body.item.hasOwnProperty("bestbefore")) { itemContent.bestbefore = (req.body.item.bestbefore) }
-        if (req.body.item.hasOwnProperty("unitprice")) { itemContent.unitprice = Decimal128.fromString(req.body.item.unitprice) }
-        if (req.body.item.hasOwnProperty("trackingId")) { itemContent.trackingId = new Date(req.body.item.trackingId) }
-        if (req.body.item.hasOwnProperty("seq")) { itemContent.seq = parseInt(req.body.item.seq) }
-
-        // Preload数据中，不组装session数据，
+    let receiveItem =  req.body.hasOwnProperty("item") ? req.body.item : {}
+    if (typeof receiveItem === "string"){
+        receiveItem = JSON.parse(receiveItem)
+    }
+    if (receiveItem.hasOwnProperty("_id")){
+        delete receiveItem._id
+    }
+    if (!receiveItem.hasOwnProperty("productLabel")){
         try {
+            let itemContent = {
+                removed: 0,
+                createTime: receiveItem.hasOwnProperty("createTime") ? new Date(req.body.item.createTime) : new Date(),
+                loggingTime: new Date(),
+                labelBuild: 3,
+            }
+
+            if (receiveItem && typeof receiveItem === "object") {
+                if (Object.keys(receiveItem).length > 0) {
+                    Object.keys(receiveItem).forEach(eachKey => {
+                        if (eachKey === "quantity" || eachKey === "removed" || eachKey === "seq" || eachKey === "labelBuild") {
+                            itemContent.eachKey = parseInt(receiveItem.eachKey)
+                        } else if (eachKey === "unitPrice") {
+                            itemContent.eachKey === Decimal128.fromString(receiveItem.unitPrice)
+                        } else if (eachKey === "createTime" || eachKey === "loggingTime" || eachKey === "removeTime") {
+                            itemContent.eachKey = new Date(receiveItem.eachKey)
+                        } else {
+                            itemContent.eachKey = receiveItem.eachKey
+                        }
+                    })
+                }
+            }
+
+            //     Insert to database
             await dbclient.connect()
             const session = dbclient.db(targetDB).collection("preloadlog");
-            let currentResult = await session.findOne({productLabel: req.body.item.productLabel}, {$set: itemContent})
-            response = currentResult ? await session.updateOne({productLabel: req.body.item.productLabel}, {$set: itemContent}) : await session.insertOne(itemContent)
+            let currentResult = await session.find({"stock.productLabel": itemContent.productLabel}).toArray()
+            response = { step1: await session.deleteMany({"stock.productLabel": itemContent.productLabel}), step2: await session.insertOne({loggingTime: new Date(),stock: itemContent}) }
+            console.log(`Found exist product: `, currentResult.length > 0, response)
         } catch (e) {
-            console.error(e)
-            response.message = e
+            console.error("Error when running /api/v1/preload/update: ", e)
+            response.message = `Error when running /api/v1/preload/update: ${e}`
         } finally {
             await dbclient.close()
         }
-    } else {
-        response.message = "Missing product labelID for filtering"
     }
     res.json(response)
 })
