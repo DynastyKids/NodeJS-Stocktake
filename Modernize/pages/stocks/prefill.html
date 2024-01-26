@@ -145,7 +145,10 @@
                         <input type="text" class="form-control col-6" id="modalEditAdd" hidden value="edit">
                         <div class="col-12">
                             <label class="form-label">Label ID</label>
-                            <input type="text" class="form-control" id="modalEdit_labelid" data-bs-targetField="productLabel" value="">
+                            <input type="text" class="form-control is-invalid" id="modalEdit_labelid" data-bs-targetField="productLabel" required value="">
+                            <div class="invalid-feedback">
+                                Please provide a valid product label.
+                            </div>
                         </div>
                         <div class="col-6 col-sm-4">
                             <label class="form-label">Product Code</label>
@@ -226,12 +229,12 @@
             </div>
             <div class="modal-footer d-flex justify-content-between">
                 <div>
-                    <button type="button" class="btn btn-info" id="editModalSave">Save Only</button>
+                    <button type="button" class="btn btn-primary" id="modalEdit_btnSubmit" disabled>Loading</button>
                 </div>
                 <div>
                     <button type="button" class="btn btn-warning" id="editModalResetBtn">Reset Table</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="modalEdit_btnSubmit" disabled>Loading</button>
+                    <button type="button" class="btn btn-info" id="editModalSave">Save Only</button>
                 </div>
             </div>
         </div>
