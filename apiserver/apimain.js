@@ -654,14 +654,16 @@ router.post("/v1/preload/update", async (req, res) => {
     let dbclient = new MongoClient(uri, {
         serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true},
     });
-    let receiveItem =  req.body.hasOwnProperty("item") ? req.body.item : {}
-    if (typeof receiveItem === "string"){
-        receiveItem = JSON.parse(receiveItem)
+    let receiveItem = req.body
+    if (typeof (req.body) === "string"){
+        receiveItem = JSON.parse(req.body)
     }
+    receiveItem =  req.body.hasOwnProperty("item") ? req.body.item : {}
+
     if (receiveItem.hasOwnProperty("_id")){
         delete receiveItem._id
     }
-    if (!receiveItem.hasOwnProperty("productLabel")){
+    if (receiveItem.hasOwnProperty("productLabel")){
         try {
             let itemContent = {
                 removed: 0,
@@ -674,13 +676,13 @@ router.post("/v1/preload/update", async (req, res) => {
                 if (Object.keys(receiveItem).length > 0) {
                     Object.keys(receiveItem).forEach(eachKey => {
                         if (eachKey === "quantity" || eachKey === "removed" || eachKey === "seq" || eachKey === "labelBuild") {
-                            itemContent.eachKey = parseInt(receiveItem.eachKey)
+                            itemContent[eachKey] = parseInt(receiveItem[eachKey])
                         } else if (eachKey === "unitPrice") {
-                            itemContent.eachKey === Decimal128.fromString(receiveItem.unitPrice)
+                            itemContent[eachKey] === Decimal128.fromString(receiveItem.unitPrice)
                         } else if (eachKey === "createTime" || eachKey === "loggingTime" || eachKey === "removeTime") {
-                            itemContent.eachKey = new Date(receiveItem.eachKey)
+                            itemContent[eachKey] = new Date(receiveItem[eachKey])
                         } else {
-                            itemContent.eachKey = receiveItem.eachKey
+                            itemContent[eachKey] = receiveItem[eachKey]
                         }
                     })
                 }
@@ -689,15 +691,19 @@ router.post("/v1/preload/update", async (req, res) => {
             //     Insert to database
             await dbclient.connect()
             const session = dbclient.db(targetDB).collection("preloadlog");
-            let currentResult = await session.find({"stock.productLabel": itemContent.productLabel}).toArray()
-            response = { step1: await session.deleteMany({"stock.productLabel": itemContent.productLabel}), step2: await session.insertOne({loggingTime: new Date(),stock: itemContent}) }
-            console.log(`Found exist product: `, currentResult.length > 0, response)
+            let currentResult = await session.find({"item.productLabel": itemContent.productLabel}).toArray()
+            response = {
+                step1: await session.deleteMany({"item.productLabel": itemContent.productLabel}),
+                step2: await session.insertOne({loggingTime: new Date(), item: itemContent})
+            }
         } catch (e) {
             console.error("Error when running /api/v1/preload/update: ", e)
             response.message = `Error when running /api/v1/preload/update: ${e}`
         } finally {
             await dbclient.close()
         }
+    } else {
+        response.message = `Missing productLabel informations`
     }
     res.json(response)
 })
@@ -714,7 +720,7 @@ router.post("/v1/preload/remove", async (req, res) => {
         try {
             await dbclient.connect()
             const session = dbclient.db(targetDB).collection("preloadlog");
-            let result = await session.deleteOne({productLabel: req.body.productLabel})
+            let result = await session.deleteOne({"item.productLabel": req.body.productLabel})
             if (result.acknowledged) {
                 response = result
             }
