@@ -39,13 +39,13 @@ async function redrawTable(forced = false) {
     }
     prefillLists.forEach(eachRow => {
         table.row.add([
-            (eachRow.stock.productCode ? eachRow.stock.productCode : ``) + (eachRow.stock.productCode && eachRow.stock.productName ? ` - ` : ``) + (eachRow.stock.productName ? eachRow.stock.productName : ``),
-            (eachRow.stock.quantity ? eachRow.stock.quantity + ` ` + (eachRow.stock.quantityUnit ? eachRow.stock.quantityUnit : ``) : ``),
-            (eachRow.stock.bestbefore ? new Date(eachRow.stock.bestbefore).toLocaleDateString("en-AU") : ``),
-            (eachRow.stock.POnumber ? eachRow.stock.POnumber : ``) + (eachRow.stock.seq ? `<br><small>${eachRow.stock.seq}</small>` : ``),
-            (eachRow.stock.productLabel ? eachRow.stock.productLabel.substring(0, 15) : ``) + (eachRow.stock.createTime ? `<br><small>${new Date(eachRow.stock.createTime).toLocaleString('en-AU')}</small>` : (eachRow.stock.loggingTime ? `<br><small>${new Date(eachRow.stock.loggingTime).toLocaleString('en-AU')}</small>` : ``)),
-            `<a href="#" class="table_actions table_action_remove" data-bs-labelId="${eachRow.stock.productLabel}" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-modalaction="edit" style="margin: 0 2px 0 2px">Patch</a>` +
-            `<a href="#" class="table_actions table_action_remove" data-bs-labelId="${eachRow.stock.productLabel}" data-bs-toggle="modal" data-bs-target="#removeModal" style="margin: 0 2px 0 2px">Remove</a>`
+            (eachRow.item.productCode ? eachRow.item.productCode : ``) + (eachRow.item.productCode && eachRow.item.productName ? ` - ` : ``) + (eachRow.item.productName ? eachRow.item.productName : ``),
+            (eachRow.item.quantity ? eachRow.item.quantity + ` ` + (eachRow.item.quantityUnit ? eachRow.item.quantityUnit : ``) : ``),
+            (eachRow.item.bestbefore ? new Date(eachRow.item.bestbefore).toLocaleDateString("en-AU") : ``),
+            (eachRow.item.POnumber ? eachRow.item.POnumber : ``) + (eachRow.item.seq ? `<br><small>${eachRow.item.seq}</small>` : ``),
+            (eachRow.item.productLabel ? eachRow.item.productLabel.substring(0, 15) : ``) + (eachRow.item.createTime ? `<br><small>${new Date(eachRow.item.createTime).toLocaleString('en-AU')}</small>` : (eachRow.item.loggingTime ? `<br><small>${new Date(eachRow.item.loggingTime).toLocaleString('en-AU')}</small>` : ``)),
+            `<a href="#" class="table_actions table_action_remove" data-bs-labelId="${eachRow.item.productLabel}" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-modalaction="edit" style="margin: 0 2px 0 2px">Patch</a>` +
+            `<a href="#" class="table_actions table_action_remove" data-bs-labelId="${eachRow.item.productLabel}" data-bs-toggle="modal" data-bs-target="#removeModal" style="margin: 0 2px 0 2px">Remove</a>`
         ]).draw(false)
     })
     document.querySelector("#loadingStatus").style = "display: none"
@@ -111,9 +111,9 @@ editModal.addEventListener("show.bs.modal", async (ev) => {
             let requestLabelId = ev.relatedTarget.hasAttribute("data-bs-labelId") ?
                 ev.relatedTarget.getAttribute("data-bs-labelid") : ""
             for (const eachElement of prefillLists) {
-                if (eachElement.hasOwnProperty("stock") && eachElement.stock.productLabel === requestLabelId) {
+                if (eachElement.hasOwnProperty("item") && eachElement.item.productLabel === requestLabelId) {
                     editModalTarget = eachElement
-                    editModal_write(eachElement.stock)
+                    editModal_write(eachElement.item)
                     editModal.querySelector("#modalEdit_btnSubmit").textContent = "Push to Stock"
                     editModal.querySelector("#modalEdit_btnSubmit").disabled = false
                     break;
@@ -155,11 +155,11 @@ editModal.querySelector("#modalEdit_labelid").addEventListener("input", async fu
     let inputValue = ev.target.value
     var found = false
     for (const prefill of prefillLists) {
-        if (prefill.stock.productLabel === inputValue) {
+        if (prefill.item.productLabel === inputValue) {
             editModal.querySelector("#modalEditAdd").value = "edit"
             editModalTarget = prefill
-            editModal.querySelector(".modal-title").textContent = `Edit Stock: ${editModalTarget.stock.productName}`
-            editModal_write(editModalTarget.stock)
+            editModal.querySelector(".modal-title").textContent = `Edit Stock: ${editModalTarget.item.productName}`
+            editModal_write(editModalTarget.item)
 
             editModal.querySelector("#modalEdit_btnSubmit").textContent = "Submit"
             editModal.querySelector("#modalEdit_btnSubmit").disabled = false
@@ -273,7 +273,6 @@ editModal.querySelector("#modalEdit_btnSubmit").addEventListener("click", async 
     let result = {action: editModal.querySelector("#modalEditAdd").value, delete: {acknowledged: false, deleteCount: 0}, add: {acknowledged: false}}
     try {
         let stockElement = editModal_read()
-        console.log(stockElement)
         if (stockElement.hasOwnProperty("productLabel") && stockElement.productLabel.length >= 7) {
             editModal.querySelector("#modalEdit_btnSubmit").textContent = "Popping out data from pre-load collection"
             result.delete = await preloadlog_delete(stockElement.productLabel)
@@ -420,9 +419,9 @@ document.querySelector("#removeModal_btnConfirm").addEventListener("click", asyn
         let prefillList = await fetchPrefillDatas(true)
         for (let i = 0; i < prefillList.length; i++) {
             document.querySelector("#removeModal_StatusText").textContent = `Checking duplicate items. Processing ${i+1} of ${prefillList.length} items.`
-            let stocksResults = await fetchStockInfoByLabelId(prefillList[i].stock.productLabel)
+            let stocksResults = await fetchStockInfoByLabelId(prefillList[i].item.productLabel)
             if (stocksResults.stocks.length > 0) {
-                var deleteResult = await preloadlog_delete(prefillList[i].stock.productLabel)
+                var deleteResult = await preloadlog_delete(prefillList[i].item.productLabel)
             }
         }
         document.querySelector("#removeModal_duplicateLabels").checked = false
@@ -432,9 +431,9 @@ document.querySelector("#removeModal_btnConfirm").addEventListener("click", asyn
         let deleteStatus = []
         var deleteFlag = true
         for (let i = 0; i < prefillList.length; i++) {
-            document.querySelector("#removeModal_StatusText").textContent = `Delete all items. Processing ${prefillList[i].stock.productLabel}, No.${i+1} of ${prefillList.length}.`
-            var deleteResult = await preloadlog_delete(prefillList[i].stock.productLabel)
-            deleteStatus.push({acknowledged: deleteResult.acknowledged, labelId: prefillList[i].stock.productLabel})
+            document.querySelector("#removeModal_StatusText").textContent = `Delete all items. Processing ${prefillList[i].item.productLabel}, No.${i+1} of ${prefillList.length}.`
+            var deleteResult = await preloadlog_delete(prefillList[i].item.productLabel)
+            deleteStatus.push({acknowledged: deleteResult.acknowledged, labelId: prefillList[i].item.productLabel})
         }
         document.querySelector("#removeModal_allLabels").checked = false
         for (var eachDelete of deleteStatus){
@@ -527,7 +526,7 @@ async function fetchProductsList(forced = false) {
 }
 
 async function fetchStockInfoByLabelId(labelId = "") {
-    let result = {prefill: [], stocks: []}
+    let result = {stocks: []}
     if (labelId.toString().length > 0) {
         let client = new MongoClient(uri, {
             serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
@@ -575,7 +574,7 @@ async function preloadlog_delete(stockLabel = "") {
         try {
             await client.connect();
             const session = client.db(targetDB).collection("preloadlog");
-            result = await session.deleteMany({"stock.productLabel": String(stockLabel)})
+            result = await session.deleteMany({"item.productLabel": String(stockLabel)})
             console.log(result)
         } catch (e) {
             console.error(`Remove preload stock Error:`, e)
