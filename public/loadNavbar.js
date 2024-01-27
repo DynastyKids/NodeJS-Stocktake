@@ -16,13 +16,13 @@ let NavbarHTML =
                             <i class="ti ti-tools"></i>Features
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="/labelgenerator.html">Generate Labels</a></li>
+                            <li><a class="dropdown-item" href="/stocks/labelgenerator.html">Generate Labels</a></li>
                             <li><a class="dropdown-item" href="/stocks/prefill.html">Check prefill labels (Unavailable)</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/stocks/stocks.html">Stock Management</a></li>
                             <li><a class="dropdown-item" href="#">Add Stock (Unavailable)</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Scan QR Code(Unavailable)</a></li>
+                            <li><a class="dropdown-item" href="/stocks/qrscan.html">Scan QR Code(Unavailable)</a></li>
                         </ul>
                     </li>
                     <li class="nav-item">
