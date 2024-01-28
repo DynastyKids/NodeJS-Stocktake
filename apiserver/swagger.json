@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Warehouse Stocktake via Swagger",
-    "description": "This is a Sample Warehouse Stocktake application based on the OpenAPI 3.0 specification.\n\nThis application are require in coherience running with Wechat Miniprogram and Electron distributed package. If you are require customization, please contact author via Github.\n\nAPI information was generated with Swagger Editor\n\n*** \n该项目是个仓库管理场景的开源项目，允许用户搭配手机自身浏览器、移动应用（开发中）以协助管理仓库\n\nAPI接口信息由DyanstyKids使用Swagger Editor制作，采用OpenAPI 3标准，项目开源于 https://github.com/DynastyKids/NodeJS-Stocktake\n***",
+    "description": "This is a Sample Warehouse Stocktake application based on the OpenAPI 3.0 specification.\n\nThis application can run with your own build applications by utilise these APIs, which allows to provide a same level access as native application. \n\nAPI information was generated with Swagger Editor\n\n\n该项目是个仓库管理场景的开源项目，允许用户搭配手机自身浏览器、移动应用（开发中）以协助管理仓库\n\nAPI接口信息由DyanstyKids使用Swagger Editor制作，采用OpenAPI 3标准，项目开源于 https://github.com/DynastyKids/NodeJS-Stocktake\n***",
     "contact": {
       "email": "shabibox@outlook.com"
     },
@@ -22,10 +22,6 @@
   ],
   "tags": [
     {
-      "name": "Sessions",
-      "description": "Everything about your stocktake sessions \n\n17Dec23 Purposed Update: This section is currently not in use for purposed update, in next version, it will be used to create a snapshot of current stocks.\n"
-    },
-    {
       "name": "Products",
       "description": "Everything about your products"
     },
@@ -35,7 +31,11 @@
     },
     {
       "name": "Preload",
-      "description": "Prefill the label to prepare for adding to stocks\n\n10Dec23 Update: This section require to have your 3rd party module to be connected with system.\n"
+      "description": "Prefill the label to prepare for adding to stocks\n"
+    },
+    {
+      "name": "Snapshots",
+      "description": "This section provide a frozen records of your stock at specific times \n"
     }
   ],
   "paths": {
@@ -59,104 +59,6 @@
           },
           "500": {
             "description": "System Internal error"
-          }
-        }
-      }
-    },
-    "/v1/sessions": {
-      "get": {
-        "tags": [
-          "Sessions"
-        ],
-        "summary": "Get all current sessions available | 获取当前可用的所有Session",
-        "description": "Get sessions available to join, user will require to use this while scanning products | 获取可以加入的Session，该端口为开放以允许所有用户加入",
-        "operationId": "selectSessions",
-        "responses": {
-          "200": {
-            "description": "Successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/session"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "System Internal error"
-          }
-        }
-      }
-    },
-    "/v1/sessions/add": {
-      "post": {
-        "tags": [
-          "Sessions"
-        ],
-        "summary": "Create a snapshot of stock records\n创建一个当前的盘点镜像结果\n",
-        "operationId": "sessionCreate",
-        "responses": {
-          "200": {
-            "description": "Create session success | 创建成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/session"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Create session Failed | 创建失败",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/trueORfalse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/session/logs": {
-      "get": {
-        "tags": [
-          "Sessions"
-        ],
-        "summary": "Get all products under current sort-take session | 获取某个会话的盘点结果",
-        "operationId": "getSessionlog",
-        "parameters": [
-          {
-            "name": "session",
-            "in": "query",
-            "description": "Session Code of request session log | 需要获取列表的sessioncode",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/pollinglogsRespose"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "System Internal error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/trueORfalse"
-                }
-              }
-            }
           }
         }
       }
@@ -209,7 +111,8 @@
         "tags": [
           "Products"
         ],
-        "summary": "Add a product",
+        "summary": "Add a product | 添加一个产品",
+        "description": "This method is now merged with /product/update, with difference of upsert has been forced set as TRUE",
         "requestBody": {
           "content": {
             "application/json": {
@@ -253,7 +156,8 @@
         "tags": [
           "Products"
         ],
-        "summary": "Update an information of product, with upsert default by true",
+        "summary": "Update an information of product | 更新一个产品信息",
+        "description": "This method is used to update the product informations, using same base function as /product/add, with optional control of upsert value (default upsert = true)",
         "parameters": [
           {
             "name": "upsert",
@@ -716,11 +620,8 @@
                 "type": "object",
                 "properties": {
                   "productLabel": {
-                    "type": "string"
-                  },
-                  "removeTime": {
                     "type": "string",
-                    "format": "date-time"
+                    "example": "20201201ABCDEF"
                   }
                 }
               }
@@ -740,6 +641,161 @@
           },
           "400": {
             "description": "Bad Request / Unsuccessful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/trueORfalse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/snapshots": {
+      "get": {
+        "tags": [
+          "Snapshots"
+        ],
+        "summary": "Get all snapshots available | 获取所有可用的历史记录列表",
+        "operationId": "selectSessions",
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/session"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "System Internal error"
+          }
+        }
+      }
+    },
+    "/v1/snapshots/add": {
+      "post": {
+        "tags": [
+          "Snapshots"
+        ],
+        "summary": "Create a snapshot of current stock records | 创建一个当前的盘点镜像结果",
+        "description": "Snapshot will show in a frozen timeframe of stock records in database, however, if the relevent record has permenant deleted from database, then it will not be available in snapshots either",
+        "operationId": "snapshotCreate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session": {
+                    "type": "string",
+                    "example": "20201201ABCDEF"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Create session success | 创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/session"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Create session Failed | 创建失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/trueORfalse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/session/logs": {
+      "get": {
+        "tags": [
+          "Snapshots"
+        ],
+        "summary": "Get all products under current sort-take session | 获取某个会话的盘点结果",
+        "operationId": "getSessionlog",
+        "parameters": [
+          {
+            "name": "session",
+            "in": "query",
+            "description": "Session Code of request session log | 需要获取列表的sessioncode",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/pollinglogsRespose"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "System Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/trueORfalse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/session/delete": {
+      "delete": {
+        "tags": [
+          "Snapshots"
+        ],
+        "summary": "Delete a snapshot based on snapshot id provided",
+        "operationId": "removeSnapshotDELETE",
+        "parameters": [
+          {
+            "name": "session",
+            "in": "query",
+            "description": "Session code that wish to delete",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/pollinglogsRespose"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "System Internal error",
             "content": {
               "application/json": {
                 "schema": {
@@ -865,7 +921,12 @@
             "format": "date-time",
             "description": "Date Format must be YYYY-MM-DD HH:mm:ss"
           },
-          "unitprice": {
+          "unitPrice": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Optional, Unit price of the item | 可选字段，产品价格"
+          },
+          "grossPrice": {
             "type": "number",
             "multipleOf": 0.01,
             "description": "Optional, Unit price of the item | 可选字段，产品价格"
@@ -934,13 +995,6 @@
             "multipleOf": 0.01,
             "description": "Optional, Unit price of the item"
           },
-          "locationRecords": {
-            "type": "array",
-            "description": "DEC2023 Update, Store location records by Objects",
-            "items": {
-              "$ref": "#/components/schemas/locationRecords"
-            }
-          },
           "trackingId": {
             "type": "string",
             "description": "Tracking Number of this product, can be container ID on shipping Vendor Id"
@@ -973,10 +1027,6 @@
             "type": "string",
             "description": "Purchease Order Identification Number (Ref for Ours)"
           },
-          "POnumber2": {
-            "type": "string",
-            "description": "Purchease Order Identification Number (Ref for Seller's )"
-          },
           "productName": {
             "type": "string"
           },
@@ -987,6 +1037,14 @@
           "productLabel": {
             "type": "string",
             "description": "Product Label Identification Number, must be identical, format as YYYYMMDD1234567, last 7 chars can be Hexadecimal"
+          },
+          "unitPrice": {
+            "type": "string",
+            "description": "Product unit price"
+          },
+          "grossPrice": {
+            "type": "string",
+            "description": "Product gross price"
           },
           "createTime": {
             "type": "string",

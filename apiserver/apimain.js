@@ -28,260 +28,11 @@ let sessionClient = new MongoClient(uri, {
 });
 
 /*
-* Session
-* Session中至少包括,GET所有session，POST加入一个Session，get某个Session的stocklist，post添加一个log记录到xxx Session
-*/
-/* 
- * SESSION
- * Getsession 获取所有当前可用的Session
- * 默认仅获取当前可用的Session，如果添加了?all=1则给出所有的Session List
- */
-router.get("/v1/sessions", async (req, res) => {
-    let sessionResults = {acknowledged: false, data: [], message: ""};
-    try {
-        let dbclient = new MongoClient(uri, {
-            serverApi: {
-                version: ServerApiVersion.v1,
-                useNewUrlParser: true,
-                useUnifiedTopology: true,
-            },
-        });
-        let options = {sort: {"startDate": 1}, projection: {"_id": 0}};
-        await dbclient.connect();
-        let session = dbclient.db(targetDB).collection("pollingsession");
-        let resultArray = await session.find({}, options).toArray();
-        sessionResults.acknowledged = true
-        sessionResults.data = resultArray
-    } catch (e) {
-        console.error("Error on /v1/sessions:", e)
-        sessionResults.message = e.toString()
-    } finally {
-        await sessionClient.close()
-    }
-
-    if (!(req.query && req.query.all && req.query.all === '1')) {
-        //修正data为返回当前有效的Sessions
-        let localTime = (new Date()).getTime()
-        let inEffectSessions = []
-        for (const eachSession of sessionResults.data) {
-            var startDateint = (new Date(eachSession.startDate)).getTime()
-            var endDateint = (new Date(eachSession.endDate)).getTime()
-            if (startDateint <= localTime && endDateint >= localTime) {
-                inEffectSessions.push(eachSession)
-            }
-        }
-        sessionResults.data = inEffectSessions
-    }
-    res.json(sessionResults);
-});
-
-/* 
- * SESSION
- * 验证当前Session是否有效
- * 用户需要以Post请求方式发起，GET请求回弹报错
- */
-router.post("/v1/sessions/join", async (req, res) => {
-    let response = {acknowledged: false, data: [], message: ""};
-    let localTime = (new Date()).getTime()
-    let dbclient = new MongoClient(uri, {
-        serverApi: {
-            version: ServerApiVersion.v1,
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        },
-    });
-
-    if (req.body && req.body.session) {
-        const sessionCode = req.body.session;
-        await dbclient.connect();
-        const sessions = dbclient.db(targetDB).collection("pollingsession");
-        let options = {sort: {"startDate": 1}, projection: {"_id": 0}};
-        try {
-            let result = await sessions.find({session: sessionCode}, options).toArray()
-            for (const eachSession of result) {
-                let startDate = (new Date(eachSession.startDate)).getTime()
-                let endDate = (new Date(eachSession.endDate)).getTime()
-                if (startDate <= localTime && endDate >= localTime) {
-                    //当用户发起加入session请求时，需要确认session是否可用，如果可用则继续返回true，
-                    response.acknowledged = true
-                }
-            }
-
-            if (!response.acknowledged) {
-                response.message = `The session '${sessionCode}' has expired or session code is incorrect.`
-            }
-        } catch (e) {
-            console.error("Error on /v1/sessions/join:", e)
-            response.message = "Missing body parameter of SESSION Code"
-        }
-    } else {
-        response.message = "Missing body parameter of SESSION Code"
-    }
-    res.json(response);
-});
-
-/*
- * SESSION
- * ADD POST方法
- * 允许用户通过客户端直接新建一个盘点会话，而无需通过服务端执行
- */
-router.post("/v1/sessions/add", async (req, res) => {
-    let response = {acknowledged: false, data: [], message: ""};
-    let localMoment = new Date();
-    let localTime = localMoment.format("YYYY-MM-DD HH:mm:ss")
-    let dbclient = new MongoClient(uri, {
-        serverApi: {
-            version: ServerApiVersion.v1,
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        },
-    });
-
-    const sessionCode = req.body.session;
-    await dbclient.connect();
-    const session = dbclient.db(targetDB).collection("pollingsession");
-    try {
-        while (true) {
-            var purposedSessionCode = randomHexGenerator().substring(1)
-            let result = await session.find({session: sessionCode}).toArray()
-            if (result.length <= 0) { //核对没有重复的Session Code， 然后插入到DB中
-                const insertTarget = {
-                    session: purposedSessionCode,
-                    startDate: localMoment.format("YYYY-MM-DD HH:mm:ss"),
-                    endDate: `${localMoment.format("YYYY-MM-DD")} 23:59:59`,
-                    logTime: localMoment.format("YYYY-MM-DD HH:mm:ss"),
-                }
-                result = await session.insertOne(insertTarget);
-                response.acknowledged = true
-                response.data.push(insertTarget)
-                break;
-            }
-        }
-    } catch (e) {
-        console.error("Error on /v1/sessions/join:", e)
-        response.message = "Missing Parameter of SESSION Code"
-    } finally {
-        await dbclient.close()
-    }
-    res.json(response)
-})
-
-function randomHexGenerator() {
-    return (Math.floor(Math.random() * (0xFFFFFFFF + 1))).toString(16).toUpperCase().padStart(8, '0')
-}
-
-/*
- * SESSION
- * session/logs GET方法
- * 替换了原有的sessionlog，用来查看某个盘点会话中已经扫描的产品，必须要传入SessionCode作为参数，可以查看所有历史的会话
- * 在MongoDB中每件产品可能被扫描多次，给出结果前在JS中去重
- */
-router.get("/v1/session/logs", async (req, res) => {
-    let response = {acknowledged: false, data: [], message: ""};
-    let dbclient = new MongoClient(uri, {
-        serverApi: {
-            version: ServerApiVersion.v1,
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        },
-    });
-    if (req.query && req.query.session) {
-        const sessionCode = String(req.query.session);
-        console.log(sessionCode)
-        try {
-            await dbclient.connect()
-            const session = dbclient.db(targetDB).collection("pollinglog");
-            // let options = { sort: {"productCode": 1,"productLabel" : 1},  projection: {"_id" : 0} };
-            let options = {sort: {"productLabel": 1}, projection: {"_id": 0}};
-            let result = await session.find({session: sessionCode}, options).toArray()
-            console.log(result)
-            response.data = result
-            response.acknowledged = true
-        } catch (e) {
-            response.message = `Error on /v1/session/logs: ${e}`
-        } finally {
-            await dbclient.close()
-        }
-    } else {
-        response.message = "Missing Parameter of SESSION Code"
-    }
-    res.json(response)
-});
-
-/*
- * SESSION
- * session/addlog POST方法 (旧)
- */
-router.post("/v1/sessionlog/add", async (req, res) => {
-    const sessioncode = (req.body.session ? req.body.session : "");
-    const iteminfo = req.body.item;
-    let localTime = new Date();
-    var mongodata = {};
-    let purposedRes = {acknowledged: false};
-    if (isBase64String(iteminfo)) {
-        mongodata = createLogObject(sessioncode, iteminfo);
-        if (mongodata !== {}) {
-            purposedRes.acknowledged = true
-            mongodata.loggingTime = new Date()
-            mongodata.createTime = new Date()
-            let insertData = await insertOneToLog(mongodata);
-            if ((await insertData).acknowledged) {
-                purposedRes = insertData;
-            }
-        }
-    }
-    res.json(purposedRes);
-});
-
-/*
- * SESSION
- * session/addlog POST方法 （新）
- * 替换了原有的sessionlog/add，须至少传入产品base64信息
- * 1. 会话ID （如果不提供则默认使用STOCK）
- * 2. 
- */
-router.post("/v1/session/addlog", async (req, res) => {
-    let response = {acknowledged: false, data: [], message: ""};
-    let dbclient = new MongoClient(uri, {
-        serverApi: {
-            version: ServerApiVersion.v1,
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        },
-    });
-    if (req.body.hasOwnProperty("session") && req.body.hasOwnProperty("item")) {
-        try {
-            await dbclient.connect();
-            let session = dbclient.db(targetDB).collection("pollinglog");
-            const filter = {
-                productLabel: req.body.item.productLabel,
-            }
-            let updateField = {
-                $push: {"sessions": req.body.session},
-            }
-            let result = await session.updateOne(filter, updateField)
-            if (result.matchedCount > 0) {
-                response.acknowledged = true
-                response.message = `${result.matchedCount} has matched, ${result.modifiedCount} has been updated`
-            } else {
-                response.message = `No has matched, no updates has been taken`
-            }
-        } catch (e) {
-            response.message = `Error on /v1/session/addlog: ${e}`
-        } finally {
-            await dbclient.close()
-        }
-    } else {
-        response.message = "Missing parameters, confirm you have body.session and body.item, refer to API document for correction"
-    }
-
-    res.json(response);
-});
-/*
 * PRODUCTS
 * products GET方法
 * 用来查看目前所有产品的信息
 */
+
 router.get("/v1/products", async (req, res) => {
     let response = {acknowledged: false, data: [], message: ""};
     let dbclient = new MongoClient(uri, {
@@ -395,6 +146,9 @@ function filterDuplicate(fields, data) {
  * STOCKS - POST方法
  * 重写后的STOCKS方法，适合用于Add/Edit/Update操作，该方法默认启用Upsert
  *
+ *  01JAN重写部分，update时候，需要检查数据库内是否已有条目
+ *  有：需要检查更新数据前后对比，并添加changelog
+ *  无：按照新添加方式处理
  */
 router.post("/v1/stocks/update", async (req, res) => {
     let response = {acknowledged: false, data: [], message: ""};
@@ -940,3 +694,138 @@ function isBase64String(text) {
     }
     return true;
 }
+
+/*
+*  Sessions -> Snapshots
+* Sessions已经弃用，转换为snapshots
+*
+* Snapshots包括
+* GET: /sessions: 获取所有的盘点记录
+* GET: /sessions/logs: 通过用户传入query，获取某次盘点的记录，用户需要指定单个session code
+* POST: /sessions/add: 添加一次snapshot，用户可以指定货品的范围时间，超出时间的不计在内，允许用户自定义一个不重复的sessionCode
+* DELETE: /sessions/delete: 删除一个snapshot，用户需要指定session Code
+* */
+
+router.get("/v1/snapshots", async (req, res) => {
+    let sessionResults = {acknowledged: false, data: [], message: ""};
+    try {
+        let dbclient = new MongoClient(uri, {
+            serverApi: {
+                version: ServerApiVersion.v1,
+                useNewUrlParser: true,
+                useUnifiedTopology: true,
+            },
+        });
+        let options = {sort: {"startDate": 1}, projection: {"_id": 0}};
+        await dbclient.connect();
+        let session = dbclient.db(targetDB).collection("pollingsession");
+        let resultArray = await session.find({}, options).toArray();
+        sessionResults.acknowledged = true
+        sessionResults.data = resultArray
+    } catch (e) {
+        console.error("Error on /v1/sessions:", e)
+        sessionResults.message = e.toString()
+    } finally {
+        await sessionClient.close()
+    }
+
+    res.json(sessionResults);
+});
+
+router.post("/v1/snapshots/add", async (req, res) => {
+    let response = {acknowledged: false, data: [], message: ""};
+    let localMoment = new Date();
+    let localTime = localMoment.format("YYYY-MM-DD HH:mm:ss")
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+
+    const sessionCode = req.body.session;
+    await dbclient.connect();
+    const session = dbclient.db(targetDB).collection("pollingsession");
+    try {
+        while (true) {
+            var purposedSessionCode = randomHexGenerator().substring(1)
+            let result = await session.find({session: sessionCode}).toArray()
+            if (result.length <= 0) { //核对没有重复的Session Code， 然后插入到DB中
+                const insertTarget = {
+                    session: purposedSessionCode,
+                    startDate: localMoment.format("YYYY-MM-DD HH:mm:ss"),
+                    endDate: `${localMoment.format("YYYY-MM-DD")} 23:59:59`,
+                    logTime: localMoment.format("YYYY-MM-DD HH:mm:ss"),
+                }
+                result = await session.insertOne(insertTarget);
+                response.acknowledged = true
+                response.data.push(insertTarget)
+                break;
+            }
+        }
+    } catch (e) {
+        console.error("Error on /v1/sessions/join:", e)
+        response.message = "Missing Parameter of SESSION Code"
+    } finally {
+        await dbclient.close()
+    }
+    res.json(response)
+})
+
+function randomHexGenerator() {
+    return (Math.floor(Math.random() * (0xFFFFFFFF + 1))).toString(16).toUpperCase().padStart(8, '0')
+}
+
+router.get("/v1/snapshots/logs", async (req, res) => {
+    let response = {acknowledged: false, data: [], message: ""};
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+    try {
+        if(!req.hasOwnProperty("query") || !req.query.hasOwnProperty("session")){
+            throw "Missing Query / target Session Code"
+        }
+        const sessionCode = String(req.query.session);
+        await dbclient.connect()
+        const session = dbclient.db(targetDB).collection("pollinglog");
+        var filter = {session: {$elemMatch : {$eq: sessionCode}}}
+        var options = {sort: {"productLabel": 1}, projection: {"_id": 0}};
+        var result = await session.find(filter, options).toArray()
+        response = {acknowledged: true, data: result}
+    } catch (e) {
+        response.message = e
+    } finally {
+        await dbclient.close()
+        res.json(response)
+    }
+});
+
+router.delete("/v1/stocks/delete", async (req, res) => {
+    let response = {acknowledged: false, deleteCount: 0}
+    let dbclient = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        },
+    });
+    try{
+        if(!req.hasOwnProperty("query") || !req.query.hasOwnProperty("session")){
+            throw "Missing Query / target Session Code"
+        }
+        const sessionCode = req.query.session
+        await dbclient.connect()
+        const session = dbclient.db(targetDB).collection("pollingsession");
+        response = await session.deleteMany({session: sessionCode})
+    } catch (e) {
+        console.error("Error when deleting session: ", e)
+    } finally {
+        await dbclient.close()
+        res.json(response)
+    }
+})
