@@ -328,43 +328,23 @@ router.get("/v1/products", async (req, res) => {
 */
 router.post("/v1/product/add", async (req, res) => {
     let response = {acknowledged: false, data: [], message: ""};
-    let dbclient = new MongoClient(uri, {
-        serverApi: {
-            version: ServerApiVersion.v1,
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        },
-    });
-    try {
-        let session = dbclient.db(targetDB).collection("products");
-        await dbclient.connect()
-
-        if (req.hasOwnProperty("body") && req.body.hasOwnProperty("item") && req.body.item.hasOwnProperty("productCode")) {
-            let filter = {productCode: req.body.item.productCode}
-            if (req.body.item.vendorCode) {
-                filter = {productCode: req.body.item.productCode, vendorCode: req.body.item.vendorCode}
-            }
-
-            const result = await session.updateOne(filter, {$set: req.body.item}, {upsert: true});
-            if (result.upsertedCount > 0) {
-                response.acknowledged = true
-                if (result.upsertedCount > 0) {
-                    response.data = {"upsertId": result.upsertedId}
-                }
-            }
-        } else {
-            response.message = `Missing body parameter(s), and productCode is a mandatory field`
-        }
-    } catch (e) {
-        response.message = `Error on /v1/products: ${e}`
-    } finally {
-        await dbclient.close()
+    if(req.hasOwnProperty("body") && req.body.hasOwnProperty("item")){
+        response = await upsertProduct(req.body.item, true)
     }
-
+    res.json(response)
+})
+router.post("/v1/products/update", async (req, res) => {
+    let response = {acknowledged: false, data: [], message: ""};
+    if(req.hasOwnProperty("body") && req.body.hasOwnProperty("item")){
+        response = await upsertProduct(req.body.item, req.query.upsert)
+    }
     res.json(response)
 })
 
-router.post("/v1/products/update", async (req, res) => {
+/* Product/update和Product/add合并了
+* 传入为req.body.item，然后剩余部分交由upsertProduct方法处理
+* */
+async function upsertProduct(itemContent, upsert = true) {
     let response = {acknowledged: false, data: [], message: ""};
     let dbclient = new MongoClient(uri, {
         serverApi: {
@@ -373,31 +353,31 @@ router.post("/v1/products/update", async (req, res) => {
             useUnifiedTopology: true,
         },
     });
+
+    if (!itemContent.hasOwnProperty("productCode")){
+        response.message = "Missing product code information"
+        return response
+    }
+
+    // 如果产品带有vendorCode，则可以联合vendorCode一起使用
+    let filter = {productCode: itemContent.productCode}
+    if (itemContent.hasOwnProperty("vendorCode") && String(itemContent.vendorCode).length >0) {
+        filter.vendorCode = itemContent.vendorCode
+    }
     try {
         let session = dbclient.db(targetDB).collection("products");
         await dbclient.connect()
-
-        if (req.hasOwnProperty("body") && req.body.hasOwnProperty("item") && req.body.item.hasOwnProperty("productCode")) {
-            let filter = {productCode: req.body.item.productCode}
-            if (req.body.item.vendorCode) {
-                filter = {productCode: req.body.item.productCode, vendorCode: req.body.item.vendorCode}
-            }
-
-            const result = await session.updateOne(filter, {$set: req.body.item}, {upsert: false});
-            if (result.matchedCount === result.modifiedCount) {
-                response.acknowledged = true
-            }
-        } else {
-            response.message = `Missing parameter, body.item.productCode is mandatory field`
+        const result = await session.updateOne(filter, {$set: itemContent}, {upsert: true});
+        if (result.matchedCount === result.modifiedCount) {
+            response.acknowledged = true
         }
     } catch (e) {
-        response.message = `Error on /v1/products: ${e}`
+        response.message = `Error on product upserts: ${e}`
     } finally {
         await dbclient.close()
     }
-
-    res.json(response)
-})
+    return response
+}
 
 function filterDuplicate(fields, data) {
     const seen = new Set();
@@ -425,50 +405,45 @@ router.post("/v1/stocks/update", async (req, res) => {
             useUnifiedTopology: true,
         },
     });
-
     let upsertFlag = (req.query.hasOwnProperty("upsert") && req.query.upsert)
-
-    if (!req.body || !req.body.item) {
-        response.message = "Missing item informations"
-    } else if (req.body && req.body.item) {
-        let filter = {}
-        let updateObject = {$set: {}}
-        if (req.body.item.productLabel) {
+    if (req.body && req.body.item) {
+        try {
+            let filter = {}
+            let updateObject = {$set: {}}
+            if (!req.body.item.hasOwnProperty("productLabel") && !req.body.item.productLabel) {
+                response.message = "Missing property of 'productLabel'"
+                throw "Missing property of 'productLabel'"
+            }
             filter = {productLabel: req.body.item.productLabel}
             // 检查各种字段中是否由需要的对应参数，如果没有则补齐
             // 默认使用字段时间并转换为时间对象，如果字段未提供默认使用当前时间
             let updateItems = req.body.item
             try {
-                if (upsertFlag){  // 新插入数据需要检查时间戳是否齐全，既有数据则跳过
-                    updateItems.createTime = updateItems.hasOwnProperty("createTime") ? new Date(updateItems.createTime) : new Date()
-                }
-                // 强制更新loggingTime为当前最后更改的时间
-                updateItems.loggingTime = updateItems.hasOwnProperty("loggingTime") ? new Date(updateItems.loggingTime) : new Date()
-                updateItems.removed = updateItems.hasOwnProperty("removed") ? updateItems.removed : 0 // 默认设定为未使用
-                if (updateItems.hasOwnProperty("removed") && parseInt(updateItems.removed) === 1) {
-                    updateItems.removeTime = updateItems.hasOwnProperty("removeTime") ? new Date(updateItems.removeTime) : new Date()
-                }
-                if (updateItems.hasOwnProperty("unitPrice")){
-                    updateItems.unitPrice = Decimal128.fromString(updateItems.unitPrice)
-                }
-
-                if (updateItems.hasOwnProperty("productLabel")){
+                if (updateItems.hasOwnProperty("productLabel")) {
                     delete updateItems.productLabel
                 }
                 if (updateItems.hasOwnProperty("_id")) {
                     delete updateItems._id
                 }
-
+                updateItems.createTime = updateItems.hasOwnProperty("createTime") ? new Date(updateItems.createTime) : new Date()
+                updateItems.loggingTime = new Date()
+                updateItems.removed = updateItems.hasOwnProperty("removed") ? updateItems.removed : 0 // 默认设定为未使用
+                if (updateItems.hasOwnProperty("removed") && parseInt(updateItems.removed) === 1) {
+                    updateItems.removeTime = updateItems.hasOwnProperty("removeTime") ? new Date(updateItems.removeTime) : new Date()
+                }
+                if (updateItems.hasOwnProperty("unitPrice")) {
+                    updateItems.unitPrice = Decimal128.fromString(updateItems.unitPrice)
+                }
                 await dbclient.connect()
                 const session = dbclient.db(targetDB).collection("pollinglog");
 
                 let originData = await session.find(filter).toArray()
                 let originElement = await session.find(filter).toArray()
                 let result = await session.updateOne(filter, {$set: updateItems}, {upsert: true})
-                if (originElement.length === 1){
-                    await session.updateOne(filter,{$push: {changelog: compareChanges(originElement[0],updateItems)}})
+                if (originElement.length === 1) {
+                    await session.updateOne(filter, {$push: {changelog: compareChanges(originElement[0], updateItems)}})
                 }
-                
+
                 if (result.acknowledged) {
                     response.acknowledged = true
                     response.data = result
@@ -478,21 +453,21 @@ router.post("/v1/stocks/update", async (req, res) => {
             } finally {
                 await dbclient.close()
             }
-        } else {
-            response.message = "Missing products key information's "
+        } catch (e) {
+            console.error("Error when processing stocks update: ", e)
         }
     } else {
-        response.message = "Action is not allowed "
+        response.message = "Missing item informations"
     }
     res.json(response)
 })
 
-function compareChanges(oldObject, newObject){
-    let changelog =  {datetime: new Date(), events:[]}
-    if (isObject(oldObject) && isObject(newObject)){
+function compareChanges(oldObject, newObject) {
+    let changelog = {datetime: new Date(), events: []}
+    if (typeof (oldObject) === 'object' && typeof (newObject) === 'object') {
         for (let eachKey of Object.keys(newObject)) {
-            if (newObject.hasOwnProperty("eachKey")){
-                if (oldObject[eachKey] !== newObject[eachKey]){
+            if (newObject.hasOwnProperty("eachKey")) {
+                if (oldObject[eachKey] !== newObject[eachKey]) {
                     changelog.events.push({field: eachKey, before: oldObject[eachKey]})
                 }
             } else {
