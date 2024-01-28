@@ -1,7 +1,7 @@
 let table = new DataTable('#table', {
     responsive: true,
     pageLength: 25,
-    lengthMenu: [[10, 15, 25, 50, 100, -1],[10, 15, 25, 50, 100, 'All']],
+    lengthMenu: [[10, 15, 25, 50, 100, -1], [10, 15, 25, 50, 100, 'All']],
     iDisplayLength: -1,
     order: [[2, 'asc']],
     columnDefs: [
@@ -18,41 +18,49 @@ document.addEventListener("DOMContentLoaded", function () {
     fetchStocksList()
 });
 
-function fetchStocksList(){
+function fetchStocksFromAPI(){
+    return new Promise((resolve, reject) =>{
+        fetch("/api/v1/stocks")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => resolve(data))
+            .catch(error => reject(error));
+    })
+}
+
+function fetchStocksList() {
     document.querySelector("#loadingAnimation").style = "display: flex"
-    fetch("/api/v1/stocks")
-        .then(respsonse => {
-            if (!respsonse.ok) {
-                throw new Error("API Request failed")
-            }
-            return respsonse.json()
-        }).then(data => {
-        if (Array.isArray(data)) {
+    fetchStocksFromAPI().then(arrayData => {
+        if (Array.isArray(arrayData.data)){
             table.clear().draw()
-            data.forEach(eachRow => {
+            arrayData.data.forEach(eachRow => {
                 table.row.add([
                     `<a href="#" data-bs-ponumber="${(eachRow.productCode ? eachRow.productCode : "")}" class="table_action_search">${(eachRow.productCode ? eachRow.productCode : "")}</a>`
-                    +`${eachRow.productName ? '<br>'+eachRow.productName : ''}`,
-                    `${eachRow.quantity ? eachRow.quantity + (eachRow.quantityUnit ? ' ' + eachRow.quantityUnit : '') : ''}`+`${eachRow.shelfLocation ? '<br>'+eachRow.shelfLocation : ''}`,
+                    + `${eachRow.productName ? '<br>' + eachRow.productName : ''}`,
+                    `${eachRow.quantity ? eachRow.quantity + (eachRow.quantityUnit ? ' ' + eachRow.quantityUnit : '') : ''}` + `${eachRow.shelfLocation ? '<br>' + eachRow.shelfLocation : ''}`,
                     `${eachRow.bestbefore ? eachRow.bestbefore : '2999-12-31'}`, // Product without Exp Date, use max
                     `${eachRow.bestbefore ? eachRow.bestbefore : '2999-12-31<br>(No Expire)'}`,
-                    `${eachRow.productLabel ? eachRow.productLabel : ''}`+`<br>`+
+                    `${eachRow.productLabel ? eachRow.productLabel : ''}` + `<br>` +
                     `<a href="#" data-bs-ponumber="${(eachRow.POnumber ? eachRow.POnumber : "")}" class="table_action_search">${(eachRow.POnumber ? eachRow.POnumber : "")}</a>`,
-                    `<a href="#" class="table_actions editModal" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-labelId="${eachRow.productLabel}">View/Edit</a>`+`<br>`+
+                    `<a href="#" class="table_actions editModal" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-labelId="${eachRow.productLabel}">View/Edit</a>` + `<br>` +
                     `<a href="#" class="table_actions removeModal" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-labelId="${eachRow.productLabel}">Remove</a>`,
                 ]).draw(false)
             })
+            document.querySelector("#loadingAnimation").style = "display: none"
         }
-        document.querySelector("#loadingAnimation").style ="display: none"
-    }).then(function(){
-        document.querySelectorAll(".table_action_search").forEach(eachElement=>{
-            eachElement.addEventListener("click",function(ev){
+    }).then(function () {
+        document.querySelectorAll(".table_action_search").forEach(eachElement => {
+            eachElement.addEventListener("click", function (ev) {
                 ev.preventDefault()
                 table.search(eachElement.getAttribute("data-bs-ponumber")).draw()
             })
         })
     }).catch(err => {
-        console.error("Error after fetching data: ", err)
+            console.error("Error after fetching data: ", err)
     })
 }
 
@@ -63,7 +71,7 @@ editModal.addEventListener("show.bs.modal", async function (ev) {
     editModal.querySelector("#editModal_labelId").value = requestLabelId
     editModal.querySelector("#editModal_btnSubmit").textContent = "Submit"
     editModal.querySelector(".modal-title").textContent = `Loading Product Information`
-    editModal.querySelector("#editModal_btnDelete").setAttribute("data-bs-labelId",requestLabelId)
+    editModal.querySelector("#editModal_btnDelete").setAttribute("data-bs-labelId", requestLabelId)
     let stockInfo = await fetchStockByLabelid(requestLabelId)
     if (Array.isArray(stockInfo) && stockInfo.length > 0) {
         currentEditModalItem = stockInfo[0]
@@ -84,24 +92,24 @@ editModal.querySelector("#editModal_btnSubmit").addEventListener("click", async 
     let submissionResult = await submitStockEditResult(updateElement)
     if (submissionResult.acknowledged) {
         bootstrap.Modal.getInstance(editModal).hide()
-        createAlert("success","Changes has been successfully saved, refreshing list.")
+        createAlert("success", "Changes has been successfully saved, refreshing list.")
         fetchStocksList(true)
     } else {
         editModal.querySelector(".modal-body p").textContent = "Error on Update, check console for more info"
     }
 })
 
-function compareChangesOfElement(originInfo, newInfo){
-    let changelog = {datetime: new Date(), events:[]}
+function compareChangesOfElement(originInfo, newInfo) {
+    let changelog = {datetime: new Date(), events: []}
     let setObjects = {}
     for (const eachKey of Object.keys(newInfo)) {
-        if (eachKey === "_id" || eachKey==="productLabel" || eachKey==="changelog"){
+        if (eachKey === "_id" || eachKey === "productLabel" || eachKey === "changelog") {
             continue;
         }
-        if (originInfo.hasOwnProperty(eachKey)){
-            if (eachKey === "unitPrice"){
-                if (originInfo.unitPrice.hasOwnProperty("$numberDecimal")){ //如果均为Decimal128，则对比值
-                    if (originInfo.unitPrice['$numberDecimal'] !== newInfo.unitPrice['$numberDecimal']){
+        if (originInfo.hasOwnProperty(eachKey)) {
+            if (eachKey === "unitPrice") {
+                if (originInfo.unitPrice.hasOwnProperty("$numberDecimal")) { //如果均为Decimal128，则对比值
+                    if (originInfo.unitPrice['$numberDecimal'] !== newInfo.unitPrice['$numberDecimal']) {
                         changelog.events.push({field: eachKey, before: (newInfo.unitPrice ? newInfo.unitPrice : null)})
                     }
                 } else { //如果值不是Decimal128,则转换值数据
@@ -109,7 +117,7 @@ function compareChangesOfElement(originInfo, newInfo){
                 }
                 setObjects.unitPrice = {$numberDecimal: String(newInfo.unitPrice)}
             }
-            if (originInfo[eachKey] !== newInfo[eachKey]){
+            if (originInfo[eachKey] !== newInfo[eachKey]) {
                 changelog.events.push({field: eachKey, before: originInfo[eachKey]})
                 setObjects[eachKey] = newInfo[eachKey]
             }
@@ -138,21 +146,21 @@ function writeModalEdit(element) {
     document.querySelector("#editModal_unit").value = element.quantityUnit ? element.quantityUnit : ""
     document.querySelector("#editModal_bestbefore").value = element.bestbefore ? element.bestbefore : ""
     document.querySelector("#editModal_location").value = element.shelfLocation ? element.shelfLocation : ""
-    
-    if (typeof element.unitPrice === 'object'){ // Unit Price需要额外判定是否为Object (Decimal 128)
+
+    if (typeof element.unitPrice === 'object') { // Unit Price需要额外判定是否为Object (Decimal 128)
         document.querySelector("#editModal_unitPrice").value = element.unitPrice.$numberDecimal
-    } else if(typeof element.unitPrice === 'number'){
+    } else if (typeof element.unitPrice === 'number') {
         document.querySelector("#editModal_unitPrice").value = element.unitPrice ? element.unitPrice : ""
     }
     document.querySelector("#editModal_ponumber").value = element.POnumber ? element.POnumber : ""
     document.querySelector("#inpt_removeTime").value = element.removeTime ? element.removeTime : ""
-    if (element.hasOwnProperty("quarantine") && element.quarantine === 1){
+    if (element.hasOwnProperty("quarantine") && element.quarantine === 1) {
         document.querySelector("#editModal_quarantineYes").checked = true
     }
-    if (element.hasOwnProperty("quarantine") && element.quarantine === 0){
+    if (element.hasOwnProperty("quarantine") && element.quarantine === 0) {
         document.querySelector("#editModal_quarantineNo").checked = true
     }
-    if (element.hasOwnProperty("quarantine") && element.quarantine === -1){
+    if (element.hasOwnProperty("quarantine") && element.quarantine === -1) {
         document.querySelector("#editModal_quarantineFinished").checked = true
     }
     document.querySelector("#editModal_btnSubmit").disabled = false
@@ -269,7 +277,7 @@ document.querySelector("#removeModalYes").addEventListener("click", async functi
 
     if (result.acknowledged) {
         bootstrap.Modal.getInstance(remvoeModal).hide()
-        createAlert("success","Item has been successfully removed, refreshing list.")
+        createAlert("success", "Item has been successfully removed, refreshing list.")
         fetchStocksList(true)
     } else {
         remvoeModal.querySelector("#editModal .modal-body p").textContent = "Error on Update, check console for more info"
@@ -277,32 +285,32 @@ document.querySelector("#removeModalYes").addEventListener("click", async functi
 })
 
 let deleteModal = document.querySelector("#deleteModal")
-deleteModal.addEventListener("show.bs.modal", (ev)=>{
+deleteModal.addEventListener("show.bs.modal", (ev) => {
     var itemId = ev.relatedTarget.getAttribute("data-bs-itemId")
     deleteModal.querySelector("#deleteModal_btnReturn").setAttribute("data-bs-itemId", itemId)
 })
 
-function createAlert(status, alertText){
+function createAlert(status, alertText) {
     let alertElement = document.createElement("div")
-    alertElement.setAttribute("role","alert")
+    alertElement.setAttribute("role", "alert")
     let closeButton = document.createElement("button")
-    closeButton.setAttribute("type","button")
-    closeButton.setAttribute("class","btn-close")
-    closeButton.setAttribute("data-bs-dismiss","alert")
+    closeButton.setAttribute("type", "button")
+    closeButton.setAttribute("class", "btn-close")
+    closeButton.setAttribute("data-bs-dismiss", "alert")
     closeButton.setAttribute("aria-label", "Close")
-    if (status === "primary"){
+    if (status === "primary") {
         alertElement.className = "alert alert-primary alert-dismissible fade show"
-    } else if (status === "secondary"){
+    } else if (status === "secondary") {
         alertElement.className = "alert alert-secondary alert-dismissible fade show"
-    } else if (status === "success"){
+    } else if (status === "success") {
         alertElement.className = "alert alert-success alert-dismissible fade show"
-    } else if (status === "danger"){
+    } else if (status === "danger") {
         alertElement.className = "alert alert-danger alert-dismissible fade show"
-    } else if (status === "warning"){
+    } else if (status === "warning") {
         alertElement.className = "alert alert-warning alert-dismissible fade show"
-    } else if (status === "light"){
+    } else if (status === "light") {
         alertElement.className = "alert alert-light alert-dismissible fade show"
-    } else if (status === "dark"){
+    } else if (status === "dark") {
         alertElement.className = "alert alert-dark alert-dismissible fade show"
     } else {
         alertElement.className = "alert alert-info alert-dismissible fade show"

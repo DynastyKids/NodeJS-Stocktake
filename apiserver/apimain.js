@@ -511,7 +511,7 @@ router.get("/v1/stocks", async (req, res) => {
     let stockLabel = req.query.label && String(req.query.label).length > 2 ? req.query.label : ""
     let stockSession = req.query.session && String(req.query.session).length > 2 ? req.query.session : ""
     let stockProduct = req.query.product && String(req.query.product).length > 2 ? req.query.product : ""
-    let response = {acknowledged: false, results: [], info: null}
+    let response = {acknowledged: false, data: [], message: ""}
     await sessionClient.connect()
     const sessions = sessionClient.db(targetDB).collection("pollinglog");
 
@@ -530,12 +530,11 @@ router.get("/v1/stocks", async (req, res) => {
             findingQuery.productCode = {$regex: new RegExp(stockProduct), $options: "i"}
         }
 
-        response = await sessions.find(findingQuery, {projection: {"_id": 0}}).toArray()
-        res.status(200)
+        response.data = await sessions.find(findingQuery, {projection: {"_id": 0}}).toArray()
+        response.acknowledged = true
     } catch (err) {
         console.error(err)
-        response.info = err
-        res.status(500)
+        response.message = err
     }
     res.json(response)
 })
