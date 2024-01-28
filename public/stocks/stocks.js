@@ -290,34 +290,42 @@ deleteModal.addEventListener("show.bs.modal", (ev) => {
     deleteModal.querySelector("#deleteModal_btnReturn").setAttribute("data-bs-itemId", itemId)
 })
 
-function createAlert(status, alertText) {
+function createAlert(status, text, time = 5000){
+    let alertAnchor = document.querySelector("#alertAnchor")
     let alertElement = document.createElement("div")
-    alertElement.setAttribute("role", "alert")
-    let closeButton = document.createElement("button")
-    closeButton.setAttribute("type", "button")
-    closeButton.setAttribute("class", "btn-close")
-    closeButton.setAttribute("data-bs-dismiss", "alert")
-    closeButton.setAttribute("aria-label", "Close")
-    if (status === "primary") {
-        alertElement.className = "alert alert-primary alert-dismissible fade show"
-    } else if (status === "secondary") {
-        alertElement.className = "alert alert-secondary alert-dismissible fade show"
-    } else if (status === "success") {
-        alertElement.className = "alert alert-success alert-dismissible fade show"
-    } else if (status === "danger") {
-        alertElement.className = "alert alert-danger alert-dismissible fade show"
-    } else if (status === "warning") {
-        alertElement.className = "alert alert-warning alert-dismissible fade show"
-    } else if (status === "light") {
-        alertElement.className = "alert alert-light alert-dismissible fade show"
-    } else if (status === "dark") {
-        alertElement.className = "alert alert-dark alert-dismissible fade show"
-    } else {
-        alertElement.className = "alert alert-info alert-dismissible fade show"
+    alertElement.className= "alert alert-primary alert-dismissible bg-success text-white border-0 fade show";
+    alertElement.role = "alert";
+    let svgImage = document.createElement("svg")
+    svgImage.className = "bi flex-shrink-0 me-2"
+    svgImage.width = 24
+    svgImage.height = 24
+    svgImage.role = "img"
+    svgImage.ariaLabel = "Info: "
+    svgImage.innerHTML = `<use xlink:href="#info-fill"/>`
+
+    let texts = document.createElement("span")
+    texts.innerHTML = text ? text : ""
+    if (status === "success"){
+        alertElement.className= "alert alert-success alert-dismissible bg-success text-white border-0 fade show"
+        svgImage.ariaLabel = "Success: "
+        svgImage.innerHTML = `<use xlink:href="#check-circle-fill"/>`
+    } else if (status === "danger"){
+        alertElement.className= "alert alert-danger alert-dismissible bg-danger text-white border-0 fade show"
+        svgImage.ariaLabel = "Danger: "
+        svgImage.innerHTML = `<use xlink:href="#exclamation-triangle-fill"/>`
+    } else if (status === "secondary"){
+        alertElement.className= "alert alert-secondary alert-dismissible bg-secondary text-white border-0 fade show"
+        svgImage.ariaLabel = "Info: "
+        svgImage.innerHTML = `<use xlink:href="#info-fill"/>`
     }
-    alertElement.innerHTML = `<p>${alertText}</p>`
-    alertElement.append(closeButton)
-    document.querySelector("#alertAnchor").append(alertElement)
+    alertElement.append(svgImage)
+    alertElement.append(text)
+    alertAnchor.append(alertElement)
+    setTimeout(function () {
+        if (alertElement){
+            alertElement.style.display = 'none'
+        }
+    }, isNaN(time) ? 3000 : time)
 }
 
 function removeProductById(itemObject) {

@@ -34,7 +34,7 @@ $(document).ready(function () {
         }
     });
 
-    function scanQRCode() {
+    async function scanQRCode() {
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
             canvas.height = video.videoHeight;
             canvas.width = video.videoWidth;
@@ -51,7 +51,7 @@ $(document).ready(function () {
                 drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "#00d73c");
                 drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#00d73c");
                 currentText.textContent = `${code.data}`;
-                createScanHistory(code.data)
+                await createScanHistory(code.data)
             }
         }
         // requestAnimationFrame(scanQRCode);
@@ -68,13 +68,13 @@ $(document).ready(function () {
 });
 
 
-function createScanHistory(qrCodeData) {
+async function createScanHistory(qrCodeData) {
     let results = {action: true}
     let historyList = document.querySelector("#list_history")
 
     if (qrCodeData.includes("?item=")) {
         var decodedElement = decodeItemData(qrCodeData)
-        let htmlBuildNode = buildInnerlistContent(decodedElement)
+        let htmlBuildNode = await buildInnerlistContent(decodedElement)
         htmlBuildNode.setAttribute("data-bs-labelid", decodedElement.item.productLabel)
         // 每次添加前需要核验是否和上一个是Label，如果不是则允许添加，如果是则忽略
         let lastAddedCard = document.querySelector("#list_history .card")
@@ -94,15 +94,21 @@ function createScanHistory(qrCodeData) {
 }
 
 async function findStockStatus(labelId) {
-    let result = {addToStock: false, edit: false, remove: false}
+    let result = {add: false, edit: false, remove: false}
     let stockResults = await fetchStockBylabel(labelId)
     let preloadResults = await fetchPrefillByLabel(labelId)
     console.log(stockResults, preloadResults)
-//     根据给予的标签号信息， 查找
-//     Pollinglog中是否已经有该产品信息，如果有，则删除Add To Stock按钮，
-//     如果没有，则：
-//        Prefill中是否已经有该产品信息，如果有，则删除AddToStock按钮
-//        如果两个表中均没有该产品信息，则
+    if (stockResults.acknowledged && stockResults.data.length > 0){
+        result.remove = true
+    }
+    if (preloadResults.acknowledged && preloadResults.data.length > 0){
+        result.add = true
+    }
+    if (stockResults.acknowledged && preloadResults.acknowledged && stockResults.data.length === 0 && preloadResults.data.length === 0){
+        result.add = true
+    }
+
+    return result
 }
 
 function fetchStockBylabel(labelid = "...") {
@@ -124,7 +130,7 @@ function fetchPrefillByLabel(labelid="...") {
     })
 }
 
-function buildInnerlistContent(element) {
+async function buildInnerlistContent(element) {
     let elementWrap = document.createElement("div")
     elementWrap.className = "col-12 card mb-1"
     let cardBody = document.createElement("div")
@@ -155,17 +161,22 @@ function buildInnerlistContent(element) {
     buttonsLeft.append(addButton, editButton, removeButton)
 
     addButton.addEventListener("click", function (ev) {
+        console.log(`Add Clicked`)
+        
+    })
+    editButton.addEventListener("click", function (ev) {
+        console.log(`Edit Clicked`)
 
     })
     removeButton.addEventListener("click", function (ev) {
-
+        console.log(`Remove Clicked`)
+        
     })
     let rowdeleteButton = document.createElement("button")
     rowdeleteButton.className = "btn btn-warning mx-1"
     rowdeleteButton.innerHTML = `<i class="ti ti-minus"></i>`
     rowdeleteButton.addEventListener("click", function (ev) {
         elementWrap.remove()
-
     })
     buttonsRight.append(rowdeleteButton)
 
@@ -173,14 +184,11 @@ function buildInnerlistContent(element) {
     buttonsDiv.className = "d-flex justify-content-between"
     cardBody.append(scanTimeElement, productLabelElement, productNameElement, productQuantityElement, divideLine, buttonsDiv)
     elementWrap.append(cardBody)
-    /*  后续需要添加按钮
-    *   如果产品不在库存中，提供按钮，允许直接添加到Stock或者PreloadLog(默认5s内执行)
-    *   如果产品已经在pollinglog
-    *       如果产品未删除，则提示是否从库存中移除该产品（默认选项，如果5s内未操作也触发执行）
-    *       如果产品已经删除，则提示已经移除，不提供其他操作
-    *   所有扫描条目尾巴需要添加删除当前记录按钮
-    * */
-    findStockStatus(element.item.productLabel)
+    let displayStatus = await findStockStatus(element.item.productLabel)
+    console.log(displayStatus)
+    addButton.style = displayStatus.add ? "" : "display:none"
+    editButton.style = displayStatus.edit ? "" : "display:none"
+    removeButton.style = displayStatus.remove ? "" : "display:none"
 
     return elementWrap
 }

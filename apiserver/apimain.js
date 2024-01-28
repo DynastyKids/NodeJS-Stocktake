@@ -130,21 +130,9 @@ async function upsertProduct(itemContent, upsert = true) {
     return response
 }
 
-function filterDuplicate(fields, data) {
-    const seen = new Set();
-    return data.filter(item => {
-        const key = fields.map(field => item[field]).join('|');
-        if (seen.has(key)) {
-            return false;
-        }
-        seen.add(key);
-        return true;
-    });
-}
-
 /*
  * STOCKS - POST方法
- * 重写后的STOCKS方法，适合用于Add/Edit/Update操作，该方法默认启用Upsert
+ * 重写后的STOCKS方法，适合用于Add/Edit/Update操作，该方法关闭Upsert
  *
  *  01JAN重写部分，update时候，需要检查数据库内是否已有条目
  *  有：需要检查更新数据前后对比，并添加changelog
@@ -152,6 +140,7 @@ function filterDuplicate(fields, data) {
  */
 router.post("/v1/stocks/update", async (req, res) => {
     let response = {acknowledged: false, data: [], message: ""};
+    let filter = {}
     let dbclient = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
@@ -159,59 +148,48 @@ router.post("/v1/stocks/update", async (req, res) => {
             useUnifiedTopology: true,
         },
     });
-    let upsertFlag = (req.query.hasOwnProperty("upsert") && req.query.upsert)
-    if (req.body && req.body.item) {
-        try {
-            let filter = {}
-            let updateObject = {$set: {}}
-            if (!req.body.item.hasOwnProperty("productLabel") && !req.body.item.productLabel) {
-                response.message = "Missing property of 'productLabel'"
-                throw "Missing property of 'productLabel'"
-            }
-            filter = {productLabel: req.body.item.productLabel}
-            // 检查各种字段中是否由需要的对应参数，如果没有则补齐
-            // 默认使用字段时间并转换为时间对象，如果字段未提供默认使用当前时间
-            let updateItems = req.body.item
-            try {
-                if (updateItems.hasOwnProperty("productLabel")) {
-                    delete updateItems.productLabel
-                }
-                if (updateItems.hasOwnProperty("_id")) {
-                    delete updateItems._id
-                }
-                updateItems.createTime = updateItems.hasOwnProperty("createTime") ? new Date(updateItems.createTime) : new Date()
-                updateItems.loggingTime = new Date()
-                updateItems.removed = updateItems.hasOwnProperty("removed") ? updateItems.removed : 0 // 默认设定为未使用
-                if (updateItems.hasOwnProperty("removed") && parseInt(updateItems.removed) === 1) {
-                    updateItems.removeTime = updateItems.hasOwnProperty("removeTime") ? new Date(updateItems.removeTime) : new Date()
-                }
-                if (updateItems.hasOwnProperty("unitPrice")) {
-                    updateItems.unitPrice = Decimal128.fromString(updateItems.unitPrice)
-                }
-                await dbclient.connect()
-                const session = dbclient.db(targetDB).collection("pollinglog");
 
-                let originData = await session.find(filter).toArray()
-                let originElement = await session.find(filter).toArray()
-                let result = await session.updateOne(filter, {$set: updateItems}, {upsert: true})
-                if (originElement.length === 1) {
-                    await session.updateOne(filter, {$push: {changelog: compareChanges(originElement[0], updateItems)}})
-                }
-
-                if (result.acknowledged) {
-                    response.acknowledged = true
-                    response.data = result
-                }
-            } catch (e) {
-                response.message = e
-            } finally {
-                await dbclient.close()
-            }
-        } catch (e) {
-            console.error("Error when processing stocks update: ", e)
+    try{
+        let upsertFlag = (req.hasOwnProperty("query") && req.query.hasOwnProperty("upsert") && req.query.upsert)
+        let updateItems = req.hasOwnProperty("body") && req.body.hasOwnProperty("item") ? req.body.item: {}
+        if (Object.keys(updateItems).length <= 0){
+            throw "Update item fetched a empty object"
         }
-    } else {
-        response.message = "Missing item informations"
+        if (!updateItems.hasOwnProperty("productLabel") || String(updateItems.productLabel).length <= 0){
+            throw "Product Label is missing"
+        }
+        filter = {productLabel: req.body.item.productLabel}
+
+        for (var eachKey of Object.keys(updateItems)) {
+            if (eachKey === "session"){ continue;}
+            if (["removed", "quantity", "labelBuild"].indexOf(eachKey) > -1){
+                updateItems[eachKey] = parseInt(updateItems[eachKey].toString())
+            }else if(["removedTime", "createTime"].indexOf(eachKey) > -1){
+                updateItems[eachKey] = new Date(updateItems[eachKey])
+            } else if (["unitPrice", "grossPrice"].indexOf(eachKey) > -1){
+                updateItems[eachKey] = Decimal128.fromString(String(updateItems[eachKey]))
+            } else {
+                updateItems[eachKey] = String(updateItems[eachKey])
+            }
+        }
+        // Forced update flags
+        updateItems["loggingTime"] = new Date()
+        if ([0,1].indexOf(updateItems["removed"])< 0){ updateItems["removed"] = 0 }
+
+        await dbclient.connect()
+        const session = dbclient.db(targetDB).collection("pollinglog");
+        let originElement = await session.find(filter).toArray()
+        if (originElement.length <= 0){ //现有记录内没有相同的记录，执行添加操作，根据用户指定的upsertFlag处理
+            response = await session.updateOne(filter, {$set: updateItems}, {upsert: upsertFlag})
+        } else {  // 现有记录内有相同的记录，执行更新操作，需要一并修改changelog
+            let changelogElement = compareChanges(originElement[0], updateItems)
+            response = await session.updateOne(filter, {$set: updateItems}, {upsert: upsertFlag})
+            response.upsert = await session.updateOne(filter, {$push: {changelog: changelogElement}})
+        }
+    } catch (e) {
+        console.error("Error when processing stock updates: ",e)
+    } finally {
+        await dbclient.close()
     }
     res.json(response)
 })
@@ -220,7 +198,10 @@ function compareChanges(oldObject, newObject) {
     let changelog = {datetime: new Date(), events: []}
     if (typeof (oldObject) === 'object' && typeof (newObject) === 'object') {
         for (let eachKey of Object.keys(newObject)) {
-            if (newObject.hasOwnProperty("eachKey")) {
+            if (eachKey === "_id" || eachKey === "productLabel"){
+                continue;
+            }
+            if (newObject.hasOwnProperty(eachKey)) {
                 if (oldObject[eachKey] !== newObject[eachKey]) {
                     changelog.events.push({field: eachKey, before: oldObject[eachKey]})
                 }
@@ -247,30 +228,32 @@ router.post("/v1/stocks/move", async (req, res) => {
         },
     });
 
-    if (req.body && req.body.hasOwnProperty("item") && req.body.hasOwnProperty("newLocation") && req.body.item.hasOwnProperty("productLabel")) {
-        // 用户提供了以上信息
-        let movementRecordsString = ''
-        if (req.body.item.hasOwnProperty("movementRecords")) {
-            //     如果有过往移动记录，则append到字段尾部，字段中间使用;分割，字段格式：T<时间戳>@位置;T<时间戳>@位置;
-            movementRecordsString = `T${Date.now()}@${req.body.item.hasOwnProperty("shelfLocation") ? req.body.item.shelfLocation : ""};` + movementRecordsString
+    try {
+        if (!req.hasOwnProperty("body") || !req.body.hasOwnProperty("item") || !req.body.item.hasOwnProperty("productLabel") || String(req.body.item.productLabel) <=0){
+            throw "Missing product key informations."
         }
-
         let filter = {productLabel: req.body.item.productLabel}
-        let updateObject = {$set: {shelfLocation: req.body.newLocation, moveRecords: movementRecordsString}}
-        try {
-            await dbclient.connect()
-            const session = dbclient.db(targetDB).collection("pollinglog");
-
-            let result = await session.updateOne(filter, updateObject, {upsert: false})
-            if (result.acknowledged) {
-                response.acknowledged = true
-                response.data = result
-            }
-        } catch (e) {
-            console.error("Error occurred when attempting to provide move action. ", e)
+        let updateObject = {$set:{shelfLocation:""}}
+        if (req.body.item.hasOwnProperty("shelfLocation") && String(req.body.item.shelfLocation).length >0 ){
+            updateObject = {$set:{shelfLocation:req.body.item.shelfLocation}}
+        } else if (req.body.hasOwnProperty("newLocation") && String(req.body.newLocation).length > 0){
+            updateObject = {$set:{shelfLocation:req.body.newLocation}}
+        } else {
+            throw "Missing of new shelfLocation. Either use item.shelfLocation or newLocation as parameter to identify new location."
         }
-    } else {
-        response.message = "Required key information of 'Label ID' and/or 'Location' does not exist"
+
+        await dbclient.connect()
+        const session = dbclient.db(targetDB).collection("pollinglog");
+
+        let oldRecords = await session.find(filter).toArray()
+        let oldLocation = ""
+        if (oldRecords.length >=0){
+            oldLocation = (oldRecords[0].hasOwnProperty("shelfLocation") && String(oldRecords[0].shelfLocation).length > 0) ? oldRecords[0].shelfLocation : ""
+        }
+        updateObject["$push"] = {changelog:{datetime: new Date()},events:[{field: "productLabel", before: oldLocation}]}
+        response = await session.updateOne(filter, updateObject, {upsert: false})
+    } catch (e){
+        console.error("Error when processing stock move: ",e)
     }
 
     res.json(response)
@@ -327,6 +310,15 @@ router.get("/v1/preload", async (req, res) => {
         let result = await session.find({}).toArray()
         response.acknowledged = true
         response.data = result
+
+        for (let i = 0; i < response.data; i++) {
+            if (response.data[i].hasOwnProperty("unitPrice") && String(response.data[i].unitPrice).length >0){
+                response.data[i].unitPrice = response.data[i].unitPrice.toString()
+            }
+            if (response.data[i].hasOwnProperty("grossPrice") && String(response.data[i].grossPrice).length >0){
+                response.data[i].grossPrice = response.data[i].grossPrice.toString()
+            }
+        }
         if (req.query){
             if (req.query.hasOwnProperty("label") && String(req.query.label).length > 3){
                 let newResultSet = []
@@ -407,12 +399,10 @@ router.post("/v1/preload/update", async (req, res) => {
                 if (["quantity", "removed", "seq", "labelBuild", "quarantine"].indexOf(eachKey) > -1) {
                     itemContent[eachKey] = parseInt(receiveItem[eachKey])
                 } else if (eachKey === "unitPrice") {
-                    console.log("unitPriceFound", Decimal128.fromString(receiveItem[eachKey]))
                     itemContent[eachKey] = Decimal128.fromString(receiveItem[eachKey])
                 } else if (["createTime", "loggingTime", "removeTime"].indexOf(eachKey) > -1) {
                     itemContent[eachKey] = new Date(receiveItem[eachKey])
                 } else {
-                    console.log("unitPriceGeneral", receiveItem[eachKey])
                     itemContent[eachKey] = receiveItem[eachKey]
                 }
             })
@@ -432,7 +422,7 @@ router.post("/v1/preload/update", async (req, res) => {
             await dbclient.close()
         }
     } catch (e) {
-        console.log("Error when processing updates of Preload:", e)
+        console.error("Error when processing updates of Preload:", e)
     }
     res.json(response)
 })
@@ -460,45 +450,6 @@ router.post("/v1/preload/remove", async (req, res) => {
     }
     res.json(response)
 })
-
-function createLogObject(sessioncode, iteminfo) {
-    var mongodata = {
-        sessions: [sessioncode],
-        labelBuild: 3,
-        removed: 0,
-        quarantine: 0,
-        loggingTime: new Date(),
-    }
-    try {
-        if (isBase64String(iteminfo)) {
-            var productInfo = JSON.parse(atob(iteminfo));
-            Object.keys(productInfo).forEach(eachKey => {
-                if (["quantity","labelBuild","removed", "quarantine"].indexOf(eachKey) > -1){
-                    mongodata[eachKey] = parseInt(productInfo[eachKey])
-                } else if(["unitPrice","grossPrice"].indexOf(eachKey) > -1){
-                    try{
-                        mongodata[eachKey] = Decimal128.fromString(productInfo[eachKey])
-                    } catch (e){
-                        console.error(`Error when processing ${eachKey}: `, e)
-                    }
-
-                } else if(["loggingTime","createTime","removedTime"].indexOf(eachKey) > -1){
-                    try {
-                        mongodata[eachKey] = new Date(productInfo[eachKey])
-                    } catch (e) {
-                        mongodata[eachKey] = new Date()
-                        console.error(`Error when processing ${eachKey}: `, e,"Using default time instead")
-                    }
-                } else {
-                    mongodata[eachKey] = String(productInfo[eachKey])
-                }
-            })
-        }
-    } catch (e) {
-        console.error("Error occurred when attempting to process data:", e);
-    }
-    return mongodata;
-}
 
 /*
  * STOCKS Get Method
@@ -531,6 +482,16 @@ router.get("/v1/stocks", async (req, res) => {
         }
 
         response.data = await sessions.find(findingQuery, {projection: {"_id": 0}}).toArray()
+
+        for (let i = 0; i < response.data; i++) {
+            if (response.data[i].hasOwnProperty("unitPrice") && String(response.data[i].unitPrice).length >0){
+                response.data[i].unitPrice = response.data[i].unitPrice.toString()
+            }
+            if (response.data[i].hasOwnProperty("grossPrice") && String(response.data[i].grossPrice).length >0){
+                response.data[i].grossPrice = response.data[i].grossPrice.toString()
+            }
+        }
+
         response.acknowledged = true
     } catch (err) {
         console.error(err)
@@ -562,21 +523,6 @@ router.get("/v1/ping", (req, res) => {
     return {acknowledged: true, message: "Connection OK"}
 })
 
-async function findAndUpdateLogs(findCondition, updateQuery) {
-    let returnResult = {}
-    try {
-        await sessionClient.connect()
-        const session = sessionClient.db(targetDB).collection("pollinglog");
-        var result = await session.updateMany(findCondition, {$set: updateQuery}, {upsert: false})
-        if (result !== null) {
-            returnResult = result
-        }
-    } catch (e) {
-        console.error(e)
-    }
-    return returnResult
-}
-
 router.use("/", swaggerUi.serve);
 router.get("/", swaggerUi.setup(swaggerDocument));
 router.get("/v1", swaggerUi.setup(swaggerDocument));
@@ -584,95 +530,6 @@ router.get('/test', (req, res) => {
     res.json({message: 'Hello from server!'})
 })
 module.exports = router;
-
-async function insertOneToLog(insertData) {
-    try {
-        await sessionClient.connect();
-        const session = sessionClient.db(targetDB).collection("pollinglog");
-        var result = await session.findOne({
-            session: insertData.session,
-            productCode: insertData.productCode,
-            productLabel: insertData.productLabel,
-        });
-        var returnData;
-        if (result == null) {
-            result = await session.insertOne(insertData);
-            returnData = {acknowledged: true, method: "insertOne", result: result};
-        } else {
-            returnData = {acknowledged: true, method: "findOne", result: result};
-        }
-        return returnData;
-    } catch (err) {
-        console.error(err);
-        return {acknowledged: false, method: null, result: err.toString};
-    }
-}
-
-async function findLastPollionglog(labelId) {
-    try {
-        await sessionClient.connect()
-        const session = sessionClient.db(targetDB).collection("pollinglog")
-        const projection = {
-            _id: 0,
-            session: 1,
-            loggingTime: 1,
-            createTime: 1,
-            productCode: 1,
-            quantity: 1,
-            quantityUnit: 1,
-            shelfLocation: 1,
-            removed: 1,
-            POIPnumber: [],
-            productName: 1,
-            bestbefore: 1,
-            productLabel: 1,
-            labelBuild: 1
-        }
-        const result = await session.findOne({productLabel: labelId}, {projection: projection})
-        if (!result) {
-            console.log("[MongoDB] Nothing Found");
-            return {}
-        } else {
-            return await result
-        }
-    } catch (err) {
-        console.error(err)
-    }
-}
-
-async function insertOneLot(productInformationObject) {
-    let returnResult = {acknowledged: false}
-    try {
-        if (productInformationObject.hasOwnProperty("productCode") && productInformationObject.hasOwnProperty("quantity") && productInformationObject.hasOwnProperty("quantityUnit") && productInformationObject.hasOwnProperty("shelfLocation") && productInformationObject.hasOwnProperty("productName") && productInformationObject.hasOwnProperty("productLabel")) {
-            await sessionClient.connect()
-            const session = sessionClient.db(targetDB).collection("pollinglog")
-            const result = await session.insertOne(productInformationObject)
-            returnResult.acknowledged = true
-        }
-    } catch (err) {
-        console.error(err)
-    }
-    return returnResult;
-}
-
-async function updateOneLotByLabel(productLabelId, updateinfoObject) {
-    var updateObject = updateinfoObject
-    updateObject['loggingTime'] = new Date()
-    let returnResult = {acknowledged: false}
-    try {
-        await sessionClient.connect()
-        const session = sessionClient.db(targetDB).collection("pollinglog")
-        const result = await session.updateOne({productLabel: productLabelId}, {$set: updateObject}) //更新信息后也更新最后记录时间
-        if (result.matchedCount === result.modifiedCount, result.modifiedCount > 0) {
-            returnResult.acknowledged = true
-            returnResult['message'] = `${result.matchedCount} document(s) matched the filter, updated ${result.modifiedCount} document(s)`
-        }
-    } catch (err) {
-        console.error(err)
-        returnResult['message'] = err.toString()
-    }
-    return returnResult
-}
 
 function isJsonString(text) {
     try {
