@@ -325,46 +325,44 @@ router.get("/v1/preload", async (req, res) => {
         await dbclient.connect()
         const session = dbclient.db(targetDB).collection("preloadlog");
         let result = await session.find({}).toArray()
-        for (let i = 0; i < result.length; i++) {
-            if (result[i].hasOwnProperty("item")) {
-                if (result[i].item.hasOwnProperty("unitPrice") && result[i].item.unitPrice) {
-                    result[i].item.unitPrice = result[i].item.unitPrice.toString()
-                }
-            }
-        }
         response.acknowledged = true
         response.data = result
-        console.log(result)
-        if (req.query) { // 如果用户提供了筛选条件，则筛选符合条件的内容**不区分大小写
-            let originResult = result
-            if (req.query.product && req.query.product.length >= 3) { //Product
-                let filteredResult = []
-                originResult.forEach(eachitem => {
-                    if (eachitem.item.hasOwnProperty("productCode") && eachitem.item.productCode.toLowerCase().includes(String(req.query.product).toLowerCase())) {
-                        filteredResult.push(eachitem)
+        if (req.query){
+            if (req.query.hasOwnProperty("label") && String(req.query.label).length > 3){
+                let newResultSet = []
+                response.data.forEach(eachResult => {
+                    if(eachResult.hasOwnProperty("item") && eachResult.item.hasOwnProperty("productLabel") && eachResult.item.productLabel === req.query.label) {
+                        newResultSet.push(eachResult)
                     }
                 })
-                originResult = filteredResult
+                response.data = newResultSet
             }
-
-            if (req.query.location && req.query.location.length >= 2) { // Location
-                let filteredResult = []
-                originResult.forEach(eachitem => {
-                    if (eachitem.item.hasOwnProperty("shelfLocation") && eachitem.item.shelfLocation.toLowerCase().includes(String(req.query.location).toLowerCase())) {
-                        filteredResult.push(eachitem)
+            if (req.query.hasOwnProperty("product") && String(req.query.product).length > 3){
+                let newResultSet = []
+                response.data.forEach(eachResult => {
+                    if(eachResult.hasOwnProperty("item") &&eachResult.item.hasOwnProperty("productCode") && eachResult.item.productCode === req.query.product) {
+                        newResultSet.push(eachResult)
                     }
                 })
-                originResult = filteredResult
+                response.data = newResultSet
             }
-
-            if (req.query.label && req.query.label.length >= 3) { // Label
-                let filteredResult = []
-                originResult.forEach(eachitem => {
-                    if (eachitem.item.hasOwnProperty("productLabel") && eachitem.item.productLabel.toLowerCase().includes(String(req.query.label).toLowerCase())) {
-                        filteredResult.push(eachitem)
+            if (req.query.hasOwnProperty("productName") && String(req.query.productName).length > 3){
+                let newResultSet = []
+                response.data.forEach(eachResult => {
+                    if(eachResult.hasOwnProperty("item") &&eachResult.item.hasOwnProperty("productName") && eachResult.item.productName === req.query.productName) {
+                        newResultSet.push(eachResult)
                     }
                 })
-                originResult = filteredResult
+                response.data = newResultSet
+            }
+            if (req.query.hasOwnProperty("location") && String(req.query.location).length > 2){
+                let newResultSet = []
+                response.data.forEach(eachResult => {
+                    if(eachResult.hasOwnProperty("item") &&eachResult.item.hasOwnProperty("shelfLocation") && eachResult.item.shelfLocation === req.query.location) {
+                        newResultSet.push(eachResult)
+                    }
+                })
+                response.data = newResultSet
             }
         }
     } catch (e) {

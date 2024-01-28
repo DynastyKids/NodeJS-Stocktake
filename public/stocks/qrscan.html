@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner - Warehouse Electron</title>
+    <link href="../library/bootstrap.min.css" rel="stylesheet"/>
+    <link href="../library/tabler/tabler-icons.min.css" rel="stylesheet">
+    <link href="../library/datatables/datatables.css" rel="stylesheet">
+</head>
+<body>
+<div class="container-fluid" style="max-height: 100vh">
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div></div>
+            <div class="col-md-6 col-sm-12 mb-2">
+                <div class="video-wrapper">
+                    <video id="qr-video" class="w-100"></video>
+                </div>
+                <div id="currentText">
+                    <label>Current On Camera</label>
+                    <p id="list_current"></p>
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <label><h5>Scan History</h5></label>
+                <div id="list_history" class="row"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../library/jquery-3.7.1.min.js"></script>
+<script src="../library/jsqr/jsQR.github.js"></script>
+<script src="../library/bootstrap.bundle.min.js"></script>
+<script src="../library/datatables/datatables.js"></script>
+<script src="../loadNavbar.js"></script>
+<script src="../library/js-base64/base64.min.js"></script>
+<script src="qrscan.js"></script>
+</body>
+<style>
+    .video-wrapper {
+        max-width: 600px;
+        max-height: 480px;
+        overflow: hidden;
+    }
+
+    #list_history {
+        max-height: 100vh;
+        overflow-y: auto;
+    }
+    @media (max-width: 767.9px) {
+        #qr-history {
+            max-height: calc(100vh - 50px); 
+        }
+    }
+    #list_current {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+    #list_history .list-group-item {
+        max-width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    div p{
+        margin-top:  0;
+        margin-bottom: 2px;
+    }
+</style>
+</html>

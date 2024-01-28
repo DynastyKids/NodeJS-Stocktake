@@ -17,10 +17,10 @@ let NavbarHTML =
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="/stocks/labelgenerator.html">Generate Labels</a></li>
-                            <li><a class="dropdown-item" href="/stocks/prefill.html">Check prefill labels (Unavailable)</a></li>
+                            <li><a class="dropdown-item" href="/stocks/prefill.html">Check prefill labels</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/stocks/stocks.html">Stock Management</a></li>
-                            <li><a class="dropdown-item" href="#">Add Stock (Unavailable)</a></li>
+                            <li style="display: none"><a class="dropdown-item" href="/stocks/add.html">Add Stock (Unavailable)</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/stocks/qrscan.html">Scan QR Code(Unavailable)</a></li>
                         </ul>
