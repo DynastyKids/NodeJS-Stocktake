@@ -308,17 +308,22 @@ router.get("/v1/preload", async (req, res) => {
         await dbclient.connect()
         const session = dbclient.db(targetDB).collection("preloadlog");
         let result = await session.find({}).toArray()
+        
+        for (let i = 0; i < result.length; i++) {
+            if (result[i].hasOwnProperty("item")){
+                if (result[i].item.hasOwnProperty("unitPrice")){
+                    result[i].item.unitPrice = result[i].item.unitPrice.toString()
+                }
+                if (result[i].item.hasOwnProperty("grossPrice")){
+                    result[i].item.grossPrice = result[i].item.grossPrice.toString()
+                }
+            }
+        }
+
         response.acknowledged = true
         response.data = result
 
-        for (let i = 0; i < response.data; i++) {
-            if (response.data[i].hasOwnProperty("unitPrice") && String(response.data[i].unitPrice).length >0){
-                response.data[i].unitPrice = response.data[i].unitPrice.toString()
-            }
-            if (response.data[i].hasOwnProperty("grossPrice") && String(response.data[i].grossPrice).length >0){
-                response.data[i].grossPrice = response.data[i].grossPrice.toString()
-            }
-        }
+        console.log(response.data)
         if (req.query){
             if (req.query.hasOwnProperty("label") && String(req.query.label).length > 3){
                 let newResultSet = []
@@ -416,8 +421,8 @@ router.post("/v1/preload/update", async (req, res) => {
                 step2: await session.insertOne({loggingTime: new Date(), item: itemContent})
             }
         } catch (e) {
-            console.error("Error when running /api/v1/preload/update: ", e)
-            response.message = `Error when running /api/v1/preload/update: ${e}`
+            console.error("Error when running /v1/preload/update: ", e)
+            response.message = `Error when running /v1/preload/update: ${e}`
         } finally {
             await dbclient.close()
         }

@@ -72,11 +72,14 @@ editModal.addEventListener("show.bs.modal", async function (ev) {
     editModal.querySelector("#editModal_btnSubmit").textContent = "Submit"
     editModal.querySelector(".modal-title").textContent = `Loading Product Information`
     editModal.querySelector("#editModal_btnDelete").setAttribute("data-bs-labelId", requestLabelId)
-    let stockInfo = await fetchStockByLabelid(requestLabelId)
-    if (Array.isArray(stockInfo) && stockInfo.length > 0) {
-        currentEditModalItem = stockInfo[0]
-        writeModalEdit(stockInfo[0])
-        editModal.querySelector("#editModal_btnSubmit").disabled = false
+    let stocksResponse =  await fetchStockByLabelid(requestLabelId)
+    if (stocksResponse.acknowledged && stocksResponse.data.length>=0){
+        let stockInfo = stocksResponse.data
+        if (Array.isArray(stockInfo) && stockInfo.length > 0) {
+            currentEditModalItem = stockInfo[0]
+            writeModalEdit(stockInfo[0])
+            editModal.querySelector("#editModal_btnSubmit").disabled = false
+        }
     }
 })
 editModal.querySelector("#editModal_btnSubmit").addEventListener("click", async (ev) => {
@@ -198,22 +201,13 @@ function readModalEdit() {
     return updateElement
 }
 
-function fetchStockByLabelid(labelId) {
+function fetchStockByLabelid(labelId){
     return new Promise((resolve, reject) => {
-        let xhr = new XMLHttpRequest()
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    resolve(JSON.parse(xhr.responseText))
-                } else {
-                    reject({acknowledged: false, message: xhr.statusText})
-                }
-            }
-        }
-
-        xhr.open("GET", "/api/v1/stocks?label=" + labelId, true)
-        xhr.send()
-    });
+        fetch(`/api/v1/stocks?label=${labelId}`)
+            .then(response => response.json())
+            .then(data => resolve(data))
+            .catch(error => reject(error));
+    })
 }
 
 function submitStockEditResult(changedObject) {
