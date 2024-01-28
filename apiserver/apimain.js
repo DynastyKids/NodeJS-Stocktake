@@ -14,7 +14,6 @@ const {ServerApiVersion, Decimal128} = require("mongodb");
 const cors = require("cors")
 
 const Storage = require("electron-store");
-const {isNumber, isObject} = require("lodash");
 
 const newStorage = new Storage();
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
@@ -596,17 +595,23 @@ router.get("/v1/preload", async (req, res) => {
     try {
         await dbclient.connect()
         const session = dbclient.db(targetDB).collection("preloadlog");
-
         let result = await session.find({}).toArray()
-        response.data = result
+        for (let i = 0; i < result.length; i++) {
+            if (result[i].hasOwnProperty("item")) {
+                if (result[i].item.hasOwnProperty("unitPrice") && result[i].item.unitPrice) {
+                    result[i].item.unitPrice = result[i].item.unitPrice.toString()
+                }
+            }
+        }
         response.acknowledged = true
-
-        if (req.query){ // 如果用户提供了筛选条件，则筛选符合条件的内容**不区分大小写
+        response.data = result
+        console.log(result)
+        if (req.query) { // 如果用户提供了筛选条件，则筛选符合条件的内容**不区分大小写
             let originResult = result
             if (req.query.product && req.query.product.length >= 3) { //Product
                 let filteredResult = []
                 originResult.forEach(eachitem => {
-                    if (eachitem.productCode.toLowerCase().includes(String(req.query.product).toLowerCase())) {
+                    if (eachitem.item.hasOwnProperty("productCode") && eachitem.item.productCode.toLowerCase().includes(String(req.query.product).toLowerCase())) {
                         filteredResult.push(eachitem)
                     }
                 })
@@ -616,7 +621,7 @@ router.get("/v1/preload", async (req, res) => {
             if (req.query.location && req.query.location.length >= 2) { // Location
                 let filteredResult = []
                 originResult.forEach(eachitem => {
-                    if (eachitem.shelfLocation.toLowerCase().includes(String(req.query.location).toLowerCase())) {
+                    if (eachitem.item.hasOwnProperty("shelfLocation") && eachitem.item.shelfLocation.toLowerCase().includes(String(req.query.location).toLowerCase())) {
                         filteredResult.push(eachitem)
                     }
                 })
@@ -626,13 +631,12 @@ router.get("/v1/preload", async (req, res) => {
             if (req.query.label && req.query.label.length >= 3) { // Label
                 let filteredResult = []
                 originResult.forEach(eachitem => {
-                    if (eachitem.productLabel.toLowerCase().includes(String(req.query.label).toLowerCase())) {
+                    if (eachitem.item.hasOwnProperty("productLabel") && eachitem.item.productLabel.toLowerCase().includes(String(req.query.label).toLowerCase())) {
                         filteredResult.push(eachitem)
                     }
                 })
                 originResult = filteredResult
             }
-            response.data = originResult
         }
     } catch (e) {
         console.error("Error when fetching preload Data:", e)
@@ -654,44 +658,42 @@ router.post("/v1/preload/update", async (req, res) => {
     let dbclient = new MongoClient(uri, {
         serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true},
     });
-    let receiveItem = req.body
-    if (typeof (req.body) === "string"){
-        receiveItem = JSON.parse(req.body)
-    }
-    receiveItem =  req.body.hasOwnProperty("item") ? req.body.item : {}
+    try {
+        let receiveItem = typeof (req.body) === "string" ? JSON.parse(req.body) : req.body;
+        receiveItem = req.body.hasOwnProperty("item") ? req.body.item : {}
+        if (receiveItem.hasOwnProperty("_id")) {
+            delete receiveItem._id
+        }
 
-    if (receiveItem.hasOwnProperty("_id")){
-        delete receiveItem._id
-    }
-    if (receiveItem.hasOwnProperty("productLabel")){
-        try {
-            let itemContent = {
-                removed: 0,
-                createTime: receiveItem.hasOwnProperty("createTime") ? new Date(req.body.item.createTime) : new Date(),
-                loggingTime: new Date(),
-                labelBuild: 3,
-            }
+        if (!receiveItem.hasOwnProperty("productLabel")) {
+            throw "received item does not have property of 'productLabel'"
+        }
 
-            if (receiveItem && typeof receiveItem === "object") {
-                if (Object.keys(receiveItem).length > 0) {
-                    Object.keys(receiveItem).forEach(eachKey => {
-                        if (eachKey === "quantity" || eachKey === "removed" || eachKey === "seq" || eachKey === "labelBuild") {
-                            itemContent[eachKey] = parseInt(receiveItem[eachKey])
-                        } else if (eachKey === "unitPrice") {
-                            itemContent[eachKey] === Decimal128.fromString(receiveItem.unitPrice)
-                        } else if (eachKey === "createTime" || eachKey === "loggingTime" || eachKey === "removeTime") {
-                            itemContent[eachKey] = new Date(receiveItem[eachKey])
-                        } else {
-                            itemContent[eachKey] = receiveItem[eachKey]
-                        }
-                    })
+        let itemContent = {
+            removed: 0,
+            createTime: new Date(),
+            loggingTime: new Date(),
+            labelBuild: 3,
+        }
+        if (receiveItem && typeof receiveItem === "object") {
+            Object.keys(receiveItem).forEach(eachKey => {
+                if (["quantity", "removed", "seq", "labelBuild", "quarantine"].indexOf(eachKey) > -1) {
+                    itemContent[eachKey] = parseInt(receiveItem[eachKey])
+                } else if (eachKey === "unitPrice") {
+                    console.log("unitPriceFound", Decimal128.fromString(receiveItem[eachKey]))
+                    itemContent[eachKey] = Decimal128.fromString(receiveItem[eachKey])
+                } else if (["createTime", "loggingTime", "removeTime"].indexOf(eachKey) > -1) {
+                    itemContent[eachKey] = new Date(receiveItem[eachKey])
+                } else {
+                    console.log("unitPriceGeneral", receiveItem[eachKey])
+                    itemContent[eachKey] = receiveItem[eachKey]
                 }
-            }
+            })
+        }
 
-            //     Insert to database
+        try {
             await dbclient.connect()
             const session = dbclient.db(targetDB).collection("preloadlog");
-            let currentResult = await session.find({"item.productLabel": itemContent.productLabel}).toArray()
             response = {
                 step1: await session.deleteMany({"item.productLabel": itemContent.productLabel}),
                 step2: await session.insertOne({loggingTime: new Date(), item: itemContent})
@@ -702,8 +704,8 @@ router.post("/v1/preload/update", async (req, res) => {
         } finally {
             await dbclient.close()
         }
-    } else {
-        response.message = `Missing productLabel informations`
+    } catch (e) {
+        console.log("Error when processing updates of Preload:", e)
     }
     res.json(response)
 })
@@ -713,24 +715,21 @@ router.post("/v1/preload/remove", async (req, res) => {
     let dbclient = new MongoClient(uri, {
         serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true},
     });
-    let bodyContent = req.body.body
-    if (Array.isArray(bodyContent) && req.body.hasOwnProperty("productLabel")) {
-        // 如果用户提供了时间，按照用户提供的时间填写removeTime，否则默认为当前时间
-        let removeTime = req.body.hasOwnProperty("removeTime") ? new Date(req.body.removeTime) : new Date()
-        try {
-            await dbclient.connect()
-            const session = dbclient.db(targetDB).collection("preloadlog");
-            let result = await session.deleteOne({"item.productLabel": req.body.productLabel})
-            if (result.acknowledged) {
-                response = result
-            }
-        } catch (e) {
-            response.message = e
-        } finally {
-            await dbclient.close()
+    try {
+        let bodyContent = typeof (req.body) === 'string' ? JSON.parse(req.body): req.body
+        if (!req.body.hasOwnProperty("productLabel")){
+            throw "Missing key parameters: 'productLabel'"
         }
-    } else {
-        response.message = "Missing Label information's "
+        await dbclient.connect()
+        const session = dbclient.db(targetDB).collection("preloadlog");
+        let result = await session.deleteMany({"item.productLabel": req.body.productLabel})
+        if (result.acknowledged) {
+            response = result
+        }
+    } catch (e){
+        console.error("Error when API removing product: ",e)
+    } finally {
+        await dbclient.close()
     }
     res.json(response)
 })
@@ -738,42 +737,38 @@ router.post("/v1/preload/remove", async (req, res) => {
 function createLogObject(sessioncode, iteminfo) {
     var mongodata = {
         sessions: [sessioncode],
-        quantity: 0,
-        productLabel: "",
         labelBuild: 3,
         removed: 0,
         quarantine: 0,
         loggingTime: new Date(),
-        createTime: new Date(),
     }
     try {
         if (isBase64String(iteminfo)) {
             var productInfo = JSON.parse(atob(iteminfo));
-            // Create元素时候全数填充
-            Object.keys(productInfo).forEach(eachKey =>{
-                if (eachKey === "Code"){
-                    mongodata.productCode = productInfo.Code
-                } else if(eachKey === "Qty"){
-                    mongodata.quantity = parseInt(productInfo.Qty)
-                } else if (eachKey === "LabelId"){
-                    mongodata.productLabel = productInfo.LabelId
-                } else if (eachKey === "Prod"){
-                    mongodata.productName = productInfo.Prod
-                } else if( eachKey === "POnumber"){
-                    mongodata.POnumber = productInfo.POnumber;
-                } else if(eachKey === "Bestbefore"){
-                    mongodata.bestbefore = productInfo.Bestbefore
-                } else if(eachKey === "Unit"){
-                    mongodata.quantityUnit = String(productInfo.Unit).toLowerCase()
-                } else if(eachKey === "Build"){
-                    mongodata.labelBuild = parseInt(productInfo.Build);
+            Object.keys(productInfo).forEach(eachKey => {
+                if (["quantity","labelBuild","removed", "quarantine"].indexOf(eachKey) > -1){
+                    mongodata[eachKey] = parseInt(productInfo[eachKey])
+                } else if(["unitPrice","grossPrice"].indexOf(eachKey) > -1){
+                    try{
+                        mongodata[eachKey] = Decimal128.fromString(productInfo[eachKey])
+                    } catch (e){
+                        console.error(`Error when processing ${eachKey}: `, e)
+                    }
+
+                } else if(["loggingTime","createTime","removedTime"].indexOf(eachKey) > -1){
+                    try {
+                        mongodata[eachKey] = new Date(productInfo[eachKey])
+                    } catch (e) {
+                        mongodata[eachKey] = new Date()
+                        console.error(`Error when processing ${eachKey}: `, e,"Using default time instead")
+                    }
                 } else {
-                    mongodata[eachKey] = productInfo[eachKey]
+                    mongodata[eachKey] = String(productInfo[eachKey])
                 }
             })
         }
-    } catch (error) {
-        console.error(error);
+    } catch (e) {
+        console.error("Error occurred when attempting to process data:", e);
     }
     return mongodata;
 }
@@ -796,16 +791,16 @@ router.get("/v1/stocks", async (req, res) => {
     try {
         let findingQuery = {removed: (req.query.removed && parseInt(req.query.label) === 1 ? 1 : 0)}
         if (stockLabel && stockLabel.length > 0) {
-            findingQuery.productLabel = {$regex: new RegExp(stockLabel),$options: "i"}
+            findingQuery.productLabel = {$regex: new RegExp(stockLabel), $options: "i"}
         }
         if (stockLocation && stockLocation.length > 0) {
-            findingQuery.shelfLocation = {$regex: new RegExp(stockLocation),$options: "i"}
+            findingQuery.shelfLocation = {$regex: new RegExp(stockLocation), $options: "i"}
         }
         if (stockSession && stockSession.length > 0) {
-            findingQuery.sessions = {$regex: new RegExp(stockSession),$options: "i"}
+            findingQuery.sessions = {$regex: new RegExp(stockSession), $options: "i"}
         }
         if (stockProduct && stockProduct.length > 0) {
-            findingQuery.productCode = {$regex: new RegExp(stockProduct),$options: "i"}
+            findingQuery.productCode = {$regex: new RegExp(stockProduct), $options: "i"}
         }
 
         response = await sessions.find(findingQuery, {projection: {"_id": 0}}).toArray()
