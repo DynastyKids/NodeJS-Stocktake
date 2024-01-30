@@ -108,6 +108,11 @@ async function findStockStatus(labelId) {
         result.add = true
     }
 
+//     根据给予的标签号信息， 查找
+//     Pollinglog中是否已经有该产品信息，则保留edit,remove，
+//     如果没有，则：
+//        Prefill中是否已经有该产品信息，则保留add,edit
+//        如果两个表中均没有该产品信息，则保留add
     return result
 }
 
