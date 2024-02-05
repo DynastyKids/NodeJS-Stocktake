@@ -38,15 +38,19 @@ async function redrawTable(forced = false) {
         prefillLists = await fetchPrefillDatas(true)
     }
     prefillLists.forEach(eachRow => {
-        table.row.add([
-            (eachRow.item.productCode ? eachRow.item.productCode : ``) + (eachRow.item.productCode && eachRow.item.productName ? ` - ` : ``) + (eachRow.item.productName ? eachRow.item.productName : ``),
-            (eachRow.item.quantity ? eachRow.item.quantity + ` ` + (eachRow.item.quantityUnit ? eachRow.item.quantityUnit : ``) : ``),
-            (eachRow.item.bestbefore ? new Date(eachRow.item.bestbefore).toLocaleDateString("en-AU") : ``),
-            (eachRow.item.POnumber ? eachRow.item.POnumber : ``) + (eachRow.item.seq ? `<br><small>${eachRow.item.seq}</small>` : ``),
-            (eachRow.item.productLabel ? eachRow.item.productLabel.substring(0, 15) : ``) + (eachRow.item.createTime ? `<br><small>${new Date(eachRow.item.createTime).toLocaleString('en-AU')}</small>` : (eachRow.item.loggingTime ? `<br><small>${new Date(eachRow.item.loggingTime).toLocaleString('en-AU')}</small>` : ``)),
-            `<a href="#" class="table_actions table_action_remove" data-bs-labelId="${eachRow.item.productLabel}" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-modalaction="edit" style="margin: 0 2px 0 2px">Patch</a>` +
-            `<a href="#" class="table_actions table_action_remove" data-bs-labelId="${eachRow.item.productLabel}" data-bs-toggle="modal" data-bs-target="#removeModal" style="margin: 0 2px 0 2px">Remove</a>`
-        ]).draw(false)
+        try{
+            table.row.add([
+                (eachRow.item.productCode ? eachRow.item.productCode : ``) + (eachRow.item.productCode && eachRow.item.productName ? ` - ` : ``) + (eachRow.item.productName ? eachRow.item.productName : ``),
+                (eachRow.item.quantity ? eachRow.item.quantity + ` ` + (eachRow.item.quantityUnit ? eachRow.item.quantityUnit : ``) : ``),
+                (eachRow.item.bestbefore ? new Date(eachRow.item.bestbefore).toLocaleDateString("en-AU") : ``),
+                (eachRow.item.POnumber ? eachRow.item.POnumber : ``) + (eachRow.item.seq ? `<br><small>${eachRow.item.seq}</small>` : ``),
+                (eachRow.item.productLabel ? eachRow.item.productLabel.substring(0, 15) : ``) + (eachRow.item.createTime ? `<br><small>${new Date(eachRow.item.createTime).toLocaleString('en-AU')}</small>` : (eachRow.item.loggingTime ? `<br><small>${new Date(eachRow.item.loggingTime).toLocaleString('en-AU')}</small>` : ``)),
+                `<a href="#" class="table_actions table_action_remove" data-bs-labelId="${eachRow.item.productLabel}" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-modalaction="edit" style="margin: 0 2px 0 2px">Patch</a>` +
+                `<a href="#" class="table_actions table_action_remove" data-bs-labelId="${eachRow.item.productLabel}" data-bs-toggle="modal" data-bs-target="#removeModal" style="margin: 0 2px 0 2px">Remove</a>`
+            ]).draw(false)
+        } catch (e) {
+            console.error("Prefill - Error when drawing data of: ", eachRow.item)
+        }
     })
     document.querySelector("#loadingStatus").style = "display: none"
 }

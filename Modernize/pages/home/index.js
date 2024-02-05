@@ -26,8 +26,8 @@ let salesBreakupApexChartColours = ["#FF5733","#33FF57","#3357FF","#FF33F6","#F6
 let turnoverRatesApexCharts; // Chart 2 Stock Turnover Time
 
 document.addEventListener("DOMContentLoaded",async () => {
-    await getAllStockRecords(true);
-    await updateProductList(true);
+    await fetchStocks(true);
+    await fetchProducts(true);
     await lastXmonthsPollinglog(24,true)
 
 
@@ -76,53 +76,33 @@ document.addEventListener("DOMContentLoaded",async () => {
             document.querySelector("#card_topseller").append(itemDiv)
             successfulInsert -= 1
         } catch (e) {
-            console.log("Error while insert best seller:",e)
+            console.error("Error while insert best seller:",e)
         }
     }
     
     // Card 4 - Apex Chart 3 Inventory Report
-    // 创建一个循环，循环到第一个pollinglog时候的数据的年份，然后添加对应的财年选项，每次用户选定财年后再拉取数据
-    let earliestLogs = await getEarliestTrans();
-    let earliestYear = new Date().getFullYear()
-    if (earliestLogs.createTime.length > 0 ){
-        if (new Date(earliestLogs.createTime[0].createTime).getFullYear() < earliestYear){
-            earliestYear = new Date(earliestLogs.createTime[0].createTime).getFullYear()
-        }
-    }
-    if (earliestLogs.loggingTime.length > 0 ){
-        if (new Date(earliestLogs.loggingTime[0].loggingTime).getFullYear() < earliestYear){
-            earliestYear = new Date(earliestLogs.loggingTime[0].loggingTime).getFullYear()
-        }
-    }
-
-    for (var i= new Date().getFullYear() ; i >= earliestYear ; i--){ //创建年份选项
-        var newFYoption = document.createElement("option")
-        newFYoption.value = i;
-        newFYoption.textContent = "Year "+i
-        document.querySelector("#inv_optionslist").append(newFYoption);
-    }
-
-    // 根据用户选定的年份Fetch对应年份的相关数据，如果createTime, loggingTime, RemoveTime三选一有符合条件的数据即可加入序列等待处理
-    // fetch相关年份的数据后，函数内按照月份处理，并返回2套数组，一套为Import Value，一套为Export Value
-    let fetchInventoryData = await fetchInventoryGraphData()
-    console.log(fetchInventoryData)
+    let fetchInventoryData = await calculateStockValues()
     let maxy = 0
-    for (let i = 0; i < fetchInventoryData.import.length; i++) {
-        maxy = (fetchInventoryData.import[i] > maxy ? fetchInventoryData.import[i] : maxy )
-        maxy = (Math.abs(fetchInventoryData.export[i]) > maxy ? Math.abs(fetchInventoryData.export[i]) : maxy)
+    fetchInventoryData.monthsIn.reverse()
+    fetchInventoryData.monthsOut.reverse()
+    for (let i = 0; i < fetchInventoryData.monthsIn.length; i++) {
+        fetchInventoryData.monthsIn[i] = fetchInventoryData.monthsIn[i].toFixed(2)
+        fetchInventoryData.monthsOut[i] = fetchInventoryData.monthsOut[i].toFixed(2)
+        maxy = (fetchInventoryData.monthsIn[i] > maxy ? parseInt(fetchInventoryData.monthsIn[i]) : maxy )
+        maxy = (fetchInventoryData.monthsOut[i] > maxy ? parseInt(fetchInventoryData.monthsOut[i]) : maxy)
+        fetchInventoryData.monthsOut[i] = -fetchInventoryData.monthsOut[i]
     }
     maxy = Math.ceil(maxy/1000)*1000
-
-    console.log(fetchInventoryData)
+    
     var inventoryStatChart = {
         series: [
             {
                 name: "Imported this month",
-                data: fetchInventoryData.import
+                data: fetchInventoryData.monthsIn
             },
             {
                 name: "Exported this month",
-                data: fetchInventoryData.export,
+                data: fetchInventoryData.monthsOut,
             },
         ],
         chart: {
@@ -179,10 +159,15 @@ document.addEventListener("DOMContentLoaded",async () => {
         tooltip: { theme: "light" },
     };
 
+    let inventoryCalculation = await calculateStockValues()
+
     document.querySelector("#inventoryOverviews h5").textContent = "Inventory Overview"
-    document.querySelector("#inventoryOverviews #stockValue").textContent = `$ ${new Intl.NumberFormat('en-AU').format(calculateInstockValue(stockRecords)[0])}`
-    document.querySelector("#inventoryOverviews #inboundValue").textContent = `$ ${new Intl.NumberFormat('en-AU').format(calculateInstockValue(stockRecords)[1])}`
-    document.querySelector("#inventoryOverviews #outboundValue").textContent = `$ ${new Intl.NumberFormat('en-AU').format(calculateInstockValue(stockRecords)[2])}`
+    document.querySelector("#inventoryOverviews #stockValue").textContent =
+        `$ ${new Intl.NumberFormat('en-AU').format(inventoryCalculation.current)}`
+    document.querySelector("#inventoryOverviews #inboundValue").textContent =
+        `$ ${new Intl.NumberFormat('en-AU').format(inventoryCalculation.monthsIn[0])} / ${inventoryCalculation.qtyIn[0]} Plts`
+    document.querySelector("#inventoryOverviews #outboundValue").textContent =
+        `$ ${new Intl.NumberFormat('en-AU').format(inventoryCalculation.monthsOut[0])} / ${inventoryCalculation.qtyOut[0]} Plts`
     new ApexCharts(document.querySelector("#inventoryOverviewChart"), inventoryStatChart).render();
 
     // Recent Transactions
@@ -327,7 +312,6 @@ async function getSalesData(count = 6, period = "quarter") {
 
     var chartLabels = []
     var chartSeriesData = []
-    console.log(periodsArray)
     for (let i = 0; i < periodsArray.length; i++) {
         chartLabels.push(periodsArray[i].sessionName)
         chartSeriesData.push(Math.round(periodsArray[i].value))
@@ -457,9 +441,8 @@ async function fetchInventoryGraphData(yearoption = new Date().getFullYear()){
 
 async function cardTurnoverTimes(period = "month") {
     if (stockRecords.length <=0){
-        await getAllStockRecords(true);
+        await fetchStocks(true);
     }
-
     // let quarterTurnoverRates = calculateTurnoverRate(stockRecords, 'quarter')
     let monthlyTurnoverRates = calculateTurnoverRate(stockRecords, 'month')
     // let weeklyTurnoverRates = calculateTurnoverRate(stockRecords, 'week')
@@ -596,16 +579,6 @@ function drawTurnOverRateRate(turnoverRates, turnoverData) {
     turnoverRatesApexCharts.render()
 }
 
-document.querySelector("#inv_optionslist").addEventListener("change",(ev)=>{
-    console.log(ev)
-    console.log(document.querySelector("#inv_optionslist").value)
-    if (document.querySelector("#inv_optionslist").value === -6){
-    //     切换图形到近6个月出入库信息
-    } else {
-        
-    }
-})
-
 async function lastXmonthsPollinglog(months = 24,forced = false){
     const recordTimeLimit = new Date().setMonth(new Date().getMonth() - months)
     if (pollinglogs.length <=0 || forced === true) {
@@ -634,35 +607,19 @@ async function lastXmonthsPollinglog(months = 24,forced = false){
     return pollinglogs
 }
 
-async function getEarliestTrans(){
-    let client = new MongoClient(uri, {
-        serverApi: {
-            version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true
-        }
-    });
-    let result = {createTime:"",loggingTime:""}
-    try {
-        await client.connect()
-        let session = await client.db(dbname).collection("pollinglog");
-        result.createTime = await session.find({createTime: {$exists: true, $ne: null}}).sort({createTime: 1}).limit(1).toArray()
-        result.loggingTime = await session.find({loggingTime: {$exists: true, $ne: null}}).sort({loggingTime: 1}).limit(1).toArray()
-    } catch (e) {
-        console.error(`Error on CheckDBConnection: ${e}`)
-    } finally {
-        await client.close()
-    }
-    return result
-}
-
 function getXaxislabels(date = new Date()){
-    // 默认仅获取近半年记录，整财年记录需要调整count为12
-    let months = [];
-    for (let i = 0; i < 12; i++) {
-        let year = date.getFullYear().toString().slice(-2);
-        let month = ('0' + (i+1)).slice(-2);
+    const months = [];
+    const currentDate = new Date();
 
-        months.push(`${month}/${year}`);
-        date.setMonth(date.getMonth() - 1);
+    for (let i = 0; i < 12; i++) {
+        let month = currentDate.getMonth() - i;
+        let year = currentDate.getFullYear();
+        if (month < 0) {
+            month += 12;
+            year -= 1;
+        }
+        const formattedMonth = (month + 1).toString().padStart(2, '0');
+        months.unshift(`${formattedMonth}/${year}`);
     }
     return months;
 }
@@ -696,52 +653,101 @@ function getRecentTransactions(recordsArray, limit = 500, direction = "both"){
     return reorderedDupArray
 }
 
-function calculateMonthStockMovementValue(stockRecords,date = new Date()){
-    // 使用Date对象，用户给定一个时间，获取当月的所有销售进出数值，并在图标上计算进出货品数量
-    let monthlyImport={value:0 , count: 0}
-    let monthlyExport = {value: 0, count: 0}
-    if (Array.isArray(stockRecords)){
-        stockRecords.forEach(eachRecord =>{
-            if (eachRecord.hasOwnProperty("loggingTime") && isSameYearmonth(new Date(eachRecord.loggingTime),date)){
-                monthlyImport.count += 1;
-                if (eachRecord.hasOwnProperty("unitPrice") && eachRecord.hasOwnProperty("quantity")){
-                    monthlyImport.value += (monthlyImport.value+eachRecord.unitPrice*eachRecord.quantity).toFixed(2)
+/*
+* 计算当前库存价值
+*
+* 1.计算当前货品价值：通过已经抓取到的stock列表，和product列表，如果stock中有grossPrice,则直接使用
+* 2. 计算当月入库货值，筛选createTime部分为当前月的时间戳，如果stock中有grossPrice，则直接使用，如果没有，则使用product中的货值
+* 3. 计算当月出库货值，筛选removeTime部分为当前月的时间戳，*/
+// 计算当前库存的货品价值
+// 当前库存货品价值：
+//
+
+async function calculateStockValues(){
+    let stockList = await fetchStocks(false)
+    let productList  = await fetchProducts(false)
+    let valueResponse = {current: 0, calculateTime: new Date(),
+        monthsIn:[0,0,0,0,0,0,0,0,0,0,0,0], monthsOut:[0,0,0,0,0,0,0,0,0,0,0,0],
+        qtyIn:[0,0,0,0,0,0,0,0,0,0,0,0], qtyOut:[0,0,0,0,0,0,0,0,0,0,0,0]};
+    try{
+        for (const eachStock of stockList) {
+            let productElement = {}
+            for (const eachProduct of productList) { //尝试查找对应产品
+                if (eachStock.productCode && String(eachStock.productCode).length > 0 && eachProduct.productCode && eachStock.productCode === eachProduct.productCode){
+                    productElement = eachProduct
+                    break;
                 }
             }
-            if (eachRecord.hasOwnProperty("removed") && eachRecord.removed === 1 &&
-                eachRecord.hasOwnProperty("removeTime") && isSameYearmonth(new Date(eachRecord.removeTime),date)){
-                monthlyExport.count += 1;
-                if (eachRecord.hasOwnProperty("unitPrice") && eachRecord.hasOwnProperty("quantity")){
-                    monthlyImport.value += (monthlyImport.value+eachRecord.unitPrice*eachRecord.quantity).toFixed(2)
+
+            let stockValue = 0
+            if (eachStock.hasOwnProperty("grossPrice") && parseFloat(eachStock.grossPrice) > 0) {
+                //     如果当前货品有grossPrice，则直接使用
+                stockValue = parseFloat(eachStock.grossPrice)
+            }else if(eachStock.hasOwnProperty("quantityUnit") && productElement.hasOwnProperty("unit") && eachStock.quantityUnit === productElement.unit){
+                //      如果当前货品没有grossValue，则需要对比单位是否和product表中一致,如果一致则尝试使用unitPrice
+                if (eachStock.hasOwnProperty("unitPrice") && parseFloat(eachStock.unitPrice) > 0) {
+                    stockValue = parseFloat(eachStock.unitPrice) * parseInt(eachStock.quantity)
+                } else if(productElement.hasOwnProperty("unitPrice") && parseFloat(productElement.unitPrice) > 0) {
+                    stockValue = parseFloat(productElement.unitPrice) * parseInt(eachStock.quantity)
+                } else { //如果没有单价信息直接跳过
+                    continue;
+                }
+            }else if(eachStock.hasOwnProperty("quantity") && parseInt(eachStock.quantity) > 0 &&
+                productElement.hasOwnProperty("cartonQty") && parseInt(eachStock.cartonQty) > 0){
+                // 如果当前货品没有grossValue，且单位不一致，当前stock使用了carton标记，则尝试使用cartonQty计算总数后再计算货值
+                if (eachStock.hasOwnProperty("unitPrice") && parseFloat(eachStock.unitPrice) > 0) {
+                    stockValue = parseFloat(eachStock.unitPrice) * parseInt(eachStock.quantity) * parseInt(eachStock.cartonQty)
+                } else if(productElement.hasOwnProperty("unitPrice") && parseFloat(productElement.unitPrice) > 0) {
+                    stockValue = parseFloat(productElement.unitPrice) * parseInt(eachStock.quantity) * parseInt(eachStock.cartonQty)
+                } else { //如果没有单价信息直接跳过
+                    continue;
+                }
+            } else {
+                continue;
+            }
+
+            // 货值计算完毕，开始分类
+            if (eachStock.hasOwnProperty("removed") && eachStock.removed === 0){  //当前库内货值
+                valueResponse.current += stockValue
+            }
+            if (eachStock.hasOwnProperty("createTime")) {
+                var monthDiff = calcMonthDiff(new Date(eachStock.createTime))
+                if (monthDiff<12){
+                    valueResponse.monthsIn[monthDiff] += stockValue
+                    valueResponse.qtyIn[monthDiff] ++
                 }
             }
-        })
+            if (eachStock.hasOwnProperty("removed") && eachStock.removed === 1 && eachStock.hasOwnProperty("removeTime")){
+                var monthDiff = calcMonthDiff(new Date(eachStock.removeTime))
+                if (monthDiff<12){
+                    valueResponse.monthsOut[monthDiff] += stockValue
+                    valueResponse.qtyOut[monthDiff] ++
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Error occurred when calculating Stock values.")
     }
-    return {import : monthlyImport, export: monthlyExport}
+    return valueResponse
 }
 
-function calculateInstockValue(stockRecords){
-    let currentInstockvalue= 0;
-    let thisMonthImportVal = 0;
-    let thisMonthExportVal = 0
-    if (Array.isArray(stockRecords)){
-        stockRecords.forEach(eachRecord=>{
-            if (eachRecord.hasOwnProperty("unitPrice") && eachRecord.hasOwnProperty("quantity")){
-                currentInstockvalue += eachRecord.quantity * eachRecord.quantity
-                if (eachRecord.hasOwnProperty("loggingTime") && isSameYearmonth(new Date(eachRecord.loggingTime))){
-                    thisMonthImportVal += eachRecord.quantity * eachRecord.quantity
-                }
-                if (eachRecord.hasOwnProperty("removeTime") && isSameYearmonth(new Date(eachRecord.removeTime))){
-                    thisMonthExportVal += eachRecord.quantity * eachRecord.quantity
-                }
-            }
-        })
+// Default:
+// withDate=false: Not including date difference, only Month & Years, 20240131 - 20240201 = 1 month diff
+// withDate=true: Including date difference, only Month & Years, 20240131 - 20240201 =  in same month
+function calcMonthDiff (inputDate, withDate = false){
+    if (!(inputDate instanceof Date)) {
+        throw new Error('Data Type must be date');
     }
-    return [currentInstockvalue,thisMonthImportVal,thisMonthExportVal]
-}
+    const currentDate = new Date();
+    let yearDifference = currentDate.getFullYear() - inputDate.getFullYear();
+    let monthDifference = currentDate.getMonth() - inputDate.getMonth();
+    let totalMonthDifference = yearDifference * 12 + monthDifference;
 
-function isSameYearmonth(date = new Date(), date2 = new Date()){
-    return date.getMonth() === date2.getMonth() && date.getFullYear() === date2.getFullYear();
+    if (withDate && currentDate.getDate() < inputDate.getDate()) {
+        totalMonthDifference--;
+    }
+
+    return totalMonthDifference;
 }
 
 function getTopSeller(stockRecords, productList) { // 默认选择x位的top seller
@@ -877,11 +883,10 @@ function calculateTurnoverRate(data, periodType = "months") {
     periods.forEach(period => {
         let totalDays = 0;
         let itemCount = 0;
-
         data.forEach(item => {
-            if (item.hasOwnProperty("createTime") && item.hasOwnProperty("removeTime")) {
-                if (item.createTime >= new Date(period.sessionStart) && item.removeTime <= new Date(period.sessionEnd)) {
-                    totalDays += (item.removeTime - item.createTime) / (24 * 60 * 60 * 1000); // 将毫秒转换为天
+            if ((item.hasOwnProperty("createTime") || item.hasOwnProperty("loggingTime"))  && item.hasOwnProperty("removeTime")) {
+                if (item.removeTime <= new Date(period.sessionEnd)) {
+                    totalDays += (item.removeTime - (item.hasOwnProperty("createTime") ? item.createTime : item.loggingTime)) / (24 * 60 * 60 * 1000); // 将毫秒转换为天
                     itemCount++;
                 }
             }
@@ -1025,7 +1030,7 @@ async function checkDBConnection() {
     return false
 }
 
-async function getAllStockRecords(forced = false,limit = 50000){
+async function fetchStocks(forced = false,limit = 50000){
     let client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true
@@ -1038,10 +1043,7 @@ async function getAllStockRecords(forced = false,limit = 50000){
     try {
         await client.connect()
         let collections = client.db(dbname).collection("pollinglog");
-        result = ( limit <= 0 ?
-            await collections.find({}).sort({"removeTime":-1,"loggingTime":1}).toArray() :
-            await collections.find({}).sort({"removeTime":-1,"loggingTime":1}).limit(limit).toArray()
-        )
+        result = ( limit <= 0 ? await collections.find({}).toArray() : await collections.find({}).limit(limit).toArray())
         stockRecords = result
     } catch (e) {
         console.error(`Error on CheckDBConnection: ${e}`)
@@ -1051,7 +1053,7 @@ async function getAllStockRecords(forced = false,limit = 50000){
     return result
 }
 
-async function updateProductList(forced = false){
+async function fetchProducts(forced = false){
     if (forced === true || productsList.length <= 0){
     // 当强制要求刷新时
         let client = new MongoClient(uri, {
@@ -1062,7 +1064,7 @@ async function updateProductList(forced = false){
         try {
             await client.connect()
             let collections = client.db(dbname).collection("products");
-            productsList = await collections.find().sort({"productCode":1}).toArray()
+            productsList = await collections.find().toArray()
         } catch (e) {
             console.error(`Error on CheckDBConnection: ${e}`)
         } finally {
