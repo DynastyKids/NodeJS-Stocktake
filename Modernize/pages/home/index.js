@@ -167,7 +167,7 @@ document.addEventListener("DOMContentLoaded",async () => {
     document.querySelector("#inventoryOverviews #inboundValue").textContent =
         `$ ${new Intl.NumberFormat('en-AU').format(inventoryCalculation.monthsIn[0])} / ${inventoryCalculation.qtyIn[0]} Plts`
     document.querySelector("#inventoryOverviews #outboundValue").textContent =
-        `$ ${new Intl.NumberFormat('en-AU').format(inventoryCalculation.monthsOut[0])} / ${inventoryCalculation.qtyOut[1]} Plts`
+        `$ ${new Intl.NumberFormat('en-AU').format(inventoryCalculation.monthsOut[0])} / ${inventoryCalculation.qtyOut[0]} Plts`
     new ApexCharts(document.querySelector("#inventoryOverviewChart"), inventoryStatChart).render();
 
     // Recent Transactions
@@ -666,8 +666,9 @@ function getRecentTransactions(recordsArray, limit = 500, direction = "both"){
 async function calculateStockValues(){
     let stockList = await fetchStocks(false)
     let productList  = await fetchProducts(false)
-    let valueResponse = {current: 0, monthsIn:[0,0,0,0,0,0,0,0,0,0,0,0], monthsOut:[0,0,0,0,0,0,0,0,0,0,0,0],
-        calculateTime: new Date(),qtyIn:[0,0,0,0,0,0,0,0,0,0,0,0], qtyOut:[0,0,0,0,0,0,0,0,0,0,0,0]};
+    let valueResponse = {current: 0, calculateTime: new Date(),
+        monthsIn:[0,0,0,0,0,0,0,0,0,0,0,0], monthsOut:[0,0,0,0,0,0,0,0,0,0,0,0],
+        qtyIn:[0,0,0,0,0,0,0,0,0,0,0,0], qtyOut:[0,0,0,0,0,0,0,0,0,0,0,0]};
     try{
         for (const eachStock of stockList) {
             let productElement = {}
@@ -709,20 +710,18 @@ async function calculateStockValues(){
             if (eachStock.hasOwnProperty("removed") && eachStock.removed === 0){  //当前库内货值
                 valueResponse.current += stockValue
             }
-
             if (eachStock.hasOwnProperty("createTime")) {
                 var monthDiff = calcMonthDiff(new Date(eachStock.createTime))
                 if (monthDiff<12){
                     valueResponse.monthsIn[monthDiff] += stockValue
-                    valueResponse.qtyIn[monthDiff] += 1
+                    valueResponse.qtyIn[monthDiff] ++
                 }
             }
-
-            if (eachStock.hasOwnProperty("removeTime")){
+            if (eachStock.hasOwnProperty("removed") && eachStock.removed === 1 && eachStock.hasOwnProperty("removeTime")){
                 var monthDiff = calcMonthDiff(new Date(eachStock.removeTime))
                 if (monthDiff<12){
                     valueResponse.monthsOut[monthDiff] += stockValue
-                    valueResponse.qtyOut[monthDiff] += 1
+                    valueResponse.qtyOut[monthDiff] ++
                 }
             }
         }
@@ -732,18 +731,19 @@ async function calculateStockValues(){
     return valueResponse
 }
 
-function calcMonthDiff (inputDate){
+// Default:
+// withDate=false: Not including date difference, only Month & Years, 20240131 - 20240201 = 1 month diff
+// withDate=true: Including date difference, only Month & Years, 20240131 - 20240201 =  in same month
+function calcMonthDiff (inputDate, withDate = false){
     if (!(inputDate instanceof Date)) {
         throw new Error('Data Type must be date');
     }
-
     const currentDate = new Date();
     let yearDifference = currentDate.getFullYear() - inputDate.getFullYear();
     let monthDifference = currentDate.getMonth() - inputDate.getMonth();
-
     let totalMonthDifference = yearDifference * 12 + monthDifference;
 
-    if (currentDate.getDate() < inputDate.getDate()) {
+    if (withDate && currentDate.getDate() < inputDate.getDate()) {
         totalMonthDifference--;
     }
 
@@ -883,11 +883,10 @@ function calculateTurnoverRate(data, periodType = "months") {
     periods.forEach(period => {
         let totalDays = 0;
         let itemCount = 0;
-
         data.forEach(item => {
-            if (item.hasOwnProperty("createTime") && item.hasOwnProperty("removeTime")) {
-                if (item.createTime >= new Date(period.sessionStart) && item.removeTime <= new Date(period.sessionEnd)) {
-                    totalDays += (item.removeTime - item.createTime) / (24 * 60 * 60 * 1000); // 将毫秒转换为天
+            if ((item.hasOwnProperty("createTime") || item.hasOwnProperty("loggingTime"))  && item.hasOwnProperty("removeTime")) {
+                if (item.removeTime <= new Date(period.sessionEnd)) {
+                    totalDays += (item.removeTime - (item.hasOwnProperty("createTime") ? item.createTime : item.loggingTime)) / (24 * 60 * 60 * 1000); // 将毫秒转换为天
                     itemCount++;
                 }
             }
