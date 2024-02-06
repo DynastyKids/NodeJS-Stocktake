@@ -20,6 +20,7 @@ let NavbarHTML =
                             <li><a class="dropdown-item" href="/stocks/prefill.html">Check prefill labels</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/stocks/stocks.html">Stock Management</a></li>
+                            <li><a class="dropdown-item" href="/stocks/nextDispatch.html">Next Dispatch (FIFO)</a></li>
                             <li style="display: none"><a class="dropdown-item" href="/stocks/add.html">Add Stock (Unavailable)</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/stocks/qrscan.html">Scan QR Code(Unavailable)</a></li>
