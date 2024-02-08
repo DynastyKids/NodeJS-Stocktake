@@ -1,6 +1,8 @@
 let countdownTime = 300000;
 let timeout;
 let stockData = []
+let productList = []
+// 后续修补部分，产品表中添加display参数，如果display为1则显示该产品在NextDisplay中，如果没有参数默认不显示
 document.addEventListener("DOMContentLoaded", async (event) => {
     let fetchedData = await fetchStocks()
     if (fetchedData.data && fetchedData.data.length > 0){
@@ -8,7 +10,6 @@ document.addEventListener("DOMContentLoaded", async (event) => {
     }
 
     let displayList = assembleDisplayArray()
-    document.querySelector("#loadingAnimation").style = "display: none"
     let htmlContent = '';
     try{
         displayList.forEach(eachProduct=>{
@@ -22,8 +23,10 @@ document.addEventListener("DOMContentLoaded", async (event) => {
                 htmlContent += `</tr>`
             }
         })
-    }  catch (e) {
+    } catch (e) {
         console.error("Error occurred when appending table: ", e)
+    } finally {
+        document.querySelector("#loadingAnimation").style = "display: none"
     }
     document.querySelector("#table-body").innerHTML = htmlContent
     const tbody = document.querySelector('#scroll-tbody');
