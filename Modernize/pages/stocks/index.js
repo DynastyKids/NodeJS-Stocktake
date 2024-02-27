@@ -12,10 +12,9 @@ const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb:/
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
 const {setInterval} = require('timers');
-const i18next = require("i18next");
 const {jsPDF} = require('jspdf');
 
-let stockList = [];
+let stocksList = {current:[], all:[], removed:[]}
 let table = new DataTable('#table', {
     responsive: true,
     pageLength: 25,
@@ -30,49 +29,44 @@ let table = new DataTable('#table', {
         },
     ],
 });
-let shouldRefresh = true;
-const countdownFrom = 60;
-let countdown = 60;
 
+const countdownFrom = 120;
 
-document.querySelector("#switchCheck").addEventListener("change", function(ev){
-    refreshCheckSwitch()
-})
-
-function refreshCheckSwitch(){
-    loadStockInfoToTable()
-    document.querySelector("#switchDiv span").textContent = `${document.querySelector("#switchCheck").checked ? "Showing all stocks." : "Showing current stocks only"}`
-}
-
-document.addEventListener("DOMContentLoaded", (event) => {
-    const URLqueries = new URLSearchParams(window.location.search)
-    document.querySelector("#switchCheck").checked = ( !!URLqueries.get('q')) // 该query存在则拉取所有数据
-    refreshCheckSwitch()
+document.addEventListener("DOMContentLoaded", async (event) => {
+    await fetchStocks(true)
+    inflateTable(stocksList.current)
     let shouldRefresh = true
-    const automaticRefresh = setInterval(() => {
-        if (shouldRefresh) {
-            refreshCheckSwitch()
-            countdown = countdownFrom;
-        }
-    }, countdownFrom * 1000)
-
-    const countdownInterval = setInterval(() => {
-        if (shouldRefresh) {
-            countdown -= 1
-            document.querySelector("#toggleTimes").innerText = `${countdown}`
-        }
-    }, 1000)
-
-    document.querySelector("#act_pause").addEventListener("click", (ev)=> {
-        shouldRefresh= !shouldRefresh
-        if (!shouldRefresh){
+    let countdown = countdownFrom;
+    
+    document.querySelector("#act_pause").addEventListener("click", async (ev) => {
+        shouldRefresh = !shouldRefresh
+        if (!shouldRefresh) {
             clearInterval(automaticRefresh)
             document.querySelector("#act_pause").innerText = "Resume Timer";
         } else {
             document.querySelector("#act_pause").innerText = "Pause Timer";
-            loadStockInfoToTable()
+            await fetchStocks(true)
         }
     })
+    function extendTime() {
+        countdown = countdownFrom;
+    }
+
+    document.addEventListener('mousemove', extendTime);
+    document.addEventListener('keypress', extendTime);
+
+    const automaticRefresh = setInterval(() => {
+        if (shouldRefresh) {
+            // 这里不需要重置countdown，因为它在extendTime中被修改
+        }
+    }, countdownFrom * 1000);
+
+    const countdownInterval = setInterval(() => {
+        if (shouldRefresh) {
+            countdown -= 1;
+            document.querySelector("#toggleTimes").innerText = `${countdown}`;
+        }
+    }, 1000);
 });
 
 function getDateTimeforInput(date = new Date()) {
@@ -99,30 +93,31 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
     document.querySelector("#editModal_submitBtn").textContent = "Submit"
     document.querySelector("#editModal .modal-title").textContent = `Loading Product Information`
     let originProperty = {}
-    for (let i = 0; i < stockList.length; i++) {
-        if ((stockList[i]._id).toString() === requestLabelId){
-            originProperty = stockList[i] //找到了目标信息，继续填充
-            editModalObject.originProps = stockList[i]
-            document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${stockList[i].productName} | StockID: ${stockList[i].productLabel.slice(-7)}`
-            document.querySelector("#editModal .modal-body #productInfoText").textContent = `${stockList[i].productCode} - ${stockList[i].productName}`
-            document.querySelector("#editModal .modal-body #labelIDText").textContent = `${stockList[i].productLabel}`
-            document.querySelector("#editModal #editModal_deleteBtn").setAttribute("data-bs-itemid", stockList[i]._id)
-            document.querySelector("#modalEditQuantity").value = (stockList[i].hasOwnProperty("quantity") ? stockList[i].quantity : "")
-            document.querySelector("#modalEditUnit").value = (stockList[i].hasOwnProperty("quantityUnit") ? stockList[i].quantityUnit : "")
-            document.querySelector("#modalEditBestbefore").value = (stockList[i].hasOwnProperty("bestbefore") ? stockList[i].bestbefore : "")
-            document.querySelector("#modelEditLocation").value = (stockList[i].hasOwnProperty("shelfLocation") ? stockList[i].shelfLocation : "")
-            document.querySelector("#modelEditPOnumber").value = (stockList[i].hasOwnProperty("POnumber") ? stockList[i].POnumber : (stockList[i].hasOwnProperty("POIPnumber") ? stockList[i].POIPnumber : ""))
-            document.querySelector("#modelEditUnitprice").value = (stockList[i].hasOwnProperty("unitPrice") ? stockList[i].unitPrice : "")
-            document.querySelector("#modelEditCheckRemoved").checked = (stockList[i].hasOwnProperty("removed") && stockList[i].removed === 1)
-            document.querySelector("#modelEditCreateTime").value = (stockList[i].hasOwnProperty("createTime") ? getDateTimeforInput(stockList[i].createTime) : "")
+
+    for (const eachItem of stocksList.all) {
+        if ((eachItem._id).toString() === requestLabelId){
+            originProperty = eachItem //找到了目标信息，继续填充
+            editModalObject.originProps = eachItem
+            document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${eachItem.productName} | StockID: ${eachItem.productLabel.slice(-7)}`
+            document.querySelector("#editModal .modal-body #productInfoText").textContent = `${eachItem.productCode} - ${eachItem.productName}`
+            document.querySelector("#editModal .modal-body #labelIDText").textContent = `${eachItem.productLabel}`
+            document.querySelector("#editModal #editModal_deleteBtn").setAttribute("data-bs-itemid", eachItem._id)
+            document.querySelector("#modalEditQuantity").value = (eachItem.hasOwnProperty("quantity") ? eachItem.quantity : "")
+            document.querySelector("#modalEditUnit").value = (eachItem.hasOwnProperty("quantityUnit") ? eachItem.quantityUnit : "")
+            document.querySelector("#modalEditBestbefore").value = (eachItem.hasOwnProperty("bestbefore") ? eachItem.bestbefore : "")
+            document.querySelector("#modelEditLocation").value = (eachItem.hasOwnProperty("shelfLocation") ? eachItem.shelfLocation : "")
+            document.querySelector("#modelEditPOnumber").value = (eachItem.hasOwnProperty("POnumber") ? eachItem.POnumber : "")
+            document.querySelector("#modelEditUnitprice").value = (eachItem.hasOwnProperty("unitPrice") ? eachItem.unitPrice : "")
+            document.querySelector("#modelEditCheckRemoved").checked = (eachItem.hasOwnProperty("removed") && eachItem.removed === 1)
+            document.querySelector("#modelEditCreateTime").value = (eachItem.hasOwnProperty("createTime") ? getDateTimeforInput(eachItem.createTime) : "")
             document.querySelector("#group_removeTime").style = (document.querySelector("#modelEditCheckRemoved").checked ? "" : "display:none")
-            document.querySelector("#modelEditRemoveTime").value = (stockList[i].hasOwnProperty("removeTime") ? getDateTimeforInput(stockList[i].removeTime) : "")
+            document.querySelector("#modelEditRemoveTime").value = (eachItem.hasOwnProperty("removeTime") ? getDateTimeforInput(eachItem.removeTime) : "")
 
-            document.querySelector('#modalEdit_quarantineYes').checked = (!!(stockList[i].hasOwnProperty("quarantine") && stockList[i].quarantine === 1))
-            document.querySelector('#modalEdit_quarantineNo').checked = (!!(stockList[i].hasOwnProperty("quarantine") && stockList[i].quarantine === 0))
-            document.querySelector('#modalEdit_quarantineFinished').checked = (!!(stockList[i].hasOwnProperty("quarantine") && stockList[i].quarantine === -1))
+            document.querySelector('#modalEdit_quarantineYes').checked = (!!(eachItem.hasOwnProperty("quarantine") && eachItem.quarantine === 1))
+            document.querySelector('#modalEdit_quarantineNo').checked = (!!(eachItem.hasOwnProperty("quarantine") && eachItem.quarantine === 0))
+            document.querySelector('#modalEdit_quarantineFinished').checked = (!!(eachItem.hasOwnProperty("quarantine") && eachItem.quarantine === -1))
 
-            document.querySelector("#modelEditComments").value = (stockList[i].hasOwnProperty("comments") ? stockList[i].comments : "")
+            document.querySelector("#modelEditComments").value = (eachItem.hasOwnProperty("comments") ? eachItem.comments : "")
             document.querySelector("#editModal_submitBtn").disabled = false
             break;
         }
@@ -232,9 +227,10 @@ document.querySelector("#editModal_submitBtn").addEventListener("click", async (
 
     let result = await session.updateOne({"_id": new ObjectId(editModalObject.labelId)}, {$set: setObject, $push: pushObject})
     if (result.acknowledged){
-        setTimeout(function(){
+        setTimeout(async function () {
             bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
-            loadStockInfoToTable()
+            // loadStockInfoToTable()
+            await fetchStocks(true)
         },3000)
     } else {
         document.querySelector("#editModal .modal-body p").textContent = "Error on Update"
@@ -265,9 +261,10 @@ document.querySelector("#removeModal").addEventListener("show.bs.modal", functio
     document.querySelector("#removeModal_btnConfirm").disabled = false
     document.querySelector("#removeModal_btnConfirm").textContent = "Confirm"
 
-    for (let i = 0; i < stockList.length; i++) {
-        if ((stockList[i]._id).toString() === itemId){
-            document.querySelector("#removeModal .modal-body p").textContent = `Are you sure to mark ${stockList[i].productName} with label ending in ${stockList[i].productLabel.slice(-7)} has been used?`
+    for (const item of stocksList.all) {
+        if ((item._id).toString() === itemId){
+            document.querySelector("#removeModal .modal-body p").textContent = `Are you sure to mark ${item.productName} with label ending in ${item.productLabel.slice(-7)} has been used?`
+            break;
         }
     }
 })
@@ -317,7 +314,8 @@ document.querySelector("#removeModal").querySelector("#removeModal_btnConfirm").
     } catch (e) {
         console.error(`Remove Stock Error when process: ${labelId};`,e)
     } finally {
-        loadStockInfoToTable()
+        // loadStockInfoToTable()
+        await fetchStocks(true)
         await client.close()
         model.hide()
     }
@@ -333,9 +331,9 @@ revertModal.addEventListener("show.bs.modal", function (ev) {
     document.querySelector("#revertModal_btnConfirm").disabled = false
     document.querySelector("#revertModal_btnConfirm").textContent = "Confirm"
 
-    for (let i = 0; i < stockList.length; i++) {
-        if ((stockList[i]._id).toString() === itemId){
-            document.querySelector("#revertModal .modal-body p").textContent = `Are you sure to revert delete of ${stockList[i].productName} with label ending in ${stockList[i].productLabel.slice(-7)}?`
+    for (const item of stocksList.all) {
+        if ((item._id).toString() === itemId){
+            document.querySelector("#revertModal .modal-body p").textContent = `Are you sure to revert delete of ${item.productName} with label ending in ${item.productLabel.slice(-7)}?`
         }
     }
 })
@@ -369,7 +367,8 @@ revertModal.querySelector("#revertModal_btnConfirm").addEventListener("click", a
         document.querySelector("#alert_error").style.display = 'flex'
         console.error(`Revert Stock Error when process: ${labelId};`,e)
     } finally {
-        loadStockInfoToTable()
+        // loadStockInfoToTable()
+        await fetchStocks(true)
         await client.close()
         model.hide()
     }
@@ -390,13 +389,14 @@ deleteModal.querySelector("#deleteModal_btnConfirm").addEventListener("click", (
         eachButton.disabled = true
     })
     deleteModal.querySelector("#deleteModal_btnConfirm").textContent = `Please Wait`
-    deleteStockitemById(String(deleteModal.querySelector("#deleteModal_labelid").value),"").then(result =>{
+    deleteStockitemById(String(deleteModal.querySelector("#deleteModal_labelid").value),"").then(async result => {
         bootstrap.Modal.getInstance(deleteModal).hide()
-        loadStockInfoToTable()
-        if (result.acknowledged){
-            createAlert("success","Item has been successfully deleted", 3000)
+        // loadStockInfoToTable()
+        await fetchStocks(true)
+        if (result.acknowledged) {
+            createAlert("success", "Item has been successfully deleted", 3000)
         } else {
-            createAlert("warning","Item delete failed, please try again later", 3000)
+            createAlert("warning", "Item delete failed, please try again later", 3000)
         }
     })
 })
@@ -434,95 +434,124 @@ async function deleteStockitemById(databaseId = "", productLabel = "") {
     return returnResponse
 }
 
-document.querySelector("#act_reloadTable").addEventListener("click",(ev) =>{
-    loadStockInfoToTable()
+document.querySelector("#act_reloadTable").addEventListener("click",async (ev) => {
+    await fetchStocks(true)
 })
 
-document.querySelector("#filterdate").addEventListener("change", (ev)=>{
-    loadStockInfoToTable()
-});
+// document.querySelector("#filterdate").addEventListener("change", (ev)=>{
+//     
+// });
 
+// Rewrite CheckBox to radio buttons
 
-function loadStockInfoToTable(fetchAll = document.querySelector("#switchCheck").checked) {
-    let requestAllData = fetchAll ? fetchAll : false
-    const URLqueries = new URLSearchParams(window.location.search)
-    requestAllData = (URLqueries.get('q') ? true : requestAllData) // 该query存在则拉取所有数据
-    getAllStockItems(requestAllData).then(result => {
-        if (result.acknowledged) {
-            table.clear().draw()
-            let results = result.resultSet
-            stockList = result.resultSet
-            table.clear().draw()
-            table.column(2).order('asc');
-            for (let index = 0; index < results.length; index++) {
-                const element = results[index];
-                if (document.querySelector("#filterdate").value !== "") {
-                    if (element.loggingTime && new Date(element.loggingTime) < new Date(document.querySelector("#filterdate").value)) {
-                        continue;
-                    }
-                }
-                table.row.add([
-                    `<a href="#" data-bs-ponumber="${(element.productCode ? element.productCode : "")}" class="table_action_search">
-                        ${(element.productCode ? element.productCode : "")}</a>`+
-                    (element.hasOwnProperty("comments") || element.hasOwnProperty("quarantine") ? `<span>`+
-                        (element.hasOwnProperty("comments") && element.comments.length > 0 ? `<i class="ti ti-message-dots"></i>`: "") +
-                        (element.hasOwnProperty("quarantine") && element.quarantine === 1 ?
-                            `<i class="ti ti-zoom-question"></i>`
-                            : (element.quarantine === -1 ? `<i class="ti ti-zoom-check-filled"></i>`: "")) +
-                        `</span>` : "" )
-                    + "<br>" + `${element.productName ? (element.productName.length > 30 ? String(element.productName).substring(0,32)+'...' : element.productName) : ""}` ,
-                    (element.bestbefore ? new Date(element.bestbefore).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' }) : ""),
-                    (element.bestbefore ? new Date(element.bestbefore).getTime() : ""),
-                    `${element.hasOwnProperty("quantity") ? element.quantity + " " + (element.quantityUnit ? element.quantityUnit.replace("carton","ctn").replace("bottle","btl") : "") : ""}`+'<br>'+
-                    (element.shelfLocation ? `<a href=../stocks/location.html?location=${element.shelfLocation}>${element.shelfLocation}</a>`: '') ,
-                    `<small>${(element.hasOwnProperty("createTime") ? "A:"+new Date(element.createTime).toLocaleDateString('en-AU',{ timeZone: 'Australia/Sydney' }) : "")}</small>`+
-                    `<small>${(element.hasOwnProperty("removeTime") && element.removed === 1 ? "<br>R:"+new Date(element.removeTime).toLocaleDateString('en-AU',{ timeZone: 'Australia/Sydney' }) : "")}</small>`,
-                    `<small>${(element.productLabel ? element.productLabel : "")}</small>`+
-                    `<small><a href="#" data-bs-ponumber="${(element.POnumber ? element.POnumber : "")}" class="table_action_search">
-                        ${(element.POnumber ? "<br>"+element.POnumber : "")}${(element.sequence ? "-"+element.sequence : "")}</a></small>`,
-                    `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-itemid="${element._id}" >View/Edit</a>` +
-                    (element.removed < 1 ? `
+document.getElementsByName("stockStatusRadio").forEach(eachOption =>{
+    eachOption.addEventListener("change", async function (ev) {
+        await fetchStocks()
+        // 默认使用Current，如果有变化则使用其他
+        let dataSet = stocksList.current
+        if (eachOption.checked && eachOption.id === "radio_history") {
+            dataSet = stocksList.removed
+        } else if (eachOption.checked && eachOption.id === "radio_all") {
+            dataSet = stocksList.all
+        } else {
+        }
+
+        inflateTable(dataSet)
+    })
+})
+
+function inflateTable(dataSet){
+    try {
+        table.clear().draw()
+        table.column(2).order('asc');
+        for (let index = 0; index < dataSet.length; index++) {
+            const element = dataSet[index];
+            // if (document.querySelector("#filterdate").value !== "") {
+            //     if (element.loggingTime && new Date(element.loggingTime) < new Date(document.querySelector("#filterdate").value)) {
+            //         continue;
+            //     }
+            // }
+            table.row.add([
+                `<a href="#" data-bs-ponumber="${(element.productCode ? element.productCode : "")}" class="table_action_search">
+                        ${(element.productCode ? element.productCode : "")}</a>` +
+                (element.hasOwnProperty("comments") || element.hasOwnProperty("quarantine") ? `<span>` +
+                    (element.hasOwnProperty("comments") && element.comments.length > 0 ? `<i class="ti ti-message-dots"></i>` : "") +
+                    (element.hasOwnProperty("quarantine") && element.quarantine === 1 ?
+                        `<i class="ti ti-zoom-question"></i>`
+                        : (element.quarantine === -1 ? `<i class="ti ti-zoom-check-filled"></i>` : "")) +
+                    `</span>` : "")
+                + "<br>" + `${element.productName ? (element.productName.length > 30 ? String(element.productName).substring(0, 32) + '...' : element.productName) : ""}`,
+                (element.bestbefore ? new Date(element.bestbefore).toLocaleDateString('en-AU', {timeZone: 'Australia/Sydney'}) : ""),
+                (element.bestbefore ? new Date(element.bestbefore).getTime() : ""),
+                `${element.hasOwnProperty("quantity") ? element.quantity + " " + (element.quantityUnit ? element.quantityUnit.replace("carton", "ctn").replace("bottle", "btl") : "") : ""}` + '<br>' +
+                (element.shelfLocation ? `<a href=../stocks/location.html?location=${element.shelfLocation}>${element.shelfLocation}</a>` : ''),
+                `<small>${(element.hasOwnProperty("createTime") ? "A:" + new Date(element.createTime).toLocaleDateString('en-AU', {timeZone: 'Australia/Sydney'}) : "")}</small>` +
+                `<small>${(element.hasOwnProperty("removeTime") && element.removed === 1 ? "<br>R:" + new Date(element.removeTime).toLocaleDateString('en-AU', {timeZone: 'Australia/Sydney'}) : "")}</small>`,
+                `<small>${(element.productLabel ? element.productLabel : "")}</small>` +
+                `<small><a href="#" data-bs-ponumber="${(element.POnumber ? element.POnumber : "")}" class="table_action_search">
+                        ${(element.POnumber ? "<br>" + element.POnumber : "")}${(element.sequence ? "-" + element.sequence : "")}</a></small>`,
+                `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-itemid="${element._id}" >View/Edit</a>` +
+                (element.removed < 1 ? `
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-itemid="${element._id}">Mark used</a>
                     ` : `<a href="#" class="table_actions table_action_revert" data-bs-toggle="modal" data-bs-target="#revertModal" 
                         data-bs-itemid="${element._id}" data-bs-shelf="${(element.shelfLocation ? element.shelfLocation : "")}">Revert</a>`) +
-                    `<a href="#" class="table_actions table_action_print" data-bs-itemid="${element._id}">Print Label</a>`
-                ]).draw(false);
-            }
-            createAlert("success", "Table has been updated", 3000)
-        } else {
-            createAlert("danger", "Disagree fetched data", 5000)
+                `<a href="#" class="table_actions table_action_print" data-bs-itemid="${element._id}">Print Label</a>`
+            ]).draw(false);
         }
-    }).then(function(){
-        document.querySelectorAll(".table_action_search").forEach(eachElement=>{
-            eachElement.addEventListener("click",function(ev){
-                ev.preventDefault()                                                                                                              
-                table.search(eachElement.getAttribute("data-bs-ponumber")).draw()
-            })
-        })
+    } catch (e) {
+        console.error("Error Occured when inflating table: ",e)
+    }
 
-    //     Regenerate Label
-        document.querySelectorAll(".table_action_print").forEach(eachElement => {
-            eachElement.addEventListener("click", function (ev) {
-                try {
-                    let elementDatabaseId = eachElement.getAttribute("data-bs-itemid")
-                    generateLabelToPDF(elementDatabaseId)
-                } catch (e) {
-                    console.error("Error when attempting generate label:", e)
+    document.querySelector("#loadingStatus").style = "display: none"
+}
+
+async function fetchStocks(forced = false) {
+    if (stocksList.all.length <= 0 || forced) {
+        document.querySelector("#loadingStatus").style.removeProperty("display")
+        let client = new MongoClient(uri, {
+            serverApi: {
+                version: ServerApiVersion.v1,
+                useNewUrlParser: true,
+                useUnifiedTopology: true
+            }
+        });
+        const sessions = client.db(targetDB).collection("pollinglog");
+        let result = {}
+        try {
+            const options = {sort: {bestbefore: -1}}
+            await client.connect();
+            result = await sessions.find({}, options).toArray()
+            stocksList.all = result
+            result.forEach(eachResult => {
+                if (eachResult.removed == 0){
+                    stocksList.current.push(eachResult)
+                } else if (eachResult.removed == 1){
+                    stocksList.removed.push(eachResult)
                 }
             })
-        })
-        
-        table.on("draw", function(){
-            document.querySelectorAll(".table_action_print").forEach(eachElement => {
-                eachElement.addEventListener("click", function (ev) {
-                    try {
-                        let elementDatabaseId = eachElement.getAttribute("data-bs-itemid")
-                        generateLabelToPDF(elementDatabaseId)
-                    } catch (e) {
-                        console.error("Error when attempting generate label:", e)
-                    }
-                })
-            })
+        } catch (err) {
+            result['message'] = err
+        } finally {
+            await client.close()
+            document.querySelector("#loadingStatus").style.display = "none"
+        }
+        return result
+    }
+
+    document.getElementsByName("stockStatusRadio").forEach(eachOption =>{
+        eachOption.addEventListener("change",  function (ev) {
+            document.querySelector("#loadingStatus").style.removeProperty("display")
+            let dataSet = stocksList.current
+            if (eachOption.checked && eachOption.id === "radio_history") {
+                dataSet = stocksList.removed
+                console.log("radio_history", dataSet)
+            } else if (eachOption.checked && eachOption.id === "radio_all") {
+                dataSet = stocksList.all
+                console.log("radio_all", dataSet)
+            } else {
+                console.log("radio_current", dataSet)
+            }
+            inflateTable(dataSet)
         })
     })
 }
@@ -535,9 +564,9 @@ function generateLabelToPDF(elementDatabaseId){
             format: 'a4',
             compress: true
         })
-        for (let i = 0; i < stockList.length; i++) {
-            if (new ObjectId(stockList[i]._id).toString() === elementDatabaseId) {
-                let generateElement = stockList[i]
+        for (const item of stocksList.all) {
+            if (new ObjectId(item._id).toString() === elementDatabaseId) {
+                let generateElement = item
                 if (generateElement.hasOwnProperty("_id")) {
                     delete generateElement._id
                 }
@@ -657,7 +686,7 @@ async function getAllStockItems(findall = false) {
     const sessions = client.db(targetDB).collection("pollinglog");
     let result = {acknowledged: false, resultSet: [], message: ""}
     try {
-        const options = {sort: {bestbefore: -1},}
+        const options = {sort: {bestbefore: -1}}
         await client.connect();
         result.acknowledged = true
         if (findall){
@@ -673,10 +702,6 @@ async function getAllStockItems(findall = false) {
     }
     return result
 }
-
-document.querySelector("#filterdate").addEventListener("change", (ev)=>{
-    loadStockInfoToTable()
-});
 
 function createAlert(status, text, time = 5000){
     let alertAnchor = document.querySelector("#alertAnchor")

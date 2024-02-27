@@ -62,14 +62,25 @@
                 <div class="card-body">
                     <h5 class="card-title fw-semibold mb-4">Actions</h5>
                     <div class="list-group-item-action">
-                        <div class="row mb-0 ms-2">
-                            <div class="col-6" id="switchDiv">
-                                <input class="form-check-input" type="checkbox" id="switchCheck">
-                                <span>Show History Stocks</span>
+                        <div class="row mb-2 ms-2">
+                            <div class="form-check col-4">
+                                <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_current" checked>
+                                <label class="form-check-label">Showing Current Stock Only</label>
                             </div>
+                            <div class="form-check col-4">
+                                <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_history">
+                                <label class="form-check-label">Show History Stocks Only</label>
+                            </div>
+                            <div class="form-check col-4">
+                                <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_all">
+                                <label class="form-check-label">Show All Stocks</label>
+                            </div>
+                        </div>
+                        <div class="row mb-0 ms-2">
+                            <div class="col-6"></div>
                             <div class="col-6" style="display: flex">
-                                <span id="labelForFilterdate" for="filterdate">Filter records after Date:</span>
-                                <input type="date" id="filterdate" name="filterdate" class="form-control form-control-sm">
+<!--                                <span id="labelForFilterdate" for="filterdate">Filter records after Date:</span>-->
+<!--                                <input type="date" id="filterdate" name="filterdate" class="form-control form-control-sm">-->
                             </div>
                             <span class="toggleRefreshText" style="float: left;">Auto Refresh in: <span id="toggleTimes"></span></span><span class="toggleRefreshText"></span>
                         </div>
@@ -160,7 +171,7 @@
     <div class="modal-dialog model-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="revertModalLabel">Revert mark used Operation</h5>
+                <h5 class="modal-title" id="revertModalLabel">Remove Item - Revert</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
