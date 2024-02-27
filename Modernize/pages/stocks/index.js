@@ -33,8 +33,7 @@ let table = new DataTable('#table', {
 const countdownFrom = 120;
 
 document.addEventListener("DOMContentLoaded", async (event) => {
-    await fetchStocks(true)
-    inflateTable(stocksList.current)
+    await inflateTable(true)
     let shouldRefresh = true
     let countdown = countdownFrom;
     
@@ -229,12 +228,11 @@ document.querySelector("#editModal_submitBtn").addEventListener("click", async (
     if (result.acknowledged){
         setTimeout(async function () {
             bootstrap.Modal.getInstance(document.querySelector("#editModal")).hide()
-            // loadStockInfoToTable()
-            await fetchStocks(true)
         },3000)
     } else {
         document.querySelector("#editModal .modal-body p").textContent = "Error on Update"
     }
+    await inflateTable(true)
 })
 
 document.querySelector("#modelEditCheckRemoved").addEventListener("change",(ev)=>{
@@ -314,16 +312,17 @@ document.querySelector("#removeModal").querySelector("#removeModal_btnConfirm").
     } catch (e) {
         console.error(`Remove Stock Error when process: ${labelId};`,e)
     } finally {
-        // loadStockInfoToTable()
-        await fetchStocks(true)
         await client.close()
         model.hide()
     }
+    await inflateTable(true)
 })
 
 let revertModal = document.querySelector("#revertModal")
+let revertModalItemid = null
 revertModal.addEventListener("show.bs.modal", function (ev) {
     var itemId = ev.relatedTarget.getAttribute("data-bs-itemid")
+    revertModalItemid = itemId
     let hiddenInput = revertModal.querySelector("#revertLabelid")
     hiddenInput.value = itemId
 
@@ -339,7 +338,7 @@ revertModal.addEventListener("show.bs.modal", function (ev) {
 })
 revertModal.querySelector("#revertModal_btnConfirm").addEventListener("click", async function (ev) {
     ev.preventDefault()
-    let labelId =  ev.relatedTarget.getAttribute("data-bs-itemid")
+    let labelId =  revertModalItemid
     let model = bootstrap.Modal.getInstance(document.querySelector("#revertModal"));
     let client = new MongoClient(uri, {
         serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
@@ -367,11 +366,10 @@ revertModal.querySelector("#revertModal_btnConfirm").addEventListener("click", a
         document.querySelector("#alert_error").style.display = 'flex'
         console.error(`Revert Stock Error when process: ${labelId};`,e)
     } finally {
-        // loadStockInfoToTable()
-        await fetchStocks(true)
         await client.close()
         model.hide()
     }
+    await inflateTable(true)
 })
 
 let deleteModal = document.querySelector("#deleteModal")
@@ -391,8 +389,7 @@ deleteModal.querySelector("#deleteModal_btnConfirm").addEventListener("click", (
     deleteModal.querySelector("#deleteModal_btnConfirm").textContent = `Please Wait`
     deleteStockitemById(String(deleteModal.querySelector("#deleteModal_labelid").value),"").then(async result => {
         bootstrap.Modal.getInstance(deleteModal).hide()
-        // loadStockInfoToTable()
-        await fetchStocks(true)
+        await inflateTable(true)
         if (result.acknowledged) {
             createAlert("success", "Item has been successfully deleted", 3000)
         } else {
@@ -443,25 +440,23 @@ document.querySelector("#act_reloadTable").addEventListener("click",async (ev) =
 // });
 
 // Rewrite CheckBox to radio buttons
-
 document.getElementsByName("stockStatusRadio").forEach(eachOption =>{
     eachOption.addEventListener("change", async function (ev) {
-        await fetchStocks()
-        // 默认使用Current，如果有变化则使用其他
-        let dataSet = stocksList.current
-        if (eachOption.checked && eachOption.id === "radio_history") {
-            dataSet = stocksList.removed
-        } else if (eachOption.checked && eachOption.id === "radio_all") {
-            dataSet = stocksList.all
-        } else {
-        }
-
-        inflateTable(dataSet)
+        await inflateTable()
     })
 })
 
-function inflateTable(dataSet){
+async function inflateTable(forced = false) {
     try {
+        table.clear().draw()
+        await fetchStocks(forced)
+        // 默认使用Current，如果有变化则使用其他
+        let dataSet = stocksList.current
+        if (document.querySelector("#radio_history").checked) {
+            dataSet = stocksList.removed
+        } else if (document.querySelector("#radio_all").checked) {
+            dataSet = stocksList.all
+        }
         table.clear().draw()
         table.column(2).order('asc');
         for (let index = 0; index < dataSet.length; index++) {
@@ -499,7 +494,7 @@ function inflateTable(dataSet){
             ]).draw(false);
         }
     } catch (e) {
-        console.error("Error Occured when inflating table: ",e)
+        console.error("Error Occured when inflating table: ", e)
     }
 
     document.querySelector("#loadingStatus").style = "display: none"
@@ -507,6 +502,9 @@ function inflateTable(dataSet){
 
 async function fetchStocks(forced = false) {
     if (stocksList.all.length <= 0 || forced) {
+        stocksList.all = []
+        stocksList.current = []
+        stocksList.removed = []
         document.querySelector("#loadingStatus").style.removeProperty("display")
         let client = new MongoClient(uri, {
             serverApi: {
@@ -539,7 +537,7 @@ async function fetchStocks(forced = false) {
     }
 
     document.getElementsByName("stockStatusRadio").forEach(eachOption =>{
-        eachOption.addEventListener("change",  function (ev) {
+        eachOption.addEventListener("change",  async function (ev) {
             document.querySelector("#loadingStatus").style.removeProperty("display")
             let dataSet = stocksList.current
             if (eachOption.checked && eachOption.id === "radio_history") {
@@ -551,7 +549,7 @@ async function fetchStocks(forced = false) {
             } else {
                 console.log("radio_current", dataSet)
             }
-            inflateTable(dataSet)
+            await inflateTable()
         })
     })
 }
