@@ -462,12 +462,17 @@ router.get("/v1/stocks", async (req, res) => {
     let stockLabel = req.query.label && String(req.query.label).length > 2 ? req.query.label : ""
     let stockSession = req.query.session && String(req.query.session).length > 2 ? req.query.session : ""
     let stockProduct = req.query.product && String(req.query.product).length > 2 ? req.query.product : ""
+    let stockRemoved = req.query.removed && parseInt(req.query.removed) ? parseInt(req.query.removed) : 0
     let response = {acknowledged: false, data: [], message: ""}
     await sessionClient.connect()
     const sessions = sessionClient.db(targetDB).collection("pollinglog");
 
+    let findingQuery = {removed: 0}
+    if (stockRemoved === 1){
+        findingQuery = {}
+    }
+
     try {
-        let findingQuery = {removed: (req.query.removed && parseInt(req.query.label) === 1 ? 1 : 0)}
         if (stockLabel && stockLabel.length > 0) {
             findingQuery.productLabel = {$regex: new RegExp(stockLabel), $options: "i"}
         }
