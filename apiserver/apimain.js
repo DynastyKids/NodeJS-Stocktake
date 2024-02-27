@@ -53,8 +53,6 @@ router.get("/v1/products", async (req, res) => {
             let filteredResult = []
             result.forEach(eachObject => {
                 for (const eachKey in eachObject) {
-                    console.log("searching:", eachKey)
-
                     if (eachObject[eachKey] && eachObject[eachKey].toLowerCase().includes((req.query.query).toLowerCase())) {
                         filteredResult.push(eachObject)
                         continue;
@@ -150,7 +148,6 @@ router.post("/v1/stocks/update", async (req, res) => {
     });
 
     try{
-        let upsertFlag = (req.hasOwnProperty("query") && req.query.hasOwnProperty("upsert") && req.query.upsert)
         let updateItems = req.hasOwnProperty("body") && req.body.hasOwnProperty("item") ? req.body.item: {}
         if (Object.keys(updateItems).length <= 0){
             throw "Update item fetched a empty object"
@@ -180,10 +177,10 @@ router.post("/v1/stocks/update", async (req, res) => {
         const session = dbclient.db(targetDB).collection("pollinglog");
         let originElement = await session.find(filter).toArray()
         if (originElement.length <= 0){ //现有记录内没有相同的记录，执行添加操作，根据用户指定的upsertFlag处理
-            response = await session.updateOne(filter, {$set: updateItems}, {upsert: upsertFlag})
+            response = await session.updateOne(filter, {$set: updateItems}, {upsert: true})
         } else {  // 现有记录内有相同的记录，执行更新操作，需要一并修改changelog
             let changelogElement = compareChanges(originElement[0], updateItems)
-            response = await session.updateOne(filter, {$set: updateItems}, {upsert: upsertFlag})
+            response = await session.updateOne(filter, {$set: updateItems}, {upsert: true})
             response.upsert = await session.updateOne(filter, {$push: {changelog: changelogElement}})
         }
     } catch (e) {
@@ -322,8 +319,6 @@ router.get("/v1/preload", async (req, res) => {
 
         response.acknowledged = true
         response.data = result
-
-        console.log(response.data)
         if (req.query){
             if (req.query.hasOwnProperty("label") && String(req.query.label).length > 3){
                 let newResultSet = []
@@ -467,12 +462,17 @@ router.get("/v1/stocks", async (req, res) => {
     let stockLabel = req.query.label && String(req.query.label).length > 2 ? req.query.label : ""
     let stockSession = req.query.session && String(req.query.session).length > 2 ? req.query.session : ""
     let stockProduct = req.query.product && String(req.query.product).length > 2 ? req.query.product : ""
+    let stockRemoved = req.query.removed && parseInt(req.query.removed) ? parseInt(req.query.removed) : 0
     let response = {acknowledged: false, data: [], message: ""}
     await sessionClient.connect()
     const sessions = sessionClient.db(targetDB).collection("pollinglog");
 
+    let findingQuery = {removed: 0}
+    if (stockRemoved === 1){
+        findingQuery = {}
+    }
+
     try {
-        let findingQuery = {removed: (req.query.removed && parseInt(req.query.label) === 1 ? 1 : 0)}
         if (stockLabel && stockLabel.length > 0) {
             findingQuery.productLabel = {$regex: new RegExp(stockLabel), $options: "i"}
         }

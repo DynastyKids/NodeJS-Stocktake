@@ -80,7 +80,7 @@ function redrawDataTable(tableData =[]){
                 `${stockElement.hasOwnProperty("seq") ? "."+stockElement.seq: ""}`+
                 `<br>${stockElement.hasOwnProperty("productLabel") && stockElement.productLabel ? stockElement.productLabel.substring(0,15) : ''}`,
                 `<a href="#" class="table_actions editModal" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-labelId="${stockElement.productLabel}">Patch / Edit</a>`+`<br>`+
-                `<a href="#" class="table_actions deleteModal" data-bs-toggle="modal" data-bs-target="#deleteModal" data-bs-labelId="${stockElement.productLabel}">Delete</a>`,
+                `<a href="#" class="table_actions removeModal" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-labelId="${stockElement.productLabel}">Delete</a>`,
             ]).draw(false)
         } catch (e) {
             console.error("Error when processing data:",eachRow,";;With Error",e)
@@ -107,6 +107,14 @@ let editModalTarget = {}
 let editModal = document.querySelector("#editModal")
 editModal.addEventListener("show.bs.modal", async function (ev) {
     let requestLabelId = ev.relatedTarget.getAttribute("data-bs-labelId")
+    editModal.querySelectorAll("input").forEach(eachInput =>{
+        if (eachInput.type === "text" || eachInput.type === "number"  || eachInput.type === "date"){
+            eachInput.value = ""
+        }
+        if (eachInput.type === "checkbox"){
+            eachInput.checked = false
+        }
+    })
     editModal.querySelector("#editModal_labelId").value = requestLabelId           
     editModal.querySelector("#editModal_btnSubmit").disabled = true
     editModal.querySelector("#editModal_btnSubmit").textContent = "Push to Stock"
@@ -152,10 +160,10 @@ editModal.querySelector("#editModal_btnSave").addEventListener("click",function(
     fetchPrefillList(true)
     bootstrap.Modal.getInstance(editModal).hide()
 })
-editModal.querySelector("#editModal_btnSubmit").addEventListener("click", async function () {
+editModal.querySelector("#editModal_btnSubmit").addEventListener("click", async function (ev) {
     editModal.querySelector("#editModal_statusText").textContent = `Processing on pushing to stock`
     readModalEdit()
-    let result = {step1: {acknowledged: false}, step2: {acknowledged: false}}
+    let result = {step1: {}, step2: {}}
     try {
         var pushToStock = await pushElementToStock("/api/v1/stocks/update", editModalTarget.item)
         var deletePreload = await removePreloadRequest("/api/v1/preload/remove", editModalTarget.item.productLabel)
@@ -163,11 +171,12 @@ editModal.querySelector("#editModal_btnSubmit").addEventListener("click", async 
         if (pushToStock.hasOwnProperty("acknowledged") && pushToStock.acknowledged) {
             result.step2 = deletePreload
         }
+        console.log({"step1": result.step1.data, editModalTarget, "step2": result.step2.data})
     } catch (e) {
         console.error("Error occured when processing: ", e)
     }
 
-    if (result.step1.acknowledged && result.step2.acknowledged) {
+    if (result.step1.hasOwnProperty("acknowledged") && result.step1.acknowledged && result.step2.hasOwnProperty("acknowledged") && result.step2.acknowledged) {
         editModal.querySelector("#editModal_statusText").textContent = `Ready`
     } else {
         console.error(`editModal; (1)Push to Stock:${result.step1.acknowledged}; (2) Delete from preload: ${result.step2.acknowledged}`)
@@ -244,7 +253,7 @@ removeModal.querySelector("#removeModalYes").addEventListener("click", async fun
     let result = await removePreloadRequest("/api/v1/preload/remove",labelId)
     if (result.acknowledged) {
         fetchPrefillList(true)
-        createAlert("success","Item has been successfully removed. Reloading page")
+        createAlert("success","Item has been successfully removed.")
         bootstrap.Modal.getInstance(removeModal).hide()
     } else {
         removeModal.querySelector("#editModal .modal-body p").textContent = "Error on Update, check console for more info"
