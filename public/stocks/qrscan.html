@@ -10,6 +10,7 @@
 </head>
 <body>
 <div class="container-fluid" style="max-height: 100vh">
+    <div id="alertAnchor"></div>
     <div class="container-fluid mt-4">
         <div class="row">
             <div></div>
@@ -29,6 +30,152 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel">Update product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="row">
+                        <h3>Product Information:</h3>
+                        <div class="col-12">
+                            <div style="display: flex">
+                                <h5 class="form-label" style="font-weight: bolder">Product Info: </h5>
+                                <h5 id="productInfoText"></h5>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label for="modalEditQuantity" class="form-label">Product Label:</label>
+                            <input type="text" class="form-control col-6" id="modalEditLabel" data-bs-targetField="productLabel" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label for="modalEditQuantity" class="form-label">Product Code:</label>
+                            <input type="text" class="form-control col-6" id="modalEditCode" data-bs-targetField="productCode" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label for="modalEditQuantity" class="form-label">Product Name:</label>
+                            <input type="text" class="form-control col-6" id="modalEditName" data-bs-targetField="productName" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label for="modelEditLocation" class="form-label">Location:</label>
+                            <input type="text" class="form-control col-6" id="modelEditLocation" data-bs-targetField="shelfLocation" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label for="modalEditQuantity" class="form-label">Product Quantity:</label>
+                            <input type="number" class="form-control col-6" id="modalEditQuantity" data-bs-targetField="quantity" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label for="modalEditUnit" class="form-label">Product Unit:</label>
+                            <input type="text" class="form-control col-6" id="modalEditUnit" data-bs-targetField="quantityUnit" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label for="modalEditBestbefore" class="form-label">Best Before:</label>
+                            <input type="date" class="form-control col-6" id="modalEditBestbefore" data-bs-targetField="bestbefore"  value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label for="modelEditUnitprice" class="form-label">Unit Price:</label>
+                            <input type="text" class="form-control col-6" id="modelEditUnitprice" data-bs-targetField="unitPrice"  value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label for="modelEditPOnumber" class="form-label">Purchase OrderID:</label>
+                            <input type="text" class="form-control col-6" id="modelEditPOnumber" data-bs-targetField="POnumber" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label for="modelEditCreateTime" class="form-label">Create Time:</label>
+                            <input type="datetime-local" class="form-control col-6" id="modelEditCreateTime" data-bs-targetField="createTime" value="">
+                        </div>
+                        <div class="col-12 mt-2 mb-2">
+                            <div class="col-12 mb-2">
+                                <label class="form-label">Item require Quarantine?</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineYes" data-bs-targetField="quarantine" value="1">
+                                    <label class="form-check-label" for="modalEdit_quarantineYes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineNo" data-bs-targetField="quarantine" value="0" checked>
+                                    <label class="form-check-label" for="modalEdit_quarantineNo">No</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineFinished" data-bs-targetField="quarantine" value="-1">
+                                    <label class="form-check-label" for="modalEdit_quarantineFinished">Inspected Finished</label>
+                                </div>
+                            </div>
+                            <div class="col-12 mb-2">
+                                <input type="checkbox" class="form-check-input" name="modalEdit_removeCheck" id="modelEditCheckRemoved" data-bs-targetField="removed" >
+                                <label class="form-label">Product has been removed?</label>
+                            </div>
+                            <div class="col-6" id="group_removeTime" style="display: none">
+                                <label for="modelEditRemoveTime" class="form-label">Remove Time:</label>
+                                <input type="datetime-local" class="form-control col-6" id="modelEditRemoveTime" data-bs-targetField="removeTime"  value="">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label for="modelEditComments" class="form-label">Comments / Notes:</label>
+                            <textarea class="form-control" id="modelEditComments" rows="5" data-bs-targetField="comments"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div>
+                    <button type="button" class="btn btn-danger" id="editModal_delete" data-bs-toggle="modal" data-bs-target="removeModal" data-bs-itemid="">Delete</button>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="editModal_submitBtn" disabled>Save & Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeModalLabel">Remove Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2"></p>
+                <hr>
+                <span>Status: <span id="removeModal_text">Ready</span></span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="removeModal_btnCancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="removeModal_btnConfirm">Confirm</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="staticBackdropHTTPS" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropLabel">Notice</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">You are about to navigate to a secure HTTPS site that uses a self-signed certificate.</p>
+                <p class="mb-1">While HTTPS sites encrypt data to provide a more secure connection,
+                    self-signed certificates may trigger a warning in your browser because they are not issued by a recognized certificate authority.</p>
+                <p class="mb-1">This action will take you to the HTTPS site. Your browser may show the warning message, click "Advanced" then "Continue" for continue using your camera scan stocks.</p>
+                <br>
+                <p class="mb-1">This does not necessarily indicate a problem with the site's security, and you understand the risks and wish to continue, please click the "Understood" button below.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="warningModal_btnConfirm">Understood</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="../library/jquery-3.7.1.min.js"></script>
 <script src="../library/jsqr/jsQR.github.js"></script>
 <script src="../library/bootstrap.bundle.min.js"></script>
