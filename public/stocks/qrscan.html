@@ -42,96 +42,115 @@
                 <form>
                     <div class="row">
                         <h3>Product Information:</h3>
-                        <div class="col-12">
-                            <div style="display: flex">
-                                <h5 class="form-label" style="font-weight: bolder">Product Info: </h5>
-                                <h5 id="productInfoText"></h5>
-                            </div>
-                        </div>
                         <div class="col-6 col-md-4">
                             <label for="modalEditQuantity" class="form-label">Product Label:</label>
-                            <input type="text" class="form-control col-6" id="modalEditLabel" data-bs-targetField="productLabel" value="">
+                            <input type="text" class="form-control col-6" id="modalEditLabel" data-bs-targetfield="productLabel" value="">
                         </div>
                         <div class="col-6 col-md-4">
                             <label for="modalEditQuantity" class="form-label">Product Code:</label>
-                            <input type="text" class="form-control col-6" id="modalEditCode" data-bs-targetField="productCode" value="">
+                            <input type="text" class="form-control col-6" id="modalEditCode" data-bs-targetfield="productCode" value="">
                         </div>
                         <div class="col-6 col-md-4">
                             <label for="modalEditQuantity" class="form-label">Product Name:</label>
-                            <input type="text" class="form-control col-6" id="modalEditName" data-bs-targetField="productName" value="">
+                            <input type="text" class="form-control col-6" id="modalEditName" data-bs-targetfield="productName" value="">
                         </div>
                         <div class="col-6 col-md-4">
                             <label for="modelEditLocation" class="form-label">Location:</label>
-                            <input type="text" class="form-control col-6" id="modelEditLocation" data-bs-targetField="shelfLocation" value="">
+                            <input type="text" class="form-control col-6" id="modelEditLocation" data-bs-targetfield="shelfLocation" value="">
                         </div>
                         <div class="col-6 col-md-4">
                             <label for="modalEditQuantity" class="form-label">Product Quantity:</label>
-                            <input type="number" class="form-control col-6" id="modalEditQuantity" data-bs-targetField="quantity" value="">
+                            <input type="number" class="form-control col-6" id="modalEditQuantity" data-bs-targetfield="quantity" value="">
                         </div>
                         <div class="col-6 col-md-4">
                             <label for="modalEditUnit" class="form-label">Product Unit:</label>
-                            <input type="text" class="form-control col-6" id="modalEditUnit" data-bs-targetField="quantityUnit" value="">
+                            <input type="text" class="form-control col-6" id="modalEditUnit" data-bs-targetfield="quantityUnit" value="">
                         </div>
                         <div class="col-6 col-md-4">
                             <label for="modalEditBestbefore" class="form-label">Best Before:</label>
-                            <input type="date" class="form-control col-6" id="modalEditBestbefore" data-bs-targetField="bestbefore"  value="">
+                            <input type="date" class="form-control col-6" id="modalEditBestbefore" data-bs-targetfield="bestbefore"  value="">
                         </div>
                         <div class="col-6 col-md-4">
                             <label for="modelEditUnitprice" class="form-label">Unit Price:</label>
-                            <input type="text" class="form-control col-6" id="modelEditUnitprice" data-bs-targetField="unitPrice"  value="">
+                            <input type="text" class="form-control col-6" id="modelEditUnitprice" data-bs-targetfield="unitPrice"  value="">
                         </div>
                         <div class="col-6 col-md-4">
                             <label for="modelEditPOnumber" class="form-label">Purchase OrderID:</label>
-                            <input type="text" class="form-control col-6" id="modelEditPOnumber" data-bs-targetField="POnumber" value="">
+                            <input type="text" class="form-control col-6" id="modelEditPOnumber" data-bs-targetfield="POnumber" value="">
                         </div>
                         <div class="col-6 col-md-4">
                             <label for="modelEditCreateTime" class="form-label">Create Time:</label>
-                            <input type="datetime-local" class="form-control col-6" id="modelEditCreateTime" data-bs-targetField="createTime" value="">
+                            <input type="datetime-local" class="form-control col-6" id="modelEditCreateTime" data-bs-targetfield="createTime" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label for="modelEditCreateTime" class="form-label">Sequence:</label>
+                            <input type="number" class="form-control col-6" id="modelEditSequence" data-bs-targetfield="seq" min="0" value="">
                         </div>
                         <div class="col-12 mt-2 mb-2">
                             <div class="col-12 mb-2">
                                 <label class="form-label">Item require Quarantine?</label>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineYes" data-bs-targetField="quarantine" value="1">
+                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineYes" data-bs-targetfield="quarantine" value="1">
                                     <label class="form-check-label" for="modalEdit_quarantineYes">Yes</label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineNo" data-bs-targetField="quarantine" value="0" checked>
+                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineNo" data-bs-targetfield="quarantine" value="0" checked>
                                     <label class="form-check-label" for="modalEdit_quarantineNo">No</label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineFinished" data-bs-targetField="quarantine" value="-1">
+                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineFinished" data-bs-targetfield="quarantine" value="-1">
                                     <label class="form-check-label" for="modalEdit_quarantineFinished">Inspected Finished</label>
                                 </div>
                             </div>
                             <div class="col-12 mb-2">
-                                <input type="checkbox" class="form-check-input" name="modalEdit_removeCheck" id="modelEditCheckRemoved" data-bs-targetField="removed" >
+                                <input type="checkbox" class="form-check-input" name="modalEdit_removeCheck" id="modelEditCheckRemoved" data-bs-targetfield="removed" >
                                 <label class="form-label">Product has been removed?</label>
                             </div>
                             <div class="col-6" id="group_removeTime" style="display: none">
                                 <label for="modelEditRemoveTime" class="form-label">Remove Time:</label>
-                                <input type="datetime-local" class="form-control col-6" id="modelEditRemoveTime" data-bs-targetField="removeTime"  value="">
+                                <input type="datetime-local" class="form-control col-6" id="modelEditRemoveTime" data-bs-targetfield="removeTime"  value="">
                             </div>
                         </div>
                         <div class="col-12">
                             <label for="modelEditComments" class="form-label">Comments / Notes:</label>
-                            <textarea class="form-control" id="modelEditComments" rows="5" data-bs-targetField="comments"></textarea>
+                            <textarea class="form-control" id="modelEditComments" rows="5" data-bs-targetfield="comments"></textarea>
                         </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer justify-content-between">
                 <div>
-                    <button type="button" class="btn btn-danger" id="editModal_delete" data-bs-toggle="modal" data-bs-target="removeModal" data-bs-itemid="">Delete</button>
+<!--                    <button type="button" class="btn btn-outline-danger" data-bs-target="#permanentDeleteModal" data-bs-toggle="modal" data-bs-dismiss="modal">Permanent Delete</button>-->
                 </div>
                 <div>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="editModal_submitBtn" disabled>Save & Submit</button>
+                    <button type="button" class="btn btn-primary" id="editModal_submitBtn" disabled>Submit</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<div class="modal fade" id="permanentDeleteModal" tabindex="-1" aria-labelledby="permanentDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="permanentDeleteModalLabel">Permanent Delete Warning</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">This operation is not revertible, this data will be permanently removed from database.</p>
+            </div>
+            <div class="modal-footer justify-content-between d-flex">
+                <small>Status: <span id="permanentDelete_text">Ready</span></small>
+                <div>
+                    <button type="button" class="btn btn-secondary" id="permanentDelete_btnCancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="permanentDelete_btnConfirm">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
     <div class="modal-dialog model-lg">
         <div class="modal-content">
@@ -141,15 +160,15 @@
             </div>
             <div class="modal-body">
                 <p class="mb-2"></p>
-                <hr>
-                <span>Status: <span id="removeModal_text">Ready</span></span>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="removeModal_btnCancel" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="removeModal_btnConfirm">Confirm</button>
+            <div class="modal-footer justify-content-between d-flex">
+                <small>Status: <span id="removeModal_text">Ready</span></small>
+                <div>
+                    <button type="button" class="btn btn-secondary" id="removeModal_btnCancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="removeModal_btnConfirm">Confirm</button>
+                </div>
             </div>
         </div>
-
     </div>
 </div>
 

@@ -272,12 +272,8 @@ router.post("/v1/stocks/remove", async (req, res) => {
         try {
             await dbclient.connect()
             const session = dbclient.db(targetDB).collection("pollinglog");
-
             let result = await session.updateOne(filter, updateObject, {upsert: false})
-            if (result.acknowledged) {
-                response.acknowledged = true
-                response.data = result
-            }
+            response = result
         } catch (e) {
             console.error("Error occurred when attempting to provide move action. ", e)
         }
@@ -305,6 +301,7 @@ router.get("/v1/preload", async (req, res) => {
         await dbclient.connect()
         const session = dbclient.db(targetDB).collection("preloadlog");
         let result = await session.find({}).toArray()
+        console.log(result)
         
         for (let i = 0; i < result.length; i++) {
             if (result[i].hasOwnProperty("item")){
@@ -462,14 +459,14 @@ router.get("/v1/stocks", async (req, res) => {
     let stockLabel = req.query.label && String(req.query.label).length > 2 ? req.query.label : ""
     let stockSession = req.query.session && String(req.query.session).length > 2 ? req.query.session : ""
     let stockProduct = req.query.product && String(req.query.product).length > 2 ? req.query.product : ""
-    let stockRemoved = req.query.removed && parseInt(req.query.removed) ? parseInt(req.query.removed) : 0
+    let stockRemoved = req.query.removed && String(req.query.removed).length > 0 ? parseInt(req.query.removed) : ""
     let response = {acknowledged: false, data: [], message: ""}
     await sessionClient.connect()
     const sessions = sessionClient.db(targetDB).collection("pollinglog");
 
-    let findingQuery = {removed: 0}
-    if (stockRemoved === 1){
-        findingQuery = {}
+    let findingQuery = {}
+    if (String(stockRemoved).length > 0){
+        let findingQuery = {removed: stockRemoved}
     }
 
     try {
@@ -488,12 +485,12 @@ router.get("/v1/stocks", async (req, res) => {
 
         response.data = await sessions.find(findingQuery, {projection: {"_id": 0}}).toArray()
 
-        for (let i = 0; i < response.data; i++) {
-            if (response.data[i].hasOwnProperty("unitPrice") && String(response.data[i].unitPrice).length >0){
-                response.data[i].unitPrice = response.data[i].unitPrice.toString()
+        for (let i = 0; i < response.data.length; i++) {
+            if (response.data[i].hasOwnProperty("unitPrice")){
+                response.data[i]["unitPrice"] = response.data[i].unitPrice.toString()
             }
-            if (response.data[i].hasOwnProperty("grossPrice") && String(response.data[i].grossPrice).length >0){
-                response.data[i].grossPrice = response.data[i].grossPrice.toString()
+            if (response.data[i].hasOwnProperty("grossPrice")){
+                response.data[i]["grossPrice"] = response.data[i].grossPrice.toString()
             }
         }
 

@@ -258,7 +258,7 @@
           {
             "name": "removed",
             "in": "query",
-            "description": "Optional, 0 for in-stock products only(default), 1 for including all history products  \n\n可选参数，是否需要从已使用的产品中查找，默认为0(仅查找现有库存)，1为包括所有历史参数\n",
+            "description": "Optional, Default finding all products ,0 for current stocks only, 1 for history stocks only  \n\n可选参数，是否需要从已使用的产品中查找，默认为查找所有库存，指定0时仅查找现有库存，值为1为仅查找历史库存\n",
             "required": false,
             "schema": {
               "type": "string",
