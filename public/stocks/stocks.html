@@ -11,7 +11,7 @@
 <body>
 <div class="container-fluid">
     <div class="container-fluid">
-        <h1>Current Stocks</h1>
+        <h1>Stocks List</h1>
         <br>
         <div class="container-fluid" id="maincontent">
             <nav aria-label="breadcrumb">
@@ -24,6 +24,26 @@
             <div id="loadingAnimation" style="display: flex">
                 <div class="loader"></div>
                 <p>Fetching Stock Data, Please Wait</p>
+            </div>
+            <div>
+                <h4>Actions</h4>
+                <div class="row mb-2 ms-2">
+                    <a href="#" id="act_reloadData">Reload Data</a>
+                </div>
+                <div class="row mb-2 ms-2">
+                    <div class="form-check col-4">
+                        <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_current" checked>
+                        <label class="form-check-label">Showing Current Stock Only</label>
+                    </div>
+                    <div class="form-check col-4">
+                        <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_history">
+                        <label class="form-check-label">Show History Stocks Only</label>
+                    </div>
+                    <div class="form-check col-4">
+                        <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_all">
+                        <label class="form-check-label">Show All Stocks</label>
+                    </div>
+                </div>
             </div>
             <table id="table" class="table " style="width: 100%">
                 <thead class="thead-light">

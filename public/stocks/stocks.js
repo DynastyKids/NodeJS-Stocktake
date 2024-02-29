@@ -14,6 +14,8 @@ let table = new DataTable('#table', {
     scrollX: true
 });
 
+let dataList={current:[],removed:[],all:[]}
+
 document.addEventListener("DOMContentLoaded", function () {
     fetchStocksList()
 });
@@ -36,21 +38,15 @@ function fetchStocksList() {
     document.querySelector("#loadingAnimation").style = "display: flex"
     fetchStocksFromAPI().then(arrayData => {
         if (Array.isArray(arrayData.data)){
-            table.clear().draw()
+            dataList.all = arrayData.data
             arrayData.data.forEach(eachRow => {
-                table.row.add([
-                    `<a href="#" data-bs-ponumber="${(eachRow.productCode ? eachRow.productCode : "")}" class="table_action_search">${(eachRow.productCode ? eachRow.productCode : "")}</a>`
-                    + `${eachRow.productName ? '<br>' + eachRow.productName : ''}`,
-                    `${eachRow.quantity ? eachRow.quantity + (eachRow.quantityUnit ? ' ' + eachRow.quantityUnit : '') : ''}` + `${eachRow.shelfLocation ? '<br>' + eachRow.shelfLocation : ''}`,
-                    `${eachRow.bestbefore ? eachRow.bestbefore : '2999-12-31'}`, // Product without Exp Date, use max
-                    `${eachRow.bestbefore ? eachRow.bestbefore : '2999-12-31<br>(No Expire)'}`,
-                    `${eachRow.productLabel ? eachRow.productLabel : ''}` + `<br>` +
-                    `<a href="#" data-bs-ponumber="${(eachRow.POnumber ? eachRow.POnumber : "")}" class="table_action_search">${(eachRow.POnumber ? eachRow.POnumber : "")}</a>`,
-                    `<a href="#" class="table_actions editModal" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-labelId="${eachRow.productLabel}">View/Edit</a>` + `<br>` +
-                    `<a href="#" class="table_actions removeModal" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-labelId="${eachRow.productLabel}">Remove</a>`,
-                ]).draw(false)
+                if (eachRow.removed === 1){
+                     dataList.removed.push(eachRow)
+                } else {
+                     dataList.current.push(eachRow)
+                }
             })
-            document.querySelector("#loadingAnimation").style = "display: none"
+            inflateTable()
         }
     }).then(function () {
         document.querySelectorAll(".table_action_search").forEach(eachElement => {
@@ -63,6 +59,50 @@ function fetchStocksList() {
             console.error("Error after fetching data: ", err)
     })
 }
+
+document.getElementsByName("stockStatusRadio").forEach(eachOption =>{
+    eachOption.addEventListener("change",   function (ev) {
+        document.querySelector("#loadingAnimation").style = "display: flex"
+        table.clear().draw()
+        setTimeout(function(){
+            inflateTable()
+        },200)
+    })
+})
+
+function inflateTable(){
+    let dataSet = dataList.current
+    document.getElementsByName("stockStatusRadio").forEach(eachOption =>{
+        if (eachOption.checked && eachOption.id === "radio_history") {
+            dataSet = dataList.removed
+        } else if (eachOption.checked && eachOption.id === "radio_all") {
+            dataSet = dataList.all
+        }
+    })
+    table.clear().draw()
+    dataSet.forEach(eachRow => {
+        table.row.add([
+            `<a href="#" data-bs-ponumber="${(eachRow.productCode ? eachRow.productCode : "")}" class="table_action_search">${(eachRow.productCode ? eachRow.productCode : "")}</a>`
+            + `${eachRow.productName ? '<br>' + eachRow.productName : ''}`,
+            `${eachRow.quantity ? eachRow.quantity + (eachRow.quantityUnit ? ' ' + eachRow.quantityUnit : '') : ''}` + `${eachRow.shelfLocation ? '<br>' + eachRow.shelfLocation : ''}`,
+            `${eachRow.shelfLocation ? eachRow.shelfLocation : ''}`, // Product without Exp Date, use max
+            `${eachRow.bestbefore ? eachRow.bestbefore : ''}`,
+            `${eachRow.productLabel ? eachRow.productLabel : ''}` + `<br>` +
+            `<a href="#" data-bs-ponumber="${(eachRow.POnumber ? eachRow.POnumber : "")}" class="table_action_search">${(eachRow.POnumber ? eachRow.POnumber : "")}</a>`,
+            (eachRow.removed === 0 ? `<a href="#" class="table_actions editModal" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-labelId="${eachRow.productLabel}">View/Edit</a>` + `<br>` +
+                `<a href="#" class="table_actions removeModal" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-labelId="${eachRow.productLabel}">Remove</a>`:
+                `<small>Removed: ${new Date(eachRow.removeTime).toLocaleDateString()}</small>`)
+            ,
+        ]).draw(false)
+    })
+    document.querySelector("#loadingAnimation").style = "display: none"
+}
+
+document.querySelector("#act_reloadData").addEventListener("click", (ev)=>{
+    table.clear().draw()
+    fetchStocksList()
+})
+
 
 let currentEditModalItem = {}
 let editModal = document.querySelector("#editModal")
