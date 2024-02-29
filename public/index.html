@@ -20,11 +20,13 @@
             </nav>
 
             Select an action from following:
-            <ul>
+            <ul class="list-group">
 <!--                <li class="httpLink"><a href="stocks/labelgenerator.html"><i class="ti ti-tag"></i>Generate Labels</a></li>-->
-                <li class="httpsLink"><a href="#" data-bs-toggle="modal" data-bs-target="#httpsModal"><i class="ti ti-tag"></i>Label Generator</a></li>
-                <li><a href="stocks/stocks.html"><i class="ti ti-packages"></i>Check Current Stocks</a></li>
-                <li><a href="stocks/nextDispatch.html"><i class="ti ti-clipboard-list"></i>Next Dispatch</a></li>
+                <li class="list-group-item httpsLink"><a href="#" data-bs-toggle="modal" data-bs-target="#httpsModal"><i class="ti ti-tag"></i>Label Generator</a></li>
+                <li class="list-group-item"><a href="stocks/stocks.html"><i class="ti ti-packages"></i>Check Current Stocks</a></li>
+                <li class="list-group-item"><a href="#" id="checkShelf" data-bs-toggle="modal" data-bs-target="#checkShelfModal"><i class="ti ti-zoom-check"></i>Check By shelf</a></li>
+                <li class="list-group-item"><a href="stocks/nextDispatch.html"><i class="ti ti-clipboard-list"></i>Next Dispatch</a></li>
+
             </ul>
         </div>
     </div>
@@ -45,6 +47,28 @@
                 </div>
                 <div class="modal-footer">
                     <a href="stocks/labelgenerator.html" class="btn btn-primary">Proceed to Label Generator</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="checkShelfModal" tabindex="-1" aria-labelledby="checkShelfModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="checkShelfModalLabel">One More Step</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>To Check a shelf, and it's history, you will need to provide at least 2 characters of bay number, e.g.: 'DA' or 'FA1'</p>
+                    <div class="mb-3 d-flex">
+                        <label class="col-form-label">Bay number:</label>
+                        <input type="text" class="form-control" id="shelfInput">
+                    </div>
+                    <p id="additionalText"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Confirm</button>
                 </div>
             </div>
         </div>
@@ -79,6 +103,15 @@
             })
         }
     });
+</script>
+<script>
+    document.querySelector("#checkShelfModal .btn-primary").addEventListener("click",(ev)=>{
+        let userInput = document.querySelector("#checkShelfModal input").value
+        const regex = /^[A-Za-z]{2,}.*$/;
+        if (regex.test(userInput)){
+            window.location.href = '/stocks/location.html?location='+encodeURIComponent(userInput)
+        }
+    })
 </script>
 </body>
 </html>

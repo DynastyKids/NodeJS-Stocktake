@@ -455,7 +455,7 @@ router.post("/v1/preload/remove", async (req, res) => {
  * Allow user to select data via session, location, label, product and removed parameters
  */
 router.get("/v1/stocks", async (req, res) => {
-    let stockLocation = req.query.shelf && String(req.query.shelf).length >= 2 ? req.query.shelf : ""
+    let stockLocation = req.query.location && String(req.query.location).length >= 2 ? req.query.location : ""
     let stockLabel = req.query.label && String(req.query.label).length > 2 ? req.query.label : ""
     let stockSession = req.query.session && String(req.query.session).length > 2 ? req.query.session : ""
     let stockProduct = req.query.product && String(req.query.product).length > 2 ? req.query.product : ""
