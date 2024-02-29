@@ -435,10 +435,6 @@ document.querySelector("#act_reloadTable").addEventListener("click",async (ev) =
     await fetchStocks(true)
 })
 
-// document.querySelector("#filterdate").addEventListener("change", (ev)=>{
-//     
-// });
-
 // Rewrite CheckBox to radio buttons
 document.getElementsByName("stockStatusRadio").forEach(eachOption =>{
     eachOption.addEventListener("change", async function (ev) {
@@ -497,6 +493,11 @@ async function inflateTable(forced = false) {
         console.error("Error Occured when inflating table: ", e)
     }
 
+    document.querySelectorAll(".table_action_print").forEach(printButton=>{
+        printButton.addEventListener("click",function(ev){
+            generateLabelToPDF(printButton.getAttribute("data-bs-itemid"))
+        })
+    })
     document.querySelector("#loadingStatus").style = "display: none"
 }
 
