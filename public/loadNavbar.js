@@ -23,7 +23,7 @@ let NavbarHTML =
                             <li><a class="dropdown-item" href="/stocks/nextDispatch.html">Next Dispatch (FIFO)</a></li>
 <!--                            <li style="display: none"><a class="dropdown-item" href="/stocks/add.html">Add Stock (Unavailable)</a></li>-->
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/stocks/qrscan.html">Scan QR Code</a></li>
+                            <li><a class="dropdown-item" href="/stocks/qrscan.html">Scan QR Code [*Beta]</a></li>
 <!--                            <li><a class="dropdown-item" href="/stocks/qrstation.html">Station Scanner(Unavailable)</a></li>-->
                         </ul>
                     </li>

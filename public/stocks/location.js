@@ -33,15 +33,18 @@ let stockInformations={current:[],history:[]}
 
 document.addEventListener("DOMContentLoaded", function () {
     const params = new URLSearchParams(window.location.search);
-    const location = params.get('location');
+    let location = params.get('location');
+    let bay = params.get('bay');
 
-        if (!location) {
+        if (!location && !bay) {
             createAlert("info","Location parameter does not exist, redirecting to stock homepage.", 5000)
             setTimeout(function() {
                 window.location.href = 'stocks.html';
             }, 5000);
         } else {
-            console.log(`Location is ${location}`);
+            if (bay !== null){
+                location = bay
+            }
             document.querySelector("h1").textContent = `Stock Information for [${location.toUpperCase()}]`
             document.querySelector("#loadingAnimation").style = "display: flex"
         fetchStocksFromAPI(location).then((result)=>{
