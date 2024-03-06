@@ -3,19 +3,9 @@ let timeout;
 let stockData = []
 let productList = []
 // 后续修补部分，产品表中添加display参数，如果display为1则显示该产品在NextDisplay中，如果没有参数默认不显示
-
-function fetchStocks(){
-    return new Promise((resolve, reject)=>{
-        fetch(`/api/v1/stocks?removed=0`,{timeout: 10000})
-            .then(response => response.json())
-            .then(data=>resolve(data))
-            .catch(error => reject(error));
-    })
-}
-
 document.addEventListener("DOMContentLoaded", async (event) => {
     let fetchedData = await fetchStocks()
-    if (fetchedData.data && fetchedData.data.length > 0) {
+    if (fetchedData.data && fetchedData.data.length > 0){
         stockData = fetchedData.data
     }
 
@@ -26,7 +16,7 @@ document.addEventListener("DOMContentLoaded", async (event) => {
             if (eachProduct.next.length > 0 && (!eachProduct.hasOwnProperty("displayFIFO") ||  eachProduct.displayFIFO === 1)){
                 let product = (eachProduct.productCode ? eachProduct.productCode : "") + ' - ' + (eachProduct.productName ? eachProduct.productName : "")
                 htmlContent += `<tr><td class="tableItemName">${(product.length > 30 ? product.substring(0,30)+'...' : product)}</td>`
-                for (let i = 0; i < eachProduct.next.length && i<5; i++) {
+                for (let i = 0; i < eachProduct.next.length && i<3; i++) {
                     var item = eachProduct.next[i]
                     htmlContent += `<td class="tableNext">${item.location ? item.location: ""} ${item.hasOwnProperty("quarantine") && item.quarantine === 1 ? '<span style="color: orange"><i class="ti ti-zoom-question"></i></span>': ""}<br>${item.bestbefore ? item.bestbefore : ""}</td>`
                 }
@@ -40,7 +30,7 @@ document.addEventListener("DOMContentLoaded", async (event) => {
     }
     document.querySelector("#table-body").innerHTML = htmlContent
     const tbody = document.querySelector('#scroll-tbody');
-})
+});
 
 function assembleDisplayArray(){
     let result=[]
@@ -109,3 +99,62 @@ function sortOnPush(array, item, fieldname){
         return a[fieldname].localeCompare(b[fieldname])
     });
 }
+
+// 页面发生操作则重新计时
+document.addEventListener('mousemove', resetTimer);
+document.addEventListener('keypress', resetTimer);
+document.addEventListener('scroll', resetTimer);
+document.addEventListener('click', resetTimer);
+
+function resetTimer() {
+    clearTimeout(timeout);
+    countdownTime = 5 * 60 * 1000; // 重置倒计时时间
+    updateCountdownDisplay(); // 更新显示
+    timeout = setTimeout(() => {
+        window.location.reload();
+    }, countdownTime);
+}
+
+function updateCountdownDisplay() {
+    let minutes = Math.floor(countdownTime / 60000);
+    let seconds = ((countdownTime % 60000) / 1000).toFixed(0);
+    document.querySelector("#toggleTimes").textContent = ` ${minutes}:${(seconds < 10 ? '0' : '')+seconds}`;
+}
+setInterval(() => {
+    if (countdownTime > 0) {
+        countdownTime -= 1000;
+        updateCountdownDisplay();
+    }
+}, 1000);
+
+function fetchStocks(){
+    return new Promise((resolve, reject)=>{
+        fetch(`/api/v1/stocks?removed=0`,{timeout: 10000})
+            .then(response => response.json())
+            .then(data=>resolve(data))
+            .catch(error => reject(error));
+    })
+}
+
+window.onload = function () {
+    setTimeout(function () {
+        let tableBodyContainer = document.querySelector('#table-body-container');
+        let tableBody = document.querySelector('#table-body');
+
+        let clonedBody = tableBody.cloneNode(true);
+        tableBody.appendChild(clonedBody.querySelector('tbody'));
+
+        const step = 1;
+
+        function scrollTable() {
+            let currentTop = parseInt(getComputedStyle(tableBody).marginTop) || 0;
+            if (Math.abs(currentTop) >= tableBody.offsetHeight / 2) {
+                tableBody.style.marginTop = '0px'; // 滚动位置=原始表格体的高度时重置到0
+            } else {
+                tableBody.style.marginTop = (currentTop - step) + 'px';
+            }
+            requestAnimationFrame(scrollTable); // 递归持续滚动
+        }
+        scrollTable();
+    }, 2500); // 2.5s滚动冷却时间
+};

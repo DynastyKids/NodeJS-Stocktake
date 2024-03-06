@@ -10,7 +10,7 @@
 <body>
 <div class="container-fluid" id="topMenu" style="display: block">
     <div class="container-fluid">
-        <h1 class="m-2" id="sessionTitle">Next Dispatch Large Screen View</h1>
+        <h1 class="m-2" id="sessionTitle">Next Dispatch - List View</h1>
         <div class="container-fluid">
             <div id="loadingAnimation" style="display: flex">
                 <div class="loader"></div>
@@ -24,35 +24,36 @@
                     <li class="breadcrumb-item active" aria-current="page">Next Dispatch</li>
                 </ol>
             </nav>
-            <div id="refreshCountdown">
-                <span class="toggleRefreshText" style="float: left;">Refresh in: </span>
-                <span id="toggleTimes"></span><span class="toggleRefreshText"></span>
-            </div>
+        </div>
+        <div class="container-fluid actions">
+            <a href="nextDispatchScreen.html">Switch View</a>
         </div>
     </div>
 </div>
 <div class="container-fluid">
     <div id="fill-div">
-        <table id="table-header">
-            <thead style="font-size: x-large; text-align: center">
-            <tr>
-                <td scope="col" class="tableItemName" style="font-size: x-large !important;" rowspan="2">Product</td>
-                <td scope="col" class="tableNext" style="font-size: x-large !important;">1st<br>Location / Date</td>
-                <td scope="col" class="tableNext" style="font-size: x-large !important;">2nd<br>Location / Date</td>
-                <td scope="col" class="tableNext" style="font-size: x-large !important;">3rd<br>Location / Date</td>
-            </tr>
-            </thead>
-        </table>
-        <div id="table-body-container">
-            <table id="table-body">
+        <table class="table table-striped table-sm">
+            <thead style="text-align: center">
                 <tr>
-                    <td class="tableItemName">Loading Product</td>
-                    <td class="tableNext">Location 1<br>Exp Date 1</td>
-                    <td class="tableNext">Location 2<br>Exp Date 2</td>
-                    <td class="tableNext">Location 3<br>Exp Date 3</td>
+                    <td class="tableItemName">Product</td>
+                    <td class="tableNext">1st<br>Location / Date</td>
+                    <td class="tableNext">2nd<br>Location / Date</td>
+                    <td class="tableNext">3rd<br>Location / Date</td>
+                    <td class="tableNext">4th<br>Location / Date</td>
+                    <td class="tableNext">5th<br>Location / Date</td>
                 </tr>
-            </table>
-        </div>
+            </thead>
+            <tbody id="table-body">
+            <tr>
+                <td class="tableItemName">Loading Product</td>
+                <td class="tableNext">Location 1<br>Exp Date 1</td>
+                <td class="tableNext">Location 2<br>Exp Date 2</td>
+                <td class="tableNext">Location 3<br>Exp Date 3</td>
+                <td class="tableNext">Location 4<br>Exp Date 4</td>
+                <td class="tableNext">Location 5<br>Exp Date 5</td>
+            </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -67,65 +68,16 @@
         overflow: hidden;
         /*position: relative;*/
     }
-
-    #table-header,
-    #scrolling-tbody {
-        width: 100%;
-    }
-
-    #table-body-container {
-        overflow: hidden;
-        /*position: absolute;*/
-        /*position: relative;*/
-        top: 0;
-        left: 0;
-        width: 100%;
-    }
-
-    .dataTable thead tr {
-        font-size: x-large;
-    }
-
-    .dataTable tbody {
-        font-size: xxx-large;
-    }
-
-    #dataTableBody {
-        overflow: hidden;
-        position: absolute;
-        top: 0;
-        left: 0;
-    }
-
+    
     .tableItemName {
         text-align: left;
-        font-size: xx-large;
         vertical-align: center;
         overflow: clip;
-        width: 35% !important;
-        font-weight: bold;
-    }
-
-    .tableNext1 {
-        font-family: 'Courier New', Courier, monospace;
-        text-align: center;
-        font-size: xxx-large;
-        font-stretch: expanded;
         width: 25% !important;
-        font-weight: bold;
     }
 
     .tableNext {
-        font-family: 'Courier New', Courier, monospace;
         text-align: center;
-        font-size: xxx-large;
-        width: 20% !important;
-        font-weight: bold;
-    }
-
-    table {
-        width: 100%;
-        border: 2px solid black;
     }
 
     tr {
@@ -135,7 +87,7 @@
 
     td, th {
         border: 1px dashed grey;
-        padding: 3px;
+        font-size: x-small;
     }
 </style>
 </html>
