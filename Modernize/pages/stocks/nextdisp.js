@@ -4,7 +4,6 @@ const {ServerApiVersion, ObjectId} = require('mongodb');
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
-const path = require('path');
 
 var $ = require('jquery');
 var DataTable = require('datatables.net-responsive-bs5')(window, $);
@@ -140,19 +139,10 @@ async function fetchStockslist (forced = false) {
 function assembleDisplayArray(stockData){
     let result =[]
     if (Array.isArray(stockData)){
-        if (stockData.length > 0){
-            result.push({
-                productCode: stockData[0].productCode ? stockData[0].productCode : ``,
-                productName: stockData[0].productName ? stockData[0].productName : ``,
-                next:[{
-                    productLabel: stockData[0].hasOwnProperty("productLabel") ? stockData[0].productLabel : null,
-                    location: stockData[0].hasOwnProperty("shelfLocation") ? stockData[0].shelfLocation : "",
-                    bestbefore: stockData[0].hasOwnProperty("bestbefore") ? stockData[0].bestbefore : "",
-                    quarantine: stockData[0].hasOwnProperty("quarantine") ? parseInt(stockData[0].quarantine) : 0,
-                }]
-            })
-        }
-        for (let i = 1; i < stockData.length; i++) {
+        for (let i = 0; i < stockData.length; i++) {
+            if (stockData[i].displayFIFO && stockData[i].displayFIFO !== 1){
+                continue;
+            }
             var foundFlag = false
             for (let j = 0; j < result.length; j++) {
                  if (result[j].productCode === stockData[i].productCode){
