@@ -5,8 +5,6 @@ var $ = require('jquery');
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion} = require('mongodb');
 
-const path = require("path");
-
 const Storage = require("electron-store");
 const newStorage = new Storage();
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
@@ -85,7 +83,10 @@ async function fetchProducts() {
 
 function build2DProductArray(productList) {
     let productArray = []
-    productList.forEach(item => {
+    for (const item of productList) {
+        if (item.displayFIFO && item.displayFIFO !== 1){
+            continue
+        }
         if (productArray.length > 0 && item.productCode !== "") {
             if (productArray[productArray.length - 1].productCode === item.productCode) {
                 productArray[productArray.length - 1]["bestbeforeArray"].push(item.bestbefore ? item.bestbefore.replaceAll("-", ""): "")
@@ -96,24 +97,14 @@ function build2DProductArray(productList) {
                 productArray[productArray.length - 1]["bestbeforeArray"] = [item.bestbefore ? item.bestbefore.replaceAll("-", ""): ""]
                 productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation ? item.shelfLocation : ""]
                 productArray[productArray.length - 1]["quanartineArray"] = [item.hasOwnProperty("quanartine") ? parseInt(item.quanartine) : 0]
-                delete productArray[productArray.length - 1].session;
-                delete productArray[productArray.length - 1]._id;
-                delete productArray[productArray.length - 1].POIPnumber;
-                delete productArray[productArray.length - 1].removed;
-                delete productArray[productArray.length - 1].loggingTime;
             }
         } else {
             productArray.push(item)
             productArray[productArray.length - 1]["bestbeforeArray"] = [item.bestbefore ? item.bestbefore.replaceAll("-", ""): ""]
             productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation ? item.shelfLocation : ""]
             productArray[productArray.length - 1]["quanartineArray"] = [item.hasOwnProperty("quanartine") ? parseInt(item.quanartine) : 0]
-            delete productArray[productArray.length - 1].session;
-            delete productArray[productArray.length - 1]._id;
-            delete productArray[productArray.length - 1].POIPnumber;
-            delete productArray[productArray.length - 1].removed;
-            delete productArray[productArray.length - 1].loggingTime;
         }
-    })
+    }
     return productArray
 }
 

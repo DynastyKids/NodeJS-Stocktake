@@ -1,7 +1,5 @@
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion, ObjectId, Decimal128} = require('mongodb');
-const path = require('path');
-const Moment = require('moment-timezone');
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
@@ -36,6 +34,8 @@ document.addEventListener("DOMContentLoaded",async (ev) => {
                 document.querySelector("#inpt_vendorcode").value = (originalProduct.vendorCode ? originalProduct.vendorCode : "");
                 document.querySelector("#inpt_weight").value = (originalProduct.weight ? originalProduct.weight : 0);
                 document.querySelector("#checkbox_expire").checked = (originalProduct.withBestbefore ? originalProduct.withBestbefore : 0);
+                document.querySelector("#checkbox_fifo").checked = (originalProduct.displayFIFO ? originalProduct.displayFIFO : 0);
+                document.querySelector("#checkbox_turnoverRate").checked = (originalProduct.turnoverRate ? originalProduct.turnoverRate : 0);
                 document.querySelector("#inpt_price").selectedIndex = (originalProduct.unitPrice ? originalProduct.unitPrice : "");
             }
         }
@@ -78,6 +78,12 @@ document.querySelector('#form_product').addEventListener('submit', async (ev) =>
         if (document.querySelector("#checkbox_expire").checked) {
             data.withBestbefore = (document.querySelector("#checkbox_expire").checked ? 1 : 0)
         }
+        if (document.querySelector("#checkbox_fifo").checked) {
+            data.displayFIFO = (document.querySelector("#checkbox_fifo").checked ? 1 : 0)
+        }
+        if (document.querySelector("#checkbox_turnoverRate").checked){
+            data.calcTurnover = document.querySelector("#checkbox_turnoverRate").checked ? 1 : 0
+        }
 
         let filterCondition = {productCode: data.productCode}
         if (data.vendorCode) {
@@ -85,7 +91,6 @@ document.querySelector('#form_product').addEventListener('submit', async (ev) =>
         }
         if (urlParams.get("mode") === "edit") {
             await updateOneData(filterCondition, data, false).then(response => {
-                console.log(response, data)
                 if (response.acknowledged) {
                     document.querySelector("#div_alertblock").style.display = "block"
                     document.querySelector("#div_alertblock span").textContent = `${response.modifiedCount} records for item ${data.productCode} has been updated successfully`
@@ -96,7 +101,6 @@ document.querySelector('#form_product').addEventListener('submit', async (ev) =>
             })
         } else {
             await updateOneData(filterCondition, data, true).then(response => {
-                console.log(response, data)
                 if (response.acknowledged) {
                     document.querySelector("#div_alertblock").style.display = "block"
                     document.querySelector("#div_alertblock span").textContent = `${data.productCode} has found ${response.matchedCount} records,  ${response.upsertedCount} record has been inserted`
@@ -116,7 +120,6 @@ document.querySelector("#input_prodCode").addEventListener("input",async (ev) =>
     document.querySelector("#form_product button").setAttribute("disabled","disabled")
     if (document.querySelector("#input_prodCode").value && document.querySelector("#input_prodCode").value.length >= 3) {
         let result = await retrieveProductByCode(document.querySelector("#input_prodCode").value)
-        console.log(result)
         if (result.length <= 0){
             document.querySelector("#form_product #input_prodCode").className = "form-control is-valid"
             document.querySelector("#form_product button").removeAttribute("disabled")
@@ -145,7 +148,8 @@ document.querySelector("#input_prodCode").addEventListener("input",async (ev) =>
             document.querySelector("#inpt_vendorcode").value = (result[0].vendorCode ? result[0].vendorCode : "");
             document.querySelector("#inpt_weight").value = (result[0].weight ? result[0].weight : 0);
             document.querySelector("#checkbox_expire").checked = (result[0].withBestbefore ? result[0].withBestbefore : 0);
-            document.querySelector("#inpt_price").selectedIndex = (result[0].unitPrice ? result[0].unitPrice : "");
+            document.querySelector("#checkbox_fifo").checked = (result[0].displayFIFO ? result[0].displayFIFO : 0);
+            document.querySelector("#checkbox_turnoverRate").checked = (result[0].calcTurnover ? result[0].calcTurnover : 0);
             document.querySelector("#inpt_price").selectedIndex = (result[0].unitPrice ? result[0].unitPrice : "");
         }
     } else {

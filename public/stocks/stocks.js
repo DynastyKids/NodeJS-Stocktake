@@ -37,6 +37,7 @@ function fetchStocksFromAPI(){
 function fetchStocksList() {
     document.querySelector("#loadingAnimation").style = "display: flex"
     fetchStocksFromAPI().then(arrayData => {
+        dataList={current:[],removed:[],all:[]}
         if (Array.isArray(arrayData.data)){
             dataList.all = arrayData.data
             arrayData.data.forEach(eachRow => {
@@ -108,6 +109,7 @@ let currentEditModalItem = {}
 let editModal = document.querySelector("#editModal")
 editModal.addEventListener("show.bs.modal", async function (ev) {
     let requestLabelId = ev.relatedTarget.getAttribute("data-bs-labelId")
+    resetModalEdit()
     editModal.querySelector("#editModal_labelId").value = requestLabelId
     editModal.querySelector("#editModal_btnSubmit").textContent = "Submit"
     editModal.querySelector(".modal-title").textContent = `Loading Product Information`
@@ -181,32 +183,50 @@ document.querySelector("#editModal_removeCheck").addEventListener("change", (ev)
     }
 })
 
-function writeModalEdit(element) {
-    document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${element.productName}`
-    document.querySelector("#editModal .modal-body #productInfoText").textContent = `${element.productCode} - ${element.productName}`
-    document.querySelector("#editModal .modal-body #labelIDText").textContent = `${element.productLabel}`
-    document.querySelector("#editModal_quantity").value = element.quantity ? element.quantity : ""
-    document.querySelector("#editModal_unit").value = element.quantityUnit ? element.quantityUnit : ""
-    document.querySelector("#editModal_bestbefore").value = element.bestbefore ? element.bestbefore : ""
-    document.querySelector("#editModal_location").value = element.shelfLocation ? element.shelfLocation : ""
+function resetModalEdit(){
+    editModal.querySelectorAll("input").forEach(eachInput=>{
+        if (['text','date','datetime-local','number'].indexOf(eachInput.type) !== -1){
+            eachInput.value = ""
+        }
+        if (eachInput.type === "checkbox"){
+            eachInput.checked = false
+        }
+    })
+}
 
-    if (typeof element.unitPrice === 'object') { // Unit Price需要额外判定是否为Object (Decimal 128)
-        document.querySelector("#editModal_unitPrice").value = element.unitPrice.$numberDecimal
-    } else if (typeof element.unitPrice === 'number') {
-        document.querySelector("#editModal_unitPrice").value = element.unitPrice ? element.unitPrice : ""
-    }
-    document.querySelector("#editModal_ponumber").value = element.POnumber ? element.POnumber : ""
-    document.querySelector("#inpt_removeTime").value = element.removeTime ? element.removeTime : ""
+function writeModalEdit(element) {
+    editModal.querySelector(".modal-title").textContent = `Edit Stock: ${element.productName}`
+    editModal.querySelector(".modal-body #productInfoText").textContent = `${element.productCode} - ${element.productName}`
+    editModal.querySelector(".modal-body #labelIDText").textContent = `${element.productLabel}`
+    editModal.querySelector("#editModal_quantity").value = element.quantity ? element.quantity : ""
+    editModal.querySelector("#editModal_unit").value = element.quantityUnit ? element.quantityUnit : ""
+    editModal.querySelector("#editModal_bestbefore").value = element.bestbefore ? element.bestbefore : ""
+    editModal.querySelector("#editModal_location").value = element.shelfLocation ? element.shelfLocation : ""
+    editModal.querySelector("#editModal_unitPrice").value = element.unitPrice ? element.unitPrice : ""
+    editModal.querySelector("#editModal_ponumber").value = element.POnumber ? element.POnumber : ""
+    editModal.querySelector("#inpt_removeTime").value = element.removeTime ? element.removeTime : ""
+    
     if (element.hasOwnProperty("quarantine") && element.quarantine === 1) {
-        document.querySelector("#editModal_quarantineYes").checked = true
+        switch (element.quarantine) {
+            case 1:
+                editModal.querySelector("#editModal_quarantineYes").checked = true
+                break;
+            case -1:
+                editModal.querySelector("#editModal_quarantineFinished").checked = true
+                break;
+            default:
+                editModal.querySelector("#editModal_quarantineNo").checked = true
+        }
     }
-    if (element.hasOwnProperty("quarantine") && element.quarantine === 0) {
-        document.querySelector("#editModal_quarantineNo").checked = true
+
+    if (element.hasOwnProperty("displayFIFO") && editModal.querySelector("#editModal_fifoCheck")){
+        editModal.querySelector("#editModal_fifoCheck").checked = element.displayFIFO === 1
     }
-    if (element.hasOwnProperty("quarantine") && element.quarantine === -1) {
-        document.querySelector("#editModal_quarantineFinished").checked = true
+    if (element.hasOwnProperty("calcTurnover") && editModal.querySelector("#editModal_turnoverCheck")){
+        editModal.querySelector("#editModal_turnoverCheck").checked = element.calcTurnover === 1
     }
-    document.querySelector("#editModal_btnSubmit").disabled = false
+
+    editModal.querySelector("#editModal_btnSubmit").disabled = false
 }
 
 function readModalEdit() {
@@ -229,6 +249,12 @@ function readModalEdit() {
     }
     if (document.querySelector("#editModal_ponumber") && String(document.querySelector("#editModal_ponumber").value).length > 0) {
         updateElement.POnumber = document.querySelector("#editModal_ponumber").value
+    }
+    if (document.querySelector("#editModal_fifoCheck")) {
+        updateElement.displayFIFO = document.querySelector("#editModal_fifoCheck").checked ? 1 : 0
+    }
+    if (document.querySelector("#editModal_turnoverCheck")) {
+        updateElement.calcTurnover = document.querySelector("#editModal_turnoverCheck").checked ? 1 : 0
     }
     if (document.querySelector("#editModal_removeCheck") && document.querySelector("#editModal_removeCheck").checked) {
         updateElement.removed = 1
@@ -310,6 +336,7 @@ document.querySelector("#removeModalYes").addEventListener("click", async functi
     let result = await removeProductById({productLabel: labelId, removeTime: new Date(localTime)})
 
     if (result.acknowledged) {
+        table.clear().draw()
         bootstrap.Modal.getInstance(remvoeModal).hide()
         createAlert("success", "Item has been successfully removed, refreshing list.")
         fetchStocksList(true)

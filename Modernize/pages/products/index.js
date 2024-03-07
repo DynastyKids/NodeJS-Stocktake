@@ -14,9 +14,7 @@ let table=new DataTable('#productTable', {
 });
 let dataset = [];
 const Storage = require("electron-store");
-const i18next = require("i18next");
 const {initRenderer} = require("electron-store");
-const {isNumber} = require("lodash");
 const newStorage = new Storage();
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
@@ -154,7 +152,8 @@ async function fetchTablesData() {
             }
         })
         dataset.push([
-            `${(eachItem.productCode ? eachItem.productCode : "")}${(eachItem.labelname && eachItem.productCode ? " - ": "")}${(eachItem.labelname ? eachItem.labelname : "")}<br><span>${eachItem.withBestbefore > 0 ? "<i class=\"ti ti-calendar-due\"></i>" : ""}</span>`,
+            `${(eachItem.productCode ? eachItem.productCode : "")}${(eachItem.labelname && eachItem.productCode ? " - ": "")}${(eachItem.labelname ? eachItem.labelname : "")}`+
+            `<br><span>${eachItem.withBestbefore > 0 ? "<i class=\"ti ti-calendar-due\"></i>" : ""}${eachItem.calcTurnover && eachItem.calcTurnover === 1 ? "<i class=\"ti ti-clock-record\"></i>" : ""}${eachItem.calcTurnover && eachItem.displayFIFO === 1 ? "<i class=\"ti ti-screen-share\"></i>" : ""}</span>`,
             `${stockTurnoverRate > 0 && stockCount > 0 ?(stockTurnoverRate / stockCount / 86400000 ).toFixed(2): ""}`,
             // `${stocksLevel["eachItem.productCode"] && stocksLevel['eachItem.productCode'].hasOwnProperty("quantity") ?
             //     stocksLevel[eachItem.productCode].quantity + (stocksLevel[eachItem.productCode].quantity > 0 ? " "+stocksLevel[eachItem.productCode].unit :"") : ""}`,
@@ -203,7 +202,6 @@ removeModal.addEventListener("show.bs.modal", async function (ev) {
     
     for (let i = 0; i < productsList.length; i++) {
         if (itemId === (productsList[i]._id).toString()) {
-            console.log(itemId, productsList[i], itemId === productsList[i])
             removeModalTarget = productsList[i]
             removeModal.querySelector(".modal-body p").textContent = `Are you sure to mark '${productsList[i].labelname}' ${productsList[i].active && productsList[i].active === 1 ? "inactive" : "active" }?`
             break;
@@ -238,12 +236,16 @@ editModal.addEventListener('show.bs.modal', async (ev) => {
     //初始化设置，默认设置submit btn为不可用，清空所有input
     editModal.querySelector("#modelEditSubmitBtn").disabled = true;
     editModal.querySelector("#modelEditSubmitBtn").textContent = "Fetching...";
-    editModal.querySelectorAll(".modal-body input").forEach(item => {
-        item.disabled = true
-        item.value = ""
+    editModal.querySelectorAll(".modal-body input").forEach(eachInput => {
+        if (["text","number","date","datetime-local"].includes(eachInput.type)){
+            eachInput.disabled = true
+            eachInput.value = ""
+        }
+        if (eachInput.type === "checkbox"){
+            eachInput.checked = false
+        }
     })
     editModal.querySelector("#editRowModalLabel").textContent = "Loading Data ..."
-    editModal.querySelector("#expiredateCheck").checked = false
     try {
         editModal.querySelector("#editRowModalinput_productId").value = itemId
         //     回填数据到输入框，对输入框解除disabled
@@ -266,11 +268,10 @@ editModal.addEventListener('show.bs.modal', async (ev) => {
             editModal.querySelector("#editRowModalinput_vendorCode").value = (originProduct.vendorCode ? originProduct.vendorCode : "")
             editModal.querySelector("#editRowModalinput_purcPrice").value = (originProduct.unitPrice ? originProduct.unitPrice : "")
             // document.querySelector("#editRowModalinput_sellPrice").value = (result.sellPrice ? result.sellPrice : "")
-            if (originProduct.withBestbefore && originProduct.withBestbefore === 1) {
-                editModal.querySelector("#expiredateCheck").checked = true
-            } else {
-                editModal.querySelector("#expiredateCheck").checked = false
-            }
+
+            editModal.querySelector("#expiredateCheck").checked = !!(originProduct.withBestbefore && originProduct.withBestbefore === 1)
+            editModal.querySelector("#editModal_fifoCheck").checked = !!(originProduct.displayFIFO && originProduct.displayFIFO === 1)
+            editModal.querySelector("#editModal_turnoverCheck").checked = !!(originProduct.calcTurnover && originProduct.calcTurnover === 1)
         }
 
         editModal.querySelectorAll(".modal-body input").forEach(item => {
@@ -303,9 +304,10 @@ document.querySelector("#modelEditSubmitBtn").addEventListener("click", async (e
         sizeWidth: String(editModal.querySelector("#editRowModalinput_width").value).length > 0 ? parseFloat(editModal.querySelector("#editRowModalinput_width").value) : "",
         sizeHeight: String(editModal.querySelector("#editRowModalinput_height").value).length > 0 ? parseFloat(editModal.querySelector("#editRowModalinput_height").value)  : "",
         vendorCode: String(document.querySelector("#editRowModalinput_vendorCode").value).length > 0 ? document.querySelector("#editRowModalinput_vendorCode").value : "",
-        unitPrice: String(document.querySelector("#editRowModalinput_purcPrice").value).length > 0 ? Decimal128.fromString(document.querySelector("#editRowModalinput_purcPrice").value): ""
+        unitPrice: String(document.querySelector("#editRowModalinput_purcPrice").value).length > 0 ? Decimal128.fromString(document.querySelector("#editRowModalinput_purcPrice").value): "",
+        displayFIFO: document.querySelector("#editModal_fifoCheck").checked ? 1 : 0 ,
+        calcTurnover: document.querySelector("#editModal_fifoCheck").checked ? 1 : 0
     }
-    console.log(result)
     let patchElement = {}
     Object.keys(result).forEach(eachKey=>{
         if (result[eachKey] !== ""){
@@ -318,6 +320,7 @@ document.querySelector("#modelEditSubmitBtn").addEventListener("click", async (e
     if (updateResult.ok === 1 || updateResult.acknowledged) {
         bootstrap.Modal.getInstance(editModal).hide()
         createAlert("success", `Product information changes has been successfully saved`)
+        editModalTarget = {}
         await redrawDataTable()
     } else {
         document.querySelector("#deleteRowModal .modal-body p").innerText = "Error happened while on updates."

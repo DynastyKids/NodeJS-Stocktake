@@ -27,19 +27,21 @@
             </div>
             <div>
                 <h4>Actions</h4>
-                <div class="row mb-2 ms-2">
-                    <a href="#" id="act_reloadData">Reload Data</a>
+                <div class="row mb-2 ms-2 d-flex">
+                    <a href="#" class="col-sm-3" id="act_reloadData">Reload Data</a>
+                    <a href="#" class="col-sm-3" id="addStock" data-bs-toggle="modal" data-bs-target="#addStockModal">Add Stock</a>
+                    <a href="nextDispatch.html" class="col-sm-3">Next Distpatch (FIFO)</a>
                 </div>
                 <div class="row mb-2 ms-2">
-                    <div class="form-check col-4">
+                    <div class="form-check col-sm-3">
                         <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_current" checked>
                         <label class="form-check-label">Showing Current Stock Only</label>
                     </div>
-                    <div class="form-check col-4">
+                    <div class="form-check col-sm-3">
                         <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_history">
                         <label class="form-check-label">Show History Stocks Only</label>
                     </div>
-                    <div class="form-check col-4">
+                    <div class="form-check col-sm-3">
                         <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_all">
                         <label class="form-check-label">Show All Stocks</label>
                     </div>
@@ -158,6 +160,14 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col-12">
+                            <input type="checkbox" class="form-check-input" id="editModal_fifoCheck">
+                            <label class="form-label">Display this in next dispatch (FIFO) screen ?</label>
+                        </div>
+                        <div class="col-12">
+                            <input type="checkbox" class="form-check-input" id="editModal_turnoverCheck">
+                            <label class="form-label">Include this in turnover rate calculation?</label>
+                        </div>
                         <div class="row col-12 d-flex mt-2 mb-2">
                             <div class="col-12">
                                 <input type="checkbox" class="form-check-input" id="editModal_removeCheck">
@@ -238,6 +248,24 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="addStockModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addStockLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addStockLabel">Add New Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="../library/jquery-3.7.1.min.js"></script>
 <script src="../library/bootstrap.bundle.min.js"></script>
 <script src="../library/datatables/datatables.js"></script>
