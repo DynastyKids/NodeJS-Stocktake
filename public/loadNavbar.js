@@ -28,7 +28,7 @@ let NavbarHTML =
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/api"><i class="ti ti-api"></i>Swagger Portal (OpenAPI)</a>
+                        <a class="nav-link" href="/api"><i class="ti ti-api"></i>Swagger (OpenAPI)</a>
                     </li>
                 </ul>
             </div>
