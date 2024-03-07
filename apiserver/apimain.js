@@ -164,7 +164,7 @@ router.post("/v1/stocks/update", async (req, res) => {
 
         for (var eachKey of Object.keys(updateItems)) {
             if (eachKey === "session"){ continue;}
-            if (["removed", "quantity", "labelBuild"].indexOf(eachKey) > -1){
+            if (["removed", "quantity", "labelBuild", "displayFIFO", "calcTurnover"].indexOf(eachKey) > -1){
                 updateItems[eachKey] = parseInt(updateItems[eachKey].toString())
             }else if(["removedTime", "createTime"].indexOf(eachKey) > -1){
                 updateItems[eachKey] = new Date(updateItems[eachKey])
@@ -176,7 +176,9 @@ router.post("/v1/stocks/update", async (req, res) => {
         }
         // Forced update flags
         updateItems["loggingTime"] = new Date()
-        if ([0,1].indexOf(updateItems["removed"])< 0){ updateItems["removed"] = 0 }
+        updateItems["removed"] =  updateItems.hasOwnProperty("removed") ? parseInt(updateItems["removed"]) : 0
+        updateItems["displayFIFO"] = updateItems.hasOwnProperty("displayFIFO") ? parseInt(updateItems["displayFIFO"]) : 1
+        updateItems["calcTurnover"] = updateItems.hasOwnProperty("calcTurnover") ? parseInt(updateItems["calcTurnover"]) : 1
 
         await dbclient.connect()
         const session = dbclient.db(targetDB).collection("pollinglog");
