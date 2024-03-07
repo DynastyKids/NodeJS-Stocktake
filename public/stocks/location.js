@@ -1,6 +1,21 @@
-let table = new DataTable('#table', {
+let currentStocktable = new DataTable('#currentStockTable', {
     responsive: true,
-    pageLength: 25,
+    bPaginate: false,
+    searching: false,
+    iDisplayLength: -1,
+    order: [[2, 'asc']],
+    columnDefs: [
+        {
+            target: 2,
+            visible: false,
+            searchable: false
+        },
+    ],
+    scrollX: true
+});
+let historyStockTable = new DataTable('#historyStockTable', {
+    responsive: true,
+    pageLength: 10,
     lengthMenu: [[10, 15, 25, 50, 100, -1], [10, 15, 25, 50, 100, 'All']],
     iDisplayLength: -1,
     order: [[2, 'asc']],
@@ -14,15 +29,45 @@ let table = new DataTable('#table', {
     scrollX: true
 });
 
-let dataList={current:[],removed:[],all:[]}
+let stockInformations={current:[],history:[]}
 
 document.addEventListener("DOMContentLoaded", function () {
-    fetchStocksList()
+    const params = new URLSearchParams(window.location.search);
+    let location = params.get('location');
+    let bay = params.get('bay');
+
+        if (!location && !bay) {
+            createAlert("info","Location parameter does not exist, redirecting to stock homepage.", 5000)
+            setTimeout(function() {
+                window.location.href = 'stocks.html';
+            }, 5000);
+        } else {
+            if (bay !== null){
+                location = bay
+            }
+            document.querySelector("h1").textContent = `Stock Information for [${location.toUpperCase()}]`
+            document.querySelector("#loadingAnimation").style = "display: flex"
+        fetchStocksFromAPI(location).then((result)=>{
+            console.log(result)
+            if (result.acknowledged && result.data.length > 0){
+                result.data.forEach(eachRow=>{
+                    if (eachRow.removed === 0){
+                        stockInformations.current.push(eachRow)
+                    } else {
+                        stockInformations.history.push(eachRow)
+                    }
+                })
+                fetchStocksList()
+            }
+        }).catch((e)=>{
+            console.error("Error when fetching data: ",e)
+        })
+    }
 });
 
-function fetchStocksFromAPI(){
+function fetchStocksFromAPI(location = ""){
     return new Promise((resolve, reject) =>{
-        fetch("/api/v1/stocks")
+        fetch(`/api/v1/stocks?location=${location}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok ' + response.statusText);
@@ -35,81 +80,42 @@ function fetchStocksFromAPI(){
 }
 
 function fetchStocksList() {
-    document.querySelector("#loadingAnimation").style = "display: flex"
-    fetchStocksFromAPI().then(arrayData => {
-        dataList={current:[],removed:[],all:[]}
-        if (Array.isArray(arrayData.data)){
-            dataList.all = arrayData.data
-            arrayData.data.forEach(eachRow => {
-                if (eachRow.removed === 1){
-                     dataList.removed.push(eachRow)
-                } else {
-                     dataList.current.push(eachRow)
-                }
-            })
-            inflateTable()
-        }
-    }).then(function () {
-        document.querySelectorAll(".table_action_search").forEach(eachElement => {
-            eachElement.addEventListener("click", function (ev) {
-                ev.preventDefault()
-                table.search(eachElement.getAttribute("data-bs-ponumber")).draw()
-            })
-        })
-    }).catch(err => {
-            console.error("Error after fetching data: ", err)
-    })
-}
-
-document.getElementsByName("stockStatusRadio").forEach(eachOption =>{
-    eachOption.addEventListener("change",   function (ev) {
-        document.querySelector("#loadingAnimation").style = "display: flex"
-        table.clear().draw()
-        setTimeout(function(){
-            inflateTable()
-        },200)
-    })
-})
-
-function inflateTable(){
-    let dataSet = dataList.current
-    document.getElementsByName("stockStatusRadio").forEach(eachOption =>{
-        if (eachOption.checked && eachOption.id === "radio_history") {
-            dataSet = dataList.removed
-        } else if (eachOption.checked && eachOption.id === "radio_all") {
-            dataSet = dataList.all
-        }
-    })
-    table.clear().draw()
-    dataSet.forEach(eachRow => {
-        table.row.add([
-            `<a href="#" data-bs-ponumber="${(eachRow.productCode ? eachRow.productCode : "")}" class="table_action_search">${(eachRow.productCode ? eachRow.productCode : "")}</a>`
+    currentStocktable.clear().draw()
+    stockInformations.current.forEach(eachRow=>{
+        currentStocktable.row.add([
+            `<a href="#" data-bs-ponumber="${(eachRow.productCode ? eachRow.productCode : "")}">${(eachRow.productCode ? eachRow.productCode : "")}</a>`
             + `${eachRow.productName ? '<br>' + eachRow.productName : ''}`,
             `${eachRow.quantity ? eachRow.quantity + (eachRow.quantityUnit ? ' ' + eachRow.quantityUnit : '') : ''}` + `${eachRow.shelfLocation ? '<br>' + eachRow.shelfLocation : ''}`,
-            `${eachRow.shelfLocation ? eachRow.shelfLocation : ''}`, // Product without Exp Date, use max
+            `${eachRow.shelfLocation ? eachRow.shelfLocation : ''}`,
             `${eachRow.bestbefore ? eachRow.bestbefore : ''}`,
             `${eachRow.productLabel ? eachRow.productLabel : ''}` + `<br>` +
-            `<a href="#" data-bs-ponumber="${(eachRow.POnumber ? eachRow.POnumber : "")}" class="table_action_search">${(eachRow.POnumber ? eachRow.POnumber : "")}</a>`,
-            (eachRow.removed === 0 ? `<a href="#" class="table_actions editModal" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-labelId="${eachRow.productLabel}">View/Edit</a>` + `<br>` +
-                `<a href="#" class="table_actions removeModal" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-labelId="${eachRow.productLabel}">Remove</a>`:
-                `<small>Removed: ${new Date(eachRow.removeTime).toLocaleDateString()}</small>`)
-            ,
+            `<a href="#" data-bs-ponumber="${(eachRow.POnumber ? eachRow.POnumber : "")}">${(eachRow.POnumber ? eachRow.POnumber : "")}</a>`,
+            `<a href="#" class="table_actions editModal" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-labelId="${eachRow.productLabel}">View/Edit</a>` + `<br>` +
+            `<a href="#" class="table_actions removeModal" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-labelId="${eachRow.productLabel}">Remove</a>`,
         ]).draw(false)
     })
+
+    historyStockTable.clear().draw()
+    stockInformations.history.forEach(eachRow=>{
+        historyStockTable.row.add([
+            `<a href="#" data-bs-ponumber="${(eachRow.productCode ? eachRow.productCode : "")}">${(eachRow.productCode ? eachRow.productCode : "")}</a>`
+            + `${eachRow.productName ? '<br>' + eachRow.productName : ''}`,
+            `${eachRow.quantity ? eachRow.quantity + (eachRow.quantityUnit ? ' ' + eachRow.quantityUnit : '') : ''}` + `${eachRow.shelfLocation ? '<br>' + eachRow.shelfLocation : ''}`,
+            `${eachRow.shelfLocation ? eachRow.shelfLocation : ''}`,
+            `${eachRow.bestbefore ? eachRow.bestbefore : ''}`,
+            `${eachRow.productLabel ? eachRow.productLabel : ''}` + `<br>` +
+            `<a href="#" data-bs-ponumber="${(eachRow.POnumber ? eachRow.POnumber : "")}">${(eachRow.POnumber ? eachRow.POnumber : "")}</a>`,
+            ``,
+        ]).draw(false)
+    })
+    
     document.querySelector("#loadingAnimation").style = "display: none"
 }
-
-document.querySelector("#act_reloadData").addEventListener("click", (ev)=>{
-    table.clear().draw()
-    fetchStocksList()
-})
-
 
 let currentEditModalItem = {}
 let editModal = document.querySelector("#editModal")
 editModal.addEventListener("show.bs.modal", async function (ev) {
     let requestLabelId = ev.relatedTarget.getAttribute("data-bs-labelId")
-    resetModalEdit()
     editModal.querySelector("#editModal_labelId").value = requestLabelId
     editModal.querySelector("#editModal_btnSubmit").textContent = "Submit"
     editModal.querySelector(".modal-title").textContent = `Loading Product Information`
@@ -183,50 +189,32 @@ document.querySelector("#editModal_removeCheck").addEventListener("change", (ev)
     }
 })
 
-function resetModalEdit(){
-    editModal.querySelectorAll("input").forEach(eachInput=>{
-        if (['text','date','datetime-local','number'].indexOf(eachInput.type) !== -1){
-            eachInput.value = ""
-        }
-        if (eachInput.type === "checkbox"){
-            eachInput.checked = false
-        }
-    })
-}
-
 function writeModalEdit(element) {
-    editModal.querySelector(".modal-title").textContent = `Edit Stock: ${element.productName}`
-    editModal.querySelector(".modal-body #productInfoText").textContent = `${element.productCode} - ${element.productName}`
-    editModal.querySelector(".modal-body #labelIDText").textContent = `${element.productLabel}`
-    editModal.querySelector("#editModal_quantity").value = element.quantity ? element.quantity : ""
-    editModal.querySelector("#editModal_unit").value = element.quantityUnit ? element.quantityUnit : ""
-    editModal.querySelector("#editModal_bestbefore").value = element.bestbefore ? element.bestbefore : ""
-    editModal.querySelector("#editModal_location").value = element.shelfLocation ? element.shelfLocation : ""
-    editModal.querySelector("#editModal_unitPrice").value = element.unitPrice ? element.unitPrice : ""
-    editModal.querySelector("#editModal_ponumber").value = element.POnumber ? element.POnumber : ""
-    editModal.querySelector("#inpt_removeTime").value = element.removeTime ? element.removeTime : ""
-    
+    document.querySelector("#editModal .modal-title").textContent = `Edit Stock: ${element.productName}`
+    document.querySelector("#editModal .modal-body #productInfoText").textContent = `${element.productCode} - ${element.productName}`
+    document.querySelector("#editModal .modal-body #labelIDText").textContent = `${element.productLabel}`
+    document.querySelector("#editModal_quantity").value = element.quantity ? element.quantity : ""
+    document.querySelector("#editModal_unit").value = element.quantityUnit ? element.quantityUnit : ""
+    document.querySelector("#editModal_bestbefore").value = element.bestbefore ? element.bestbefore : ""
+    document.querySelector("#editModal_location").value = element.shelfLocation ? element.shelfLocation : ""
+
+    if (typeof element.unitPrice === 'object') { // Unit Price需要额外判定是否为Object (Decimal 128)
+        document.querySelector("#editModal_unitPrice").value = element.unitPrice.$numberDecimal
+    } else if (typeof element.unitPrice === 'number') {
+        document.querySelector("#editModal_unitPrice").value = element.unitPrice ? element.unitPrice : ""
+    }
+    document.querySelector("#editModal_ponumber").value = element.POnumber ? element.POnumber : ""
+    document.querySelector("#inpt_removeTime").value = element.removeTime ? element.removeTime : ""
     if (element.hasOwnProperty("quarantine") && element.quarantine === 1) {
-        switch (element.quarantine) {
-            case 1:
-                editModal.querySelector("#editModal_quarantineYes").checked = true
-                break;
-            case -1:
-                editModal.querySelector("#editModal_quarantineFinished").checked = true
-                break;
-            default:
-                editModal.querySelector("#editModal_quarantineNo").checked = true
-        }
+        document.querySelector("#editModal_quarantineYes").checked = true
     }
-
-    if (element.hasOwnProperty("displayFIFO") && editModal.querySelector("#editModal_fifoCheck")){
-        editModal.querySelector("#editModal_fifoCheck").checked = element.displayFIFO === 1
+    if (element.hasOwnProperty("quarantine") && element.quarantine === 0) {
+        document.querySelector("#editModal_quarantineNo").checked = true
     }
-    if (element.hasOwnProperty("calcTurnover") && editModal.querySelector("#editModal_turnoverCheck")){
-        editModal.querySelector("#editModal_turnoverCheck").checked = element.calcTurnover === 1
+    if (element.hasOwnProperty("quarantine") && element.quarantine === -1) {
+        document.querySelector("#editModal_quarantineFinished").checked = true
     }
-
-    editModal.querySelector("#editModal_btnSubmit").disabled = false
+    document.querySelector("#editModal_btnSubmit").disabled = false
 }
 
 function readModalEdit() {
@@ -249,12 +237,6 @@ function readModalEdit() {
     }
     if (document.querySelector("#editModal_ponumber") && String(document.querySelector("#editModal_ponumber").value).length > 0) {
         updateElement.POnumber = document.querySelector("#editModal_ponumber").value
-    }
-    if (document.querySelector("#editModal_fifoCheck")) {
-        updateElement.displayFIFO = document.querySelector("#editModal_fifoCheck").checked ? 1 : 0
-    }
-    if (document.querySelector("#editModal_turnoverCheck")) {
-        updateElement.calcTurnover = document.querySelector("#editModal_turnoverCheck").checked ? 1 : 0
     }
     if (document.querySelector("#editModal_removeCheck") && document.querySelector("#editModal_removeCheck").checked) {
         updateElement.removed = 1
@@ -336,7 +318,6 @@ document.querySelector("#removeModalYes").addEventListener("click", async functi
     let result = await removeProductById({productLabel: labelId, removeTime: new Date(localTime)})
 
     if (result.acknowledged) {
-        table.clear().draw()
         bootstrap.Modal.getInstance(remvoeModal).hide()
         createAlert("success", "Item has been successfully removed, refreshing list.")
         fetchStocksList(true)

@@ -76,9 +76,15 @@ router.get("/v1/products", async (req, res) => {
 * 允许用户通过第三方渠道添加新产品
 */
 router.post("/v1/product/add", async (req, res) => {
+    // 添加方式为Upsert,如果产品已经在库存内则覆盖相关field
     let response = {acknowledged: false, data: [], message: ""};
     if(req.hasOwnProperty("body") && req.body.hasOwnProperty("item")){
-        response = await upsertProduct(req.body.item, true)
+        // 允许用户通过API添加，补充部分字段
+        let patchingData = req.body.item
+        if (!patchingData.hasOwnProperty("checkbox_fifo")){
+            patchingData['checkbox_expire'] = 0
+        }
+        response = await upsertProduct(patchingData, true)
     }
     res.json(response)
 })
@@ -117,9 +123,8 @@ async function upsertProduct(itemContent, upsert = true) {
         let session = dbclient.db(targetDB).collection("products");
         await dbclient.connect()
         const result = await session.updateOne(filter, {$set: itemContent}, {upsert: true});
-        if (result.matchedCount === result.modifiedCount) {
-            response.acknowledged = true
-        }
+        response = result
+        response.acknowledged = result.matchedCount !== result.modifiedCount ? false : response.acknowledged
     } catch (e) {
         response.message = `Error on product upserts: ${e}`
     } finally {
@@ -159,7 +164,7 @@ router.post("/v1/stocks/update", async (req, res) => {
 
         for (var eachKey of Object.keys(updateItems)) {
             if (eachKey === "session"){ continue;}
-            if (["removed", "quantity", "labelBuild"].indexOf(eachKey) > -1){
+            if (["removed", "quantity", "labelBuild", "displayFIFO", "calcTurnover"].indexOf(eachKey) > -1){
                 updateItems[eachKey] = parseInt(updateItems[eachKey].toString())
             }else if(["removedTime", "createTime"].indexOf(eachKey) > -1){
                 updateItems[eachKey] = new Date(updateItems[eachKey])
@@ -171,7 +176,9 @@ router.post("/v1/stocks/update", async (req, res) => {
         }
         // Forced update flags
         updateItems["loggingTime"] = new Date()
-        if ([0,1].indexOf(updateItems["removed"])< 0){ updateItems["removed"] = 0 }
+        updateItems["removed"] =  updateItems.hasOwnProperty("removed") ? parseInt(updateItems["removed"]) : 0
+        updateItems["displayFIFO"] = updateItems.hasOwnProperty("displayFIFO") ? parseInt(updateItems["displayFIFO"]) : 1
+        updateItems["calcTurnover"] = updateItems.hasOwnProperty("calcTurnover") ? parseInt(updateItems["calcTurnover"]) : 1
 
         await dbclient.connect()
         const session = dbclient.db(targetDB).collection("pollinglog");
@@ -455,21 +462,20 @@ router.post("/v1/preload/remove", async (req, res) => {
  * Allow user to select data via session, location, label, product and removed parameters
  */
 router.get("/v1/stocks", async (req, res) => {
-    let stockLocation = req.query.shelf && String(req.query.shelf).length >= 2 ? req.query.shelf : ""
+    let stockLocation = req.query.location && String(req.query.location).length >= 2 ? req.query.location : ""
     let stockLabel = req.query.label && String(req.query.label).length > 2 ? req.query.label : ""
     let stockSession = req.query.session && String(req.query.session).length > 2 ? req.query.session : ""
     let stockProduct = req.query.product && String(req.query.product).length > 2 ? req.query.product : ""
-    let stockRemoved = req.query.removed && String(req.query.removed).length > 0 ? parseInt(req.query.removed) : ""
+    let stockRemoved = req.query.removed && String(req.query.removed).length > 0 ? req.query.removed : ""
     let response = {acknowledged: false, data: [], message: ""}
     await sessionClient.connect()
     const sessions = sessionClient.db(targetDB).collection("pollinglog");
 
     let findingQuery = {}
-    if (String(stockRemoved).length > 0){
-        let findingQuery = {removed: stockRemoved}
-    }
-
     try {
+        if (stockRemoved && stockRemoved.length > 0){
+            findingQuery.removed = parseInt(stockRemoved)
+        }
         if (stockLabel && stockLabel.length > 0) {
             findingQuery.productLabel = {$regex: new RegExp(stockLabel), $options: "i"}
         }

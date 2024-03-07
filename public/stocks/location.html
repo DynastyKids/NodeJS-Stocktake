@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stocks - Warehouse Electron</title>
+    <title>Bay View - Warehouse Electron</title>
     <link href="../library/bootstrap.min.css" rel="stylesheet"/>
     <link href="../library/tabler/tabler-icons.min.css" rel="stylesheet">
     <link href="../library/datatables/datatables.css" rel="stylesheet">
@@ -11,13 +11,14 @@
 <body>
 <div class="container-fluid">
     <div class="container-fluid">
-        <h1>Stocks List</h1>
+        <h1>Loading bay information</h1>
         <br>
         <div class="container-fluid" id="maincontent">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="/">Home</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Stocks</li>
+                    <li class="breadcrumb-item"><a href="stocks.html">Stocks</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Locations</li>
                 </ol>
             </nav>
             <div id="alertAnchor"></div>
@@ -25,51 +26,59 @@
                 <div class="loader"></div>
                 <p>Fetching Stock Data, Please Wait</p>
             </div>
-            <div>
-                <h4>Actions</h4>
-                <div class="row mb-2 ms-2 d-flex">
-                    <a href="#" class="col-sm-3" id="act_reloadData">Reload Data</a>
-                    <a href="#" class="col-sm-3" id="addStock" data-bs-toggle="modal" data-bs-target="#addStockModal">Add Stock</a>
-                    <a href="nextDispatch.html" class="col-sm-3">Next Distpatch (FIFO)</a>
-                </div>
-                <div class="row mb-2 ms-2">
-                    <div class="form-check col-sm-3">
-                        <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_current" checked>
-                        <label class="form-check-label">Showing Current Stock Only</label>
-                    </div>
-                    <div class="form-check col-sm-3">
-                        <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_history">
-                        <label class="form-check-label">Show History Stocks Only</label>
-                    </div>
-                    <div class="form-check col-sm-3">
-                        <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_all">
-                        <label class="form-check-label">Show All Stocks</label>
-                    </div>
-                </div>
+            <div id="location_Current">
+                 <h3>Current Stocks</h3>
+                <table id="currentStockTable" class="table " style="width: 100%">
+                    <thead class="thead-light">
+                    <tr>
+                        <th>Code<br>Product Name</th>
+                        <th>Quantity<br>Location</th>
+                        <th>Best Before</th>
+                        <th>Best Before</th>
+                        <th>Stock ID<br>Purchase Order #</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tfoot class="tfoot-light">
+                    <tr>
+                        <th>Code<br>Product Name</th>
+                        <th>Quantity<br>Location</th>
+                        <th>Best Before</th>
+                        <th>Best Before</th>
+                        <th>Stock ID<br>Purchase Order #</th>
+                        <th>Actions</th>
+                    </tr>
+                    </tfoot>
+                    <tbody></tbody>
+                </table>
             </div>
-            <table id="table" class="table " style="width: 100%">
-                <thead class="thead-light">
-                <tr>
-                    <th>Code<br>Product Name</th>
-                    <th>Quantity<br>Location</th>
-                    <th>Best Before</th>
-                    <th>Best Before</th>
-                    <th>Stock ID<br>Purchase Order #</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tfoot class="tfoot-light">
-                <tr>
-                    <th>Code<br>Product Name</th>
-                    <th>Quantity<br>Location</th>
-                    <th>Best Before</th>
-                    <th>Best Before</th>
-                    <th>Stock ID<br>Purchase Order #</th>
-                    <th>Actions</th>
-                </tr>
-                </tfoot>
-                <tbody></tbody>
-            </table>
+            <hr>
+            <div id="location_historydata">
+                <h3>History Stocks</h3>
+                <table id="historyStockTable" class="table " style="width: 100%">
+                    <thead class="thead-light">
+                    <tr>
+                        <th>Code<br>Product Name</th>
+                        <th>Quantity<br>Location</th>
+                        <th>Best Before</th>
+                        <th>Best Before</th>
+                        <th>Stock ID<br>Purchase Order #</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tfoot class="tfoot-light">
+                    <tr>
+                        <th>Code<br>Product Name</th>
+                        <th>Quantity<br>Location</th>
+                        <th>Best Before</th>
+                        <th>Best Before</th>
+                        <th>Stock ID<br>Purchase Order #</th>
+                        <th>Actions</th>
+                    </tr>
+                    </tfoot>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
     </div>
     <div class="modal fade" id="httpsModal" tabindex="-1" aria-labelledby="httpsModalLabel" aria-hidden="true">
@@ -94,8 +103,7 @@
         </div>
     </div>
 </div>
-<div class="modal fade" data-bs-backdrop="static" id="editModal" tabindex="-1"
-     aria-labelledby="editModalLabel" aria-hidden="true">
+<div class="modal fade" data-bs-backdrop="static" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -159,14 +167,6 @@
                                     <label class="form-check-label" for="editModal_quarantineFinished">Inspected Finished</label>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-12">
-                            <input type="checkbox" class="form-check-input" id="editModal_fifoCheck">
-                            <label class="form-label">Display this in next dispatch (FIFO) screen ?</label>
-                        </div>
-                        <div class="col-12">
-                            <input type="checkbox" class="form-check-input" id="editModal_turnoverCheck">
-                            <label class="form-label">Include this in turnover rate calculation?</label>
                         </div>
                         <div class="row col-12 d-flex mt-2 mb-2">
                             <div class="col-12">
@@ -248,28 +248,10 @@
         </div>
     </div>
 </div>
-<div class="modal fade" id="addStockModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addStockLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addStockLabel">Add New Stock</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                ...
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Submit</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script src="../library/jquery-3.7.1.min.js"></script>
 <script src="../library/bootstrap.bundle.min.js"></script>
 <script src="../library/datatables/datatables.js"></script>
-<script src="stocks.js"></script>
+<script src="location.js"></script>
 <script src="../loadNavbar.js"></script>
 </body>
 <style>
@@ -277,8 +259,8 @@
         padding-left: .25rem;
         padding-right: .25rem;
     }
-    
-/*    Loading Animation*/
+
+    /*    Loading Animation*/
     .loader {
         width: 40px;
         aspect-ratio: 1;
