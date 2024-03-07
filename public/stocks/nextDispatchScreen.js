@@ -35,21 +35,8 @@ document.addEventListener("DOMContentLoaded", async (event) => {
 function assembleDisplayArray(){
     let result=[]
     if (Array.isArray(stockData)){
-        if (stockData.length > 0){
-            result.push({
-                productCode: stockData[0].productCode ? stockData[0].productCode : ``,
-                productName: stockData[0].productName ? stockData[0].productName : ``,
-                next:[{
-                    productLabel: stockData[0].hasOwnProperty("productLabel") ? stockData[0].productLabel : null,
-                    location: stockData[0].hasOwnProperty("shelfLocation") ? stockData[0].shelfLocation : "",
-                    bestbefore: stockData[0].hasOwnProperty("bestbefore") ? stockData[0].bestbefore : getDateStringFromLabel(stockData[i].productLabel),
-                    quarantine: stockData[0].hasOwnProperty("quarantine") ? parseInt(stockData[0].quarantine) : 0,
-                }]
-            })
-        }
         for (let i = 1; i < stockData.length; i++) {
-            console.log(stockData[i])
-            if (stockData[i].hasOwnProperty("displayFIFO") && stockData[i].displayFIFO === 0){
+            if (stockData[i].hasOwnProperty("displayFIFO") && stockData[i].displayFIFO != 1){
                 continue;
             }
             var foundFlag = false
