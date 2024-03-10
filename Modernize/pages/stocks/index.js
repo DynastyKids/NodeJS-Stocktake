@@ -493,13 +493,25 @@ async function inflateTable(forced = false) {
         console.error("Error Occured when inflating table: ", e)
     }
 
-    document.querySelectorAll(".table_action_print").forEach(printButton=>{
-        printButton.addEventListener("click",function(ev){
-            generateLabelToPDF(printButton.getAttribute("data-bs-itemid"))
-        })
-    })
     document.querySelector("#loadingStatus").style = "display: none"
 }
+$(document).ready(function(){
+    table.on("draw", function (){
+        document.querySelectorAll(".table_action_print").forEach(printButton=>{
+            printButton.addEventListener("click",function(ev){
+                generateLabelToPDF(printButton.getAttribute("data-bs-itemid"))
+            })
+        })
+    })
+    // $("#table").DataTable({
+    //     "drawCallback": function(settings){
+    //         $("#table").on("click",".table_action_print", function(){
+    //             var itemid = $(this).data("data-bs-itemid")
+    //             generateLabelToPDF(itemid)
+    //         })
+    //     }
+    // })
+})
 
 async function fetchStocks(forced = false) {
     if (stocksList.all.length <= 0 || forced) {
@@ -629,9 +641,9 @@ function generateLabelToPDF(elementDatabaseId){
                 doc.setFontSize(90).setFont("Helvetica", 'normal')   // ↙Bestbefore
                 doc.text(generateElement.bestbefore ? generateElement.bestbefore : "", 15, doc.internal.pageSize.getHeight() - 115, {lineHeightFactor: 0.9});
                 doc.setFontSize(72).setFont("courier", 'bold')     // ↙Label
-                doc.text(`${generateElement.productLabel ? generateElement.productLabel.slice(-7): ""}`, 15, doc.internal.pageSize.getHeight() - 55, {lineHeightFactor: 0.85});
+                doc.text(`${generateElement.productLabel ? generateElement.productLabel.toUpperCase().slice(-7): ""}`, 15, doc.internal.pageSize.getHeight() - 55, {lineHeightFactor: 0.85});
                 doc.setFontSize(36).setFont("courier", 'bold')      //  ↗Label
-                doc.text(`${generateElement.POnumber ? generateElement.POnumber : ""} / ${generateElement.productLabel.toUpperCase().substring(0, 7)}`, doc.internal.pageSize.getWidth() - 20, 30, {
+                doc.text(`${generateElement.POnumber ? generateElement.POnumber : ""} / ${generateElement.productLabel.toUpperCase().slice(-7)}`, doc.internal.pageSize.getWidth() - 20, 30, {
                     lineHeightFactor: 0.75,
                     align: "right"
                 });
