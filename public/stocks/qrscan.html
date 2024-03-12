@@ -18,6 +18,10 @@
                 <div class="video-wrapper">
                     <video id="qr-video" class="w-100"></video>
                 </div>
+                <div id="fetch-frequency">
+                    <label>Fetch request frequency: </label> <span>3 seconds</span>
+                    <input type="range" class="form-range" min="1000" max="10000" step="500" value="3000" id="fetchFreqRange">
+                </div>
                 <div id="currentText">
                     <label>Current On Camera</label>
                     <p id="list_current"></p>
@@ -25,6 +29,24 @@
             </div>
             <div class="col-md-6 col-sm-12">
                 <label><h5>Scan History</h5></label>
+                <div style="display: none">
+                    <h6>Default action: </h6>
+                    <div class="d-flex justify-content-between" >
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="defaultActionRadio" id="defaultaction_view" value="view" checked>
+                            <label class="form-check-label">View</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="defaultActionRadio" id="defaultaction_add" value="add">
+                            <label class="form-check-label">Add</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="defaultActionRadio" id="defaultaction_delete" value="delete">
+                            <label class="form-check-label">Delete</label>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="list_history" class="row"></div>
             </div>
         </div>
@@ -71,17 +93,21 @@
                             <input type="date" class="form-control col-6" id="modalEditBestbefore" data-bs-targetfield="bestbefore"  value="">
                         </div>
                         <div class="col-6 col-md-4">
-                            <label for="modelEditUnitprice" class="form-label">Unit Price:</label>
-                            <input type="text" class="form-control col-6" id="modelEditUnitprice" data-bs-targetfield="unitPrice"  value="">
+                            <label for="modelEditCreateTime" class="form-label">Create Time:</label>
+                            <input type="datetime-local" class="form-control col-6" id="modelEditCreateTime" data-bs-targetfield="createTime" value="">
                         </div>
                         <div class="col-6 col-md-4">
                             <label for="modelEditPOnumber" class="form-label">Purchase OrderID:</label>
                             <input type="text" class="form-control col-6" id="modelEditPOnumber" data-bs-targetfield="POnumber" value="">
                         </div>
                         <div class="col-6 col-md-4">
-                            <label for="modelEditCreateTime" class="form-label">Create Time:</label>
-                            <input type="datetime-local" class="form-control col-6" id="modelEditCreateTime" data-bs-targetfield="createTime" value="">
+                            <label for="modelEditUnitprice" class="form-label">Unit Price:</label>
+                            <input type="text" class="form-control col-6" id="modelEditUnitprice" data-bs-targetfield="unitPrice" value="">
                         </div>
+<!--                        <div class="col-6 col-md-4">-->
+<!--                            <label for="modelEditUnitprice" class="form-label">Gross Price:</label>-->
+<!--                            <input type="text" class="form-control col-6" id="modelEditGrossprice" data-bs-targetfield="grossPrice" value="">-->
+<!--                        </div>-->
                         <div class="col-6 col-md-4">
                             <label for="modelEditCreateTime" class="form-label">Sequence:</label>
                             <input type="number" class="form-control col-6" id="modelEditSequence" data-bs-targetfield="seq" min="0" value="">
@@ -106,9 +132,17 @@
                                 <input type="checkbox" class="form-check-input" name="modalEdit_removeCheck" id="modelEditCheckRemoved" data-bs-targetfield="removed" >
                                 <label class="form-label">Product has been removed?</label>
                             </div>
+                            <div class="col-12 mb-2">
+                                <input type="checkbox" class="form-check-input" name="modalEdit_displayFIFO" id="modelEditDisplayFIFO" data-bs-targetfield="displayFIFO" checked>
+                                <label class="form-label">Display item in Next Dispatch (FIFO) Screen.</label>
+                            </div>
+                            <div class="col-12 mb-2">
+                                <input type="checkbox" class="form-check-input" name="modalEdit_calcTurnover" id="modelEditCalcTurnover" data-bs-targetfield="calcTurnover" checked>
+                                <label class="form-label">Included in turnover rate calculation?</label>
+                            </div>
                             <div class="col-6" id="group_removeTime" style="display: none">
                                 <label for="modelEditRemoveTime" class="form-label">Remove Time:</label>
-                                <input type="datetime-local" class="form-control col-6" id="modelEditRemoveTime" data-bs-targetfield="removeTime"  value="">
+                                <input type="datetime-local" class="form-control col-6" id="modelEditRemoveTime" data-bs-targetfield="removeTime">
                             </div>
                         </div>
                         <div class="col-12">
