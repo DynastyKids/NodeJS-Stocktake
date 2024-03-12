@@ -23,8 +23,10 @@ document.addEventListener("DOMContentLoaded", async (event) => {
                 htmlContent += `</tr>`
             }
         }
+        createAlert("success","Next Dispatch list has successfully loaded", 2000)
     } catch (e) {
         console.error("Error occurred when appending table: ", e)
+        createAlert("danger","Error occurred when generate FIFO list, check console for more info")
     } finally {
         document.querySelector("#loadingAnimation").style = "display: none"
     }

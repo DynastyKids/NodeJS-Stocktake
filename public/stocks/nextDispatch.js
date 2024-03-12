@@ -33,8 +33,10 @@ document.addEventListener("DOMContentLoaded", async (event) => {
                 htmlContent += `</tr>`
             }
         }
+        createAlert("success","Next Dispatch list has successfully loaded", 2000)
     } catch (e) {
         console.error("Error occurred when appending table: ", e)
+        createAlert("danger","Error occurred when generate FIFO list, check console for more info")
     } finally {
         document.querySelector("#loadingAnimation").style = "display: none"
     }
@@ -56,7 +58,7 @@ function assembleDisplayArray(){
                     sortOnPush(result[j].next, {
                         productLabel: stockData[i].hasOwnProperty("productLabel") ? stockData[i].productLabel : null,
                         location: stockData[i].hasOwnProperty("shelfLocation") ? stockData[i].shelfLocation : "",
-                        bestbefore: stockData[i].hasOwnProperty("bestbefore") ? stockData[i].bestbefore : getDateStringFromLabel(stockData[i].productLabel),
+                        bestbefore: stockData[i].hasOwnProperty("bestbefore") ? new Date(stockData[i].bestbefore).toLocaleDateString() : getDateStringFromLabel(stockData[i].productLabel),
                         quarantine: stockData[i].hasOwnProperty("quarantine") ? parseInt(stockData[i].quarantine) : 0,
                     },"bestbefore")
                     break;
@@ -69,7 +71,7 @@ function assembleDisplayArray(){
                     next:[{
                         productLabel: stockData[i].hasOwnProperty("productLabel") ? stockData[i].productLabel : null,
                         location: stockData[i].hasOwnProperty("shelfLocation") ? stockData[i].shelfLocation : "",
-                        bestbefore: stockData[i].hasOwnProperty("bestbefore") ? stockData[i].bestbefore : getDateStringFromLabel(stockData[i].productLabel),
+                        bestbefore: stockData[i].hasOwnProperty("bestbefore") ? new Date(stockData[i].bestbefore).toLocaleDateString() : getDateStringFromLabel(stockData[i].productLabel),
                         quarantine: stockData[i].hasOwnProperty("quarantine") ? parseInt(stockData[i].quarantine) : 0
                     }]
                 }, "productCode")

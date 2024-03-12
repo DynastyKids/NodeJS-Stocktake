@@ -17,13 +17,7 @@
                 <li class="breadcrumb-item active" aria-current="page">Label Generator</li>
             </ol>
         </nav>
-
-        <div id="toastDiv" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">Product data has fetched successfully.</div>
-                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
+        <div id="alertAnchor"></div>
         <div id="loadingAnimation" style="display: flex">
             <div class="loader"></div>
             <p>Fetching Products List, Please Wait</p>
@@ -98,8 +92,9 @@
 <script src="../library/qrious.min.js"></script>
 <!--JS.PDF用于生成PDF文件，而PDF.js用于读取PDF文件-->
 <script src="../library/sha1.min.js"></script>
-<script src="../library/jsqr/jsqr-1.0.2-min.js"></script>
+<script src="../library/jsqr/jsQR.min.js"></script>
 <script src="../loadNavbar.js"></script>
+<script src="../elements.js"></script>
 <script src="labelgenerator.js"></script>
 
 <style>

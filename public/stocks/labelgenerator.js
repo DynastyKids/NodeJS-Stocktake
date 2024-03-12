@@ -1,6 +1,5 @@
 let rowNumber = 1
 let productsData = [] //在生成Label时候也可以使用
-let toast = document.querySelector("#toastDiv")
 document.addEventListener("DOMContentLoaded", function (ev) {
     let idleTimer;
 
@@ -12,16 +11,13 @@ document.addEventListener("DOMContentLoaded", function (ev) {
     fetchProducts().then(response=>{
         console.log(response.data)
         if (response.data.acknowledged) {
-            document.querySelector("#toastDiv .toast-body").innerText = "Product list has fetched successfully"
-            document.querySelector("#toastDiv").classList.add("bg-success");
-            document.querySelector("#toastDiv").classList.remove("bg-warning");
+            createAlert("success","Product list has fetched successfully", 3000)
             if (Array.isArray(response.data.data)) {
                 productsData = response.data.data
                 response.data.data.forEach(eachItem => {
                     // document.querySelector("#productSuggestions").append(`<option value="${eachItem.productCode}" label="${eachItem.description}"></option>`);
                     $("#productSuggestions").append(`<option value="${eachItem.description}" data-code="${eachItem.productCode}" data-qty="${eachItem.palletQty}" data-unit="${eachItem.unit}"></option>`);
                 });
-                (new bootstrap.Toast(toast)).show();
             }
         }
         document.querySelector("#loadingAnimation").style = "display: none"
@@ -48,10 +44,7 @@ async function fetchProducts(forced = false){
             let response = await axios.get('/api/v1/products', true)
             return (response ? response : {acknowledged: false, data:[]})
         } catch (e) {
-            document.querySelector("#toastDiv .toast-body").innerText = "Error(s) encountered when fetching products lists"
-            document.querySelector("#toastDiv").classList.add("bg-warning");
-            document.querySelector("#toastDiv").classList.remove("bg-success");
-            (new bootstrap.Toast(toast)).show();
+            createAlert("warning", "Error(s) encountered when fetching products lists", 5000)
             return (response ? response : {acknowledged: false, data:[]})
             console.error("Error when fetching Products List:",e)
         }
