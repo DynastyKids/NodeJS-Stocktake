@@ -130,6 +130,11 @@ document.querySelector("#fetch-frequency input").addEventListener("change",(ev)=
     document.querySelector("#fetch-frequency span").textContent = `${(ev.target.value/1000)} second`
 })
 
+document.querySelector('#camerazoom-div input').addEventListener('change', (ev) =>{
+    document.querySelector("#qr-video").style.transform = `scale(${ev.target.value})`;
+    document.querySelector("#camerazoom-div span").textContent = `${(ev.target.value)}x`
+})
+
 function fetchStockBylabel_lazy(labelId) { // 如果上一次和本次的时间相差不超过3s，(避免DDOS)
     let currentTime = new Date().getTime()
     if (labelId === lastRequest.pollinglog.requestLabelId && Math.abs(currentTime - lastRequest.pollinglog.requestTime) <= fetchFrequency) {
@@ -445,7 +450,6 @@ editModal.querySelector("#editModal_submitBtn").addEventListener("click", async 
             } else {
                 submitItem[eachInput.getAttribute("data-bs-targetfield")] = eachInput.value ? String(eachInput.value) : null
             }
-            console.log(eachInput.type, eachInput.value)
         }
         if (eachInput.type === "checkbox" && eachInput.checked) {
             submitItem.removed = editModal.querySelector("#modelEditCheckRemoved").checked ? 1 : 0

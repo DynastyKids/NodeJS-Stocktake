@@ -12,15 +12,19 @@
 <div class="container-fluid" style="max-height: 100vh">
     <div id="alertAnchor"></div>
     <div class="container-fluid mt-4">
+        <h1>Label Scanner</h1>
         <div class="row">
-            <div></div>
             <div class="col-md-6 col-sm-12 mb-2">
                 <div class="video-wrapper">
                     <video id="qr-video" class="w-100"></video>
                 </div>
                 <div id="fetch-frequency">
                     <label>Fetch request frequency: </label> <span>3 seconds</span>
-                    <input type="range" class="form-range" min="1000" max="10000" step="500" value="3000" id="fetchFreqRange">
+                    <input type="range" min="1000" max="10000" step="500" value="3000" id="fetchFreqRange">
+                </div>
+                <div id="camerazoom-div">
+                    <label>Camera Zoom Level: </label> <span>1</span>
+                    <input type="range" id="cameraZoom-range" min="1" max="3" step="0.1" value="1">
                 </div>
                 <div id="currentText">
                     <label>Current On Camera</label>
