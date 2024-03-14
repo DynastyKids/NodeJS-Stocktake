@@ -1,8 +1,9 @@
+// Screensaver - Next Dispatch
 try{
     const {MongoClient, ServerApiVersion} = require("mongodb");
     const Storage = require("electron-store");
 } finally {
-//     Nothings
+// Nothing happens
 }
 const newStorage2 = new Storage();
 let dburi = newStorage2.get("mongoURI") ? newStorage2.get("mongoURI") : "mongodb://localhost:27017"
@@ -19,8 +20,8 @@ inactiveModal.setAttribute("aria-hidden","true")
 let inactiveModalDialog = document.createElement("div")
 inactiveModalDialog.className = "modal-dialog modal-fullscreen"
 
-let inactiveModalCotent = document.createElement("div")
-inactiveModalCotent.className = "modal-content"
+let inactiveModalContent = document.createElement("div")
+inactiveModalContent.className = "modal-content"
 
 let inactiveModalHeader = document.createElement("div")
 inactiveModalHeader.className = "modal-header"
@@ -45,10 +46,10 @@ inactiveModalBody.innerHTML = `
         <div id="table-body-container">
             <table id="table-body">
                 <tr>
-                    <td class="tableItemName">Loading Product</td>
-                    <td class="tableNext1">Location 1<br>Exp Date 1</td>
-                    <td class="tableNext2">Location 2<br>Exp Date 2</td>
-                    <td class="tableNext2">Location 3<br>Exp Date 3</td>
+<!--                    <td class="tableItemName">Loading Product</td>-->
+<!--                    <td class="tableNext1">Location 1<br>Exp Date 1</td>-->
+<!--                    <td class="tableNext2">Location 2<br>Exp Date 2</td>-->
+<!--                    <td class="tableNext2">Location 3<br>Exp Date 3</td>-->
                 </tr>
             </table>
         </div>
@@ -59,10 +60,10 @@ let inactiveModalFooter = document.createElement("div")
 inactiveModalFooter.className = "modal-footer"
 inactiveModalFooter.innerHTML = `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>`
 
-inactiveModalCotent.append(inactiveModalHeader)
-inactiveModalCotent.append(inactiveModalBody)
-inactiveModalCotent.append(inactiveModalFooter)
-inactiveModalDialog.append(inactiveModalCotent)
+inactiveModalContent.append(inactiveModalHeader)
+inactiveModalContent.append(inactiveModalBody)
+inactiveModalContent.append(inactiveModalFooter)
+inactiveModalDialog.append(inactiveModalContent)
 inactiveModal.append(inactiveModalDialog)
 
 document.querySelector("body").append(inactiveModal)
@@ -146,7 +147,7 @@ style.textContent = `
 
 document.head.appendChild(style)
 
-let inactivityTime = function (setTime = 120) {  // Default screen saver started after 120s
+let inactivityTime = function (setTime = 10) {  // Default screen saver started after 120s
     let time2Open, time2Close;
     window.onload = resetTimer;
     // DOM Events
@@ -226,20 +227,28 @@ async function inactive_fetchProducts() {
         let htmlContent = '';
         productsDisplay.forEach(item => {
             if (item.bestbeforeArray.length > 0 && item.LocationArray.length > 0 && item.bestbeforeArray[0]) {
-                htmlContent += `<tr><td class="tableItemName">${(item.productCode ? item.productCode : "")} - ${item.productName}</td>`
-                htmlContent += `<td class="tableNext1">${item.LocationArray[0]} ${item.hasOwnProperty("quanartineArray") && item.quanartineArray[0] === 1 ? '<span style="color: orange"><i class="ti ti-zoom-question"></i></span>': ""}<br>${item.bestbeforeArray[0]}</td>`
-
-                htmlContent += (item.bestbeforeArray.length > 1 && item.LocationArray.length > 1) ?
-                    `<td class="tableNext2">${item.LocationArray[1]} ${item.hasOwnProperty("quanartineArray") && item.quanartineArray[1] === 1 ? '<span style="color: orange"><i class="ti ti-zoom-question"></i></span>': ""}<br>${item.bestbeforeArray[1]}</td>` :
-                    `<td class="tableNext2"></td>`
-
-                htmlContent += (item.bestbeforeArray.length > 2 && item.LocationArray.length > 2) ?
-                    `<td class="tableNext2">${item.LocationArray[2]} ${item.hasOwnProperty("quanartineArray") && item.quanartineArray[2] === 1 ? '<span style="color: orange"><i class="ti ti-zoom-question"></i></span>': ""}<br>${item.bestbeforeArray[2]}</td>` :
-                    `<td class="tableNext2"></td>`
-                htmlContent += `</tr>`
+                console.log(item)
+                let tableRow = document.createElement("tr")
+                let productCol = document.createElement("td")
+                let column1 = document.createElement("td")
+                let column2 = document.createElement("td")
+                let column3 = document.createElement("td")
+                productCol.className = "tableItemName"
+                productCol.textContent = `${(item.productCode ? item.productCode : "")} - ${item.productName}`
+                column1.className = "tableNext1"
+                column1.innerHTML = `${item.LocationArray[0]} ${item.hasOwnProperty("quanartineArray") && item.quanartineArray[0] === 1 ? '<span style="color: orange"><i class="ti ti-zoom-question"></i></span>': ""}<br>${new Date(item.bestbeforeArray[0]).toLocaleDateString()}`
+                if (item.bestbeforeArray.length > 1 && item.LocationArray.length > 1){
+                    column2.className = "tableNext2"
+                    column2.innerHTML =  `${item.LocationArray[1]} ${item.hasOwnProperty("quanartineArray") && item.quanartineArray[1] === 1 ? '<span style="color: orange"><i class="ti ti-zoom-question"></i></span>': ""}<br>${new Date(item.bestbeforeArray[1]).toLocaleDateString()}`
+                }
+                if (item.bestbeforeArray.length > 2 && item.LocationArray.length > 2) {
+                    column3.className = "tableNext2"
+                    column3.innerHTML = `${item.LocationArray[2]} ${item.hasOwnProperty("quanartineArray") && item.quanartineArray[2] === 1 ? '<span style="color: orange"><i class="ti ti-zoom-question"></i></span>' : ""}<br>${new Date(item.bestbeforeArray[2]).toLocaleDateString()}`
+                }
+                tableRow.append(productCol, column1, column2, column3)
+                document.querySelector("#table-body").append(tableRow)
             }
         })
-        document.querySelector("#table-body").innerHTML = htmlContent
     }
 }
 function inactive_buildProductArr(productList) {
@@ -247,12 +256,12 @@ function inactive_buildProductArr(productList) {
     productList.forEach(item => {
         if (productArray.length > 0 && item.productCode !== "") {
             if (productArray[productArray.length - 1].productCode === item.productCode) {
-                productArray[productArray.length - 1]["bestbeforeArray"].push(item.bestbefore ? item.bestbefore.replaceAll("-", ""): "")
+                productArray[productArray.length - 1]["bestbeforeArray"].push(item.bestbefore ? item.bestbefore: "")
                 productArray[productArray.length - 1]["LocationArray"].push(item.shelfLocation ? item.shelfLocation : "")
                 productArray[productArray.length - 1]["quanartineArray"].push(item.hasOwnProperty("quanartine") ? parseInt(item.quanartine) : 0)
             } else {
                 productArray.push(item)
-                productArray[productArray.length - 1]["bestbeforeArray"] = [item.bestbefore ? item.bestbefore.replaceAll("-", ""): ""]
+                productArray[productArray.length - 1]["bestbeforeArray"] = [item.bestbefore ? item.bestbefore: ""]
                 productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation ? item.shelfLocation : ""]
                 productArray[productArray.length - 1]["quanartineArray"] = [item.hasOwnProperty("quanartine") ? parseInt(item.quanartine) : 0]
                 delete productArray[productArray.length - 1].session;
@@ -263,7 +272,7 @@ function inactive_buildProductArr(productList) {
             }
         } else {
             productArray.push(item)
-            productArray[productArray.length - 1]["bestbeforeArray"] = [item.bestbefore ? item.bestbefore.replaceAll("-", ""): ""]
+            productArray[productArray.length - 1]["bestbeforeArray"] = [item.bestbefore ? item.bestbefore: ""]
             productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation ? item.shelfLocation : ""]
             productArray[productArray.length - 1]["quanartineArray"] = [item.hasOwnProperty("quanartine") ? parseInt(item.quanartine) : 0]
             delete productArray[productArray.length - 1].session;
