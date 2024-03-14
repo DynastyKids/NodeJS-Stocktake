@@ -374,7 +374,7 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev) => {
     } catch (e) {
         console.error("Error when fetching product information: ", e)
     }
-    
+
     try {  // Step 3: 使用线上数据填充(从数据库获取到的，如果数据有变化，优先使用线上数据)
         fetchStockBylabel(requestLabelId).then(response => {
             if (response.data.length > 0) {
@@ -542,6 +542,7 @@ removeModal.querySelector("#removeModal_btnConfirm").addEventListener("click", a
         removeModal.querySelector("#removeModal_btnConfirm").textContent = "Processing"
 
         removeStockByLabel(removeObject.productLabel).then(result => {
+            console.log(result)
             removeModal.querySelector("#removeModal_text").textContent = "Ready"
             try {
                 if (result.acknowledged && result.matchedCount === 1 && result.modifiedCount === 1) {
