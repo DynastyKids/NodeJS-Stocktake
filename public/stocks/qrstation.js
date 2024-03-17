@@ -72,36 +72,141 @@ $(document).ready(async function () {
     }
 });
 
-
 async function createScanHistory(qrCodeData) {
     let results = {action: true}
     let historyList = document.querySelector("#list_history")
     if (qrCodeData.includes("?item=")) {
         //如果扫描到了带item关键字的，则查找过去stock是否有该条目，如果有则需要修正已经在框内的数据
         var decodedElement = decodeItemData(qrCodeData)
-        let htmlBuildNode = await buildInnerlistContent(decodedElement)
+        let htmlBuildNode = await historyItem_createcard(decodedElement)
         htmlBuildNode.setAttribute("data-bs-labelid", decodedElement.item.productLabel)
-        // 每次添加前需要核验是否和上一个是Label，如果不是则允许添加，如果是则忽略
-        let lastAddedCard = document.querySelector("#list_history .card")
-        if (lastAddedCard !== null) {
-            if (!lastAddedCard.hasAttribute("data-bs-labelid")) { // 如果上一个卡片没有labelid, 则默认添加
+        let listOfCards = historyList.querySelectorAll(".card")
+        try {
+            if (listOfCards.length > 0) {
+                //列表内已经有卡片了；如果已经扫描过这张卡片，则跳过、或移动卡片元素到列表开始；如果未扫描过这张卡片，则开始填充数据，1.默认填充，2，数据库补充，3.添加默认操作
+                var foundItem = false
+                for (let i = 0; i < listOfCards.length; i++) {
+                    try {
+                        var cardNode = listOfCards[i]
+                        if (cardNode.dataset['bsLabelid'] === decodedElement['item']['productLabel']) { // 历史记录里面找到了这张卡，将该节点删除，然后按照新扫描流程再来一次
+                            foundItem = true // 如果是第0个则不添加
+                            if (i >= 1) {
+                                cardNode.parentNode.removeChild(cardNode)
+                                foundItem = false
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Error when processing card information:", e)
+                    }
+                }
+                if (!foundItem) {
+                    historyList.insertAdjacentElement('afterbegin', htmlBuildNode)
+                    scanHistory.push(decodedElement.item)
+                    scanAction(decodedElement.item.productLabel)
+                }
+            } else {  //历史列表为空
                 historyList.insertAdjacentElement('afterbegin', htmlBuildNode)
                 scanHistory.push(decodedElement.item)
-            } else if (lastAddedCard.getAttribute("data-bs-labelid") !== decodedElement.item.productLabel) { // 如果上一卡片labelId不同则可以添加
-                historyList.insertAdjacentElement('afterbegin', htmlBuildNode)
-                scanHistory.push(decodedElement.item)
+                scanAction(decodedElement.item.productLabel)
             }
-        } else { // 如果上一个卡片不存在则可以添加
-            historyList.insertAdjacentElement('afterbegin', htmlBuildNode)
-            scanHistory.push(decodedElement.item)
+        } catch (e) {
+            console.error("Scan Action: Element does not have label. ", e)
         }
-    } else {
-        // historyList.insertAdjacentHTML('afterbegin', `<div class='col-12 card mt-1'><div class="card">QR Code Raw Data: ${qrCodeData}</div></div>`)
     }
     return results
 }
 
-function fetchStockBylabel(labelid = "...") {
+function scanAction(stockLabelId = "") {
+    var action = "view"
+    document.querySelectorAll("input[name='defaultActionRadio']").forEach(eachInput => {
+        if (eachInput.checked) {
+            action = eachInput.value
+        }
+    })
+    try {
+        if (stockLabelId.length > 0 && action === "delete") { //     当动作核实为delete且label存在后
+            let result = fetchStockBylabel_lazy(stockLabelId)
+            let targetElement = document.querySelector(`div[data-bs-labelid="${stockLabelId}"]`)
+            let autoRemoveDiv = document.createElement("div")
+            autoRemoveDiv.innerHTML = "Default delete action: <span class='historyItem_countdown'></span>"
+            targetElement.querySelector(".historyItem_bodyDiv").append(autoRemoveDiv)
+            actionCountdown(autoRemoveDiv.querySelector(".historyItem_countdown"))
+        }
+    } catch (e) {
+        console.error("Error when processing on scan action")
+    }
+}
+
+function actionCountdown(displayElement, duration = 5) {
+    // Action Countdown 仅通过扫码后对应的Action自动触发
+    //     如果该label存在于系统中，则仅update removed = 1 & removeTime
+    //     如果该label不存在，则需要upsert添加，设置全参数
+    //     给对应的remove按钮添加倒计时，如果倒计时内没有点击取消，则执行remove操作
+    let cancelButton = document.createElement("a")
+    cancelButton.textContent = "Cancel"
+    cancelButton.href = "#"
+    displayElement.append(cancelButton)
+    cancelButton.addEventListener('click', () => {
+        clearInterval(countdownInterval);
+        displayElement.textContent = 'Cancelled';
+        cancelButton.remove();
+    });
+
+    let timer = duration
+    let countdownInterval = setInterval(() => {
+        displayElement.textContent = `${parseInt(timer % 60, 10)} seconds`;
+        displayElement.append(cancelButton)
+
+        if (--timer < 0) {
+            try {
+                clearInterval(countdownInterval);
+                let originalCard = displayElement.parentNode.parentNode
+                let elementTarget = {}
+                var foundInPrefill = false
+                // QR Station Auto remove
+                removeObjectKeys.forEach(eachKey => {
+                    if (originalCard.querySelector(`td[data-targetfield="${eachKey}"]`)) {
+                        elementTarget[eachKey] = originalCard.querySelector(`td[data-targetfield='${eachKey}']`).textContent
+                    }
+                })
+                fetchPrefillByLabel(elementTarget.productLabel).then(prefillResult => {
+                    if (prefillResult.data.length >= 0) { //     不在现有产品列表和prefill中，
+                        foundInPrefill = true
+                        removePreloadByLabel(elementTarget.productLabel).then(preloadResult => {
+                            if (preloadResult.acknowledged && preloadResult.matchedCount === 1 && preloadResult.modifiedCount === 1) {
+                                createAlert("success", "Product has been successfully removed")
+                            }
+                        })
+                    }
+                })
+                fetchStockBylabel(elementTarget.productLabel).then(async stockResult => {
+                    if (stockResult.data.length <= 0 && !foundInPrefill) {//     不在现有产品列表中
+                        let result = async () => {
+                            updateStockByLabel(elementTarget)
+                        }
+                        await result()
+                    }
+                    removeStockByLabel(elementTarget.productLabel).then(stockResult => {
+                        if (stockResult.acknowledged && stockResult.matchedCount === 1 && stockResult.modifiedCount === 1) {
+                            createAlert("success", "Product has been successfully removed")
+                        }
+                    })
+                })
+                // QR Station Auto remove
+                displayElement.textContent = 'Item removed';
+                // 如果倒计时结束，移除取消按钮，设置Remove按钮为disabled
+                if (displayElement.nextSibling) {
+                    displayElement.parentNode.removeChild(displayElement.nextSibling);
+                }
+                displayElement.parentNode.parentNode.querySelector(".historyItem_actionDelete").disabled = true
+            } catch (e) {
+                console.error("Error occured when actions taken after countdown:", e)
+            }
+        }
+    }, 1000)
+}
+
+function fetchStockBylabel(labelid = "") {
     return new Promise((resolve, reject) => {
         fetch(`/api/v1/stocks?&label=${labelid && labelid.length > 0 ? labelid : "..."}`, {timeout: 10000})
             .then(response => response.json())
@@ -110,7 +215,7 @@ function fetchStockBylabel(labelid = "...") {
     })
 }
 
-function fetchPrefillByLabel(labelid = "...") {
+function fetchPrefillByLabel(labelid = "") {
     return new Promise((resolve, reject) => {
         fetch(`/api/v1/preload?label=${labelid && labelid.length > 0 ? labelid : "..."}`, {timeout: 10000})
             .then(response => response.json())
@@ -125,12 +230,12 @@ let lastRequest = {
 }
 let fetchFrequency = 3000  //针对同一label的重新请求的CD时间
 
-document.querySelector("#fetch-frequency input").addEventListener("change",(ev)=>{
+document.querySelector("#fetch-frequency input").addEventListener("change", (ev) => {
     fetchFrequency = parseInt(ev.target.value)
-    document.querySelector("#fetch-frequency span").textContent = `${(ev.target.value/1000)} second`
+    document.querySelector("#fetch-frequency span").textContent = `${(ev.target.value / 1000)} second`
 })
 
-document.querySelector('#camerazoom-div input').addEventListener('change', (ev) =>{
+document.querySelector('#camerazoom-div input').addEventListener('change', (ev) => {
     document.querySelector("#qr-video").style.transform = `scale(${ev.target.value})`;
     document.querySelector("#camerazoom-div span").textContent = `${(ev.target.value)}x`
 })
@@ -177,34 +282,50 @@ function fetchProducts(forced = false) {
     return productList
 }
 
-async function buildInnerlistContent(element) {
+async function historyItem_createcard(element) {
     let elementWrap = document.createElement("div")
-    elementWrap.className = "col-12 card mb-1"
+    elementWrap.className = "col-12 card mb-1 historyItem_mainDiv"
     let cardBody = document.createElement("div")
-    cardBody.className = "card-body"
+    cardBody.className = "card-body historyItem_bodyDiv"
     let textarea = document.createElement("table")
-    textarea.className = "table"
+    textarea.className = "table historyItem_bodyTable"
     let scanTimeElement = document.createElement("tr")
     scanTimeElement.innerHTML = `<td>Scan Time:</td><td>${new Date().toLocaleString()}</td>`
-    let productLabelElement = document.createElement("tr")
-    productLabelElement.innerHTML = `${element.item.hasOwnProperty("productLabel") ? "<td>Product Label: </td><td>" + element.item.productLabel + "</td>" : ""}`
-    let productNameElement = document.createElement("tr")
-    productNameElement.innerHTML = `<td>Product:</td><td>${element.item.hasOwnProperty("productCode") ? element.item.productCode + " - " : ""}${element.item.hasOwnProperty("productName") ? element.item.productName : ""}</td>`
-    let productQuantityElement = document.createElement("tr")
-    productQuantityElement.innerHTML = `<td>Quantity:</td><td>${element.item.hasOwnProperty("quantity") ? element.item.quantity : ""} ${element.item.hasOwnProperty("quantityUnit") ? " " + element.item.quantityUnit : ""}</td>`
-    let bestbeforeElement = (element.item.bestbefore ? document.createElement("tr") : "")
-    if (element.item.bestbefore) {
-        bestbeforeElement.innerHTML = `${element.item.hasOwnProperty("bestbefore") ? "<td>Best before:</td><td>" + (element.item.bestbefore ? new Date(element.item.bestbefore).toLocaleDateString() : "") + "</td>" : ""}`
+    textarea.append(scanTimeElement)
+    let insertKeys = [
+        {key: "productLabel", name: "Product Label"},
+        {key: "productCode", name: "Product Code"},
+        {key: "productName", name: "Product Name"},
+        {key: "quantity", name: "Quantity"},
+        {key: "quantityUnit", name: "Unit"},
+        {key: "bestbefore", name: "Best before"},
+        {key: "POnumber", name: "Purchase order Ref"},
+        {key: "seq", name: "Sequence"},
+    ]
+    for (const eachElement of insertKeys) {
+        let insertElement = document.createElement("tr")
+        insertElement.className = "historyItem_RowElement"
+        if (element.item[eachElement.key]) {
+            let titleCell = document.createElement("td")
+            titleCell.className = `historyItem_cell_${eachElement.key}`
+            titleCell.textContent = `${eachElement.name}:`
+            let valueCell = document.createElement("td")
+            valueCell.className = `historyItem_value_${eachElement.key}`
+            valueCell.setAttribute("data-targetfield", eachElement.key)
+            valueCell.textContent = `${element.item[`${eachElement.key}`]}`
+
+            insertElement.append(titleCell, valueCell)
+            textarea.append(insertElement)
+        }
     }
-    let ponumberElement = document.createElement("tr")
-    ponumberElement.innerHTML = `${element.item.hasOwnProperty("POnumber") ? "<td>Purchase order:</td><td>" + element.item.POnumber + (element.item.hasOwnProperty("seq") ? "." + element.item.seq : "") + "</td>" : ""}`
+
     let buttonsDiv = document.createElement("div")
-    buttonsDiv.className = "card-footer text-muted"
+    buttonsDiv.className = "card-footer text-muted historyItem_buttonDiv"
     let divideLine = document.createElement("hr")
 
     let buttonsRight = document.createElement("div")
     let rowdeleteButton = document.createElement("button")
-    rowdeleteButton.className = "btn btn-warning mx-1"
+    rowdeleteButton.className = "btn btn-warning mx-1 historyItem_actionRowDelete"
     rowdeleteButton.innerHTML = `<i class="ti ti-minus"></i>`
     rowdeleteButton.addEventListener("click", function (ev) {
         elementWrap.remove()
@@ -213,14 +334,14 @@ async function buildInnerlistContent(element) {
 
     let buttonsLeft = document.createElement("div")
     let editButton = document.createElement("button")
-    editButton.className = "btn btn-primary mx-1 btn_edit"
+    editButton.className = "btn btn-primary mx-1 btn_edit historyItem_actionEdit"
     editButton.innerHTML = `<i class="ti ti-edit"></i> Update`
     editButton.setAttribute("data-bs-toggle", "modal")
     editButton.setAttribute("data-bs-target", "#editModal")
     editButton.setAttribute("data-bs-labelid", element.item.productLabel)
 
     let removeButton = document.createElement("button")
-    removeButton.className = "btn btn-danger mx-1 btn_delete"
+    removeButton.className = "btn btn-danger mx-1 btn_delete historyItem_actionDelete"
     removeButton.innerHTML = `<i class="ti ti-trash"></i> Remove`
     removeButton.setAttribute("data-bs-labelid", element.item.productLabel)
     removeButton.setAttribute("data-bs-toggle", "modal")
@@ -232,12 +353,10 @@ async function buildInnerlistContent(element) {
             buttonsLeft.innerHTML = ""
             // 无论任何情况下，均提供EditButton选项，
             buttonsLeft.append(editButton)
-            if (displayStatus.stock.length > 0 && displayStatus.stock[0].removed === 0) { // 产品目前在库内,提供remove选项
-                buttonsLeft.append(removeButton)
-            } else if (displayStatus.stock.length > 0) { // 产品已经不在库内，仅提供文字解释
+            if (displayStatus.stock.length > 0 && displayStatus.stock[0].removed === 1) { // 产品已经不在库内，仅提供文字解释
                 buttonsLeft.innerHTML += `<small>Removed since ${new Date(displayStatus.stock[0].removeTime).toLocaleDateString()}</small>`
                 //     后续考虑增加revert功能
-            } else if (displayStatus.preload.length > 0) { // 产品目前在预填充表格内，提供额外remove选项
+            } else { //如果产品没被删除，均可以添加Remove Btn（未添加产品按照直接添加后删除处理）
                 buttonsLeft.append(removeButton)
             }
         } catch (e) {
@@ -246,19 +365,10 @@ async function buildInnerlistContent(element) {
     })
 
     buttonsDiv.append(buttonsLeft, buttonsRight)
-    buttonsDiv.className = "d-flex justify-content-between"
-    textarea.append(scanTimeElement, productLabelElement, productNameElement, productQuantityElement, bestbeforeElement, ponumberElement)
+    buttonsDiv.className = "d-flex justify-content-between historyItem_actionDiv"
     cardBody.append(textarea, divideLine, buttonsDiv)
-    // if (!(displayStatus.add) && !(displayStatus.update) && !(displayStatus.remove)){
-    //     let itemRemoved = document.createElement("p")
-    //     itemRemoved.textContent = "Item has been REMOVED from stock."
-    //     cardBody.append(itemRemoved)
-    // }
 
     elementWrap.append(cardBody)
-    // editButton.style = displayStatus.update || displayStatus.add ? "" : "display:none"
-    // removeButton.style = displayStatus.remove ? "" : "display:none"
-
     return elementWrap
 }
 
@@ -374,7 +484,7 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev) => {
     } catch (e) {
         console.error("Error when fetching product information: ", e)
     }
-    
+
     try {  // Step 3: 使用线上数据填充(从数据库获取到的，如果数据有变化，优先使用线上数据)
         fetchStockBylabel(requestLabelId).then(response => {
             if (response.data.length > 0) {
@@ -382,12 +492,12 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev) => {
                 editModal.querySelector("#editModalLabel").textContent = `Edit Stock Information - ${stockInfo["productCode"]}: ${stockInfo["productLabel"].slice(-7).toUpperCase()}`
                 for (const elementKey in stockInfo) {
                     try {
-                        if (elementKey === "comments"){
+                        if (elementKey === "comments") {
                             editModal.querySelector("textarea").value = stockInfo[elementKey]
                         }
                         if (["calcTurnover", "displayFIFO", "removed"].includes(elementKey)) {
                             editModal.querySelector(`input[data-bs-targetfield="${elementKey}"]`).checked = stockInfo[elementKey] === 1
-                        } else{
+                        } else {
                             editModal.querySelector(`input[data-bs-targetfield="${elementKey}"]`).value = stockInfo[elementKey]
                         }
                     } catch (e) {                            //     Field Does not exist, skipped
@@ -478,7 +588,7 @@ editModal.querySelector("#editModal_submitBtn").addEventListener("click", async 
             element.parentNode.removeChild(element)
         }
     }).catch((e) => {
-        console.error(e)
+        console.error("Error occurred when pushing element to stock:",e)
     })
 })
 
@@ -506,33 +616,63 @@ function pushElementToStock(stockObject) {
 let removeModal = document.querySelector("#removeModal")
 let removeModalRelatedBtn = null;
 let removeObject = {}
+var removeObjectKeys = ["productCode", "productName", "productLabel", "quantity", "quantityUnit", "bestbefore", "POnumber"]
 removeModal.addEventListener("show.bs.modal", function (ev) {
     removeModalRelatedBtn = ev.relatedTarget
     removeModal.querySelector(".modal-body p").textContent = `Fetching item Information, please wait...`
     removeModal.querySelector("#removeModal_text").textContent = "Ready"
-    var itemId = ev.relatedTarget.getAttribute("data-bs-labelid")
-    removeObject = {}
-    removeLabel = itemId
-    fetchStockBylabel(itemId).then((result) => {
-        if (result.data.length > 0) {
-            removeObject = result.data[0]
-            removeModal.querySelector(".modal-body p").innerHTML = `Are you sure to remove ${removeObject.productCode ? removeObject.productCode : ""} : ${removeObject.productName ? removeObject.productName : ""} from stocks?<hr>` +
-                `<p>${removeObject.productCode ? "Product: " + removeObject.productCode : ""} ${removeObject.productName ? removeObject.productName : ""}</p>` +
-                `<p>${removeObject.productLabel ? "Label: " + removeObject.productLabel : ""}</p>` +
-                `<p>${removeObject.quantity ? "Quantity: " + removeObject.quantity + " " + removeObject.quantityUnit : ""}</p>` +
-                `<p>${removeObject.bestbefore ? "Best Before: " + new Date(removeObject.bestbefore).toLocaleDateString() : ""}</p>` +
-                `<p>${removeObject.POnumber ? "Purchase Ref: " + removeObject.POnumber : ""}</p>`
-            removeModal.querySelector("#removeModal_btnConfirm").disabled = false
-            removeModal.querySelector("#removeModal_btnConfirm").textContent = "Confirm"
-        }
-    }).catch(e => {
+    try {
+        var itemId = ev.relatedTarget.getAttribute("data-bs-labelid")
+        removeObject = {}
+        removeLabel = itemId
+        removeModal.querySelector(".modal-body p").textContent = `Are you sure to remove ${itemId} from system?`
+        fetchStockBylabel(itemId).then((result) => {
+            if (result.data.length > 0) {
+                removeObject = result.data[0]
+                removeModal.querySelector(".modal-body p").innerHTML = `Are you sure to remove ${removeObject.productCode ? removeObject.productCode : ""} : ${removeObject.productName ? removeObject.productName : ""} from stocks?<hr>` +
+                    `<p>${removeObject.productCode ? "Product: " + removeObject.productCode : ""} ${removeObject.productName ? removeObject.productName : ""}</p>` +
+                    `<p>${removeObject.productLabel ? "Label: " + removeObject.productLabel : ""}</p>` +
+                    `<p>${removeObject.quantity ? "Quantity: " + removeObject.quantity + " " + removeObject.quantityUnit : ""}</p>` +
+                    `<p>${removeObject.bestbefore ? "Best Before: " + new Date(removeObject.bestbefore).toLocaleDateString() : ""}</p>` +
+                    `<p>${removeObject.POnumber ? "Purchase Ref: " + removeObject.POnumber : ""}</p>`
+                removeModal.querySelector("#removeModal_btnConfirm").disabled = false
+                removeModal.querySelector("#removeModal_btnConfirm").textContent = "Confirm"
+            } else {
+                fetchPrefillByLabel(itemId).then((prefillResult) => {
+                    if (prefillResult.data.length > 0) {
+                        removeObject = prefillResult.data[0]
+                        removeModal.querySelector(".modal-body p").innerHTML = `Are you sure to remove ${removeObject.productCode ? removeObject.productCode : ""} : ${removeObject.productName ? removeObject.productName : ""} from stocks?<hr>` +
+                            `<p>${removeObject.productCode ? "Product: " + removeObject.productCode : ""} ${removeObject.productName ? removeObject.productName : ""}</p>` +
+                            `<p>${removeObject.productLabel ? "Label: " + removeObject.productLabel : ""}</p>` +
+                            `<p>${removeObject.quantity ? "Quantity: " + removeObject.quantity + " " + removeObject.quantityUnit : ""}</p>` +
+                            `<p>${removeObject.bestbefore ? "Best Before: " + new Date(removeObject.bestbefore).toLocaleDateString() : ""}</p>` +
+                            `<p>${removeObject.POnumber ? "Purchase Ref: " + removeObject.POnumber : ""}</p>`
+                        removeModal.querySelector("#removeModal_btnConfirm").disabled = false
+                        removeModal.querySelector("#removeModal_btnConfirm").textContent = "Confirm"
+                    } else { //     不存在于Stock,Prefill，则尝试直接使用上次解析的文本
+                        let originalCard = ev.relatedTarget.parentNode.parentNode.parentNode
+                        removeObject = {}
+                        removeObjectKeys.forEach(eachKey => {
+                            if (originalCard.querySelector(`td[data-targetfield="${eachKey}"]`)) {
+                                removeObject[eachKey] = originalCard.querySelector(`td[data-targetfield='${eachKey}']`).textContent
+                            }
+                        })
+                        removeModal.querySelector(".modal-body p").innerHTML = `Are you sure to remove ${removeObject.productCode ? removeObject.productCode : ""} : ${removeObject.productName ? removeObject.productName : ""} from stocks?<hr>` +
+                            `<p>${removeObject.productCode ? "Product: " + removeObject.productCode : ""} ${removeObject.productName ? removeObject.productName : ""}</p>` +
+                            `<p>${removeObject.productLabel ? "Label: " + removeObject.productLabel : ""}</p>` +
+                            `<p>${removeObject.quantity ? "Quantity: " + removeObject.quantity + " " + removeObject.quantityUnit : ""}</p>` +
+                            `<p>${removeObject.bestbefore ? "Best Before: " + new Date(removeObject.bestbefore).toLocaleDateString() : ""}</p>` +
+                            `<p>${removeObject.POnumber ? "Purchase Ref: " + removeObject.POnumber : ""}</p>`
+                        removeModal.querySelector("#removeModal_btnConfirm").disabled = false
+                        removeModal.querySelector("#removeModal_btnConfirm").textContent = "Confirm"
+                    }
+                })
+            }
+        })
+    } catch (e) {
         removeModal.querySelector(".modal-body p").textContent = `Fetching item information failed. Check console for more info.`
-        console.error(`Error when fetching information for ${itemId}`)
-    })
-    fetchStockBylabel(itemId).then((prefillResult) => {
-
-    })
-    removeModal.querySelector(".modal-body p").textContent = `Are you sure to remove ${itemId} from system?`
+        console.error(`Error when fetching information for ${itemId}:`,e)
+    }
 })
 
 removeModal.querySelector("#removeModal_btnConfirm").addEventListener("click", async function (ev) {
@@ -540,28 +680,66 @@ removeModal.querySelector("#removeModal_btnConfirm").addEventListener("click", a
         removeModal.querySelector("#removeModal_text").textContent = "Processing request..."
         removeModal.querySelector("#removeModal_btnConfirm").disabled = true
         removeModal.querySelector("#removeModal_btnConfirm").textContent = "Processing"
-
-        removeStockByLabel(removeObject.productLabel).then(result => {
-            removeModal.querySelector("#removeModal_text").textContent = "Ready"
-            try {
-                if (result.acknowledged && result.matchedCount === 1 && result.modifiedCount === 1) {
-                    createAlert("success", "Product has been successfully removed")
-                    // document.querySelector(`div[data-bs-labelid="${removeObject.productLabel}"] .cardLeftOptions`).innerHTML=""
-                    removeModalRelatedBtn.textContent = `Removed`
-                    removeModalRelatedBtn.disabled = true
-                } else {
-                    createAlert("warning", "Product has been successfully removed")
+        try {
+            var foundInPrefill = false
+            fetchPrefillByLabel(removeObject.productLabel).then(prefillResult => {
+                if (prefillResult.data.length >= 0) { //     不在现有产品列表和prefill中，
+                    foundInPrefill = true
+                    removePreloadByLabel(removeObject.productLabel).then(preloadResult => {
+                        removeModal.querySelector("#removeModal_text").textContent = "Ready"
+                        if (preloadResult.acknowledged && preloadResult.matchedCount === 1 && preloadResult.modifiedCount === 1) {
+                            createAlert("success", "Product has been successfully removed")
+                            // document.querySelector(`div[data-bs-labelid="${removeObject.productLabel}"] .cardLeftOptions`).innerHTML=""
+                            removeModalRelatedBtn.textContent = `Removed`
+                            removeModalRelatedBtn.disabled = true
+                        }
+                    })
                 }
-            } catch (e) {
-                console.error("Error when resolve result data from remove Products")
-            } finally {
-                bootstrap.Modal.getInstance(removeModal).hide()
-            }
-        })
+            })
+
+            fetchStockBylabel(removeObject.productLabel).then(async stockResult => {
+                if (stockResult.data.length <= 0 && !foundInPrefill) {//     不在现有产品列表中
+                    let result = async () => {
+                        updateStockByLabel(removeObject)
+                    }
+                    await result()
+                }
+
+                removeStockByLabel(removeObject.productLabel).then(stockResult => {
+                    removeModal.querySelector("#removeModal_text").textContent = "Ready"
+                    if (stockResult.acknowledged && stockResult.matchedCount === 1 && stockResult.modifiedCount === 1) {
+                        createAlert("success", "Product has been successfully removed")
+                        // document.querySelector(`div[data-bs-labelid="${removeObject.productLabel}"] .cardLeftOptions`).innerHTML=""
+                        removeModalRelatedBtn.textContent = `Removed`
+                        removeModalRelatedBtn.disabled = true
+                    }
+                })
+            })
+        } catch (e) {
+            console.error("Error occured when attempting to remove stock:", e)
+        } finally {
+            bootstrap.Modal.getInstance(removeModal).hide()
+        }
     } else {
         removeModal.querySelector("#removeModal_text").textContent = "Error, not found label information"
     }
 })
+
+function updateStockByLabel(item = {}) {
+    return new Promise((resolve, reject) => {
+        fetch('/api/v1/stocks/update', {
+            method: "POST",
+            cache: 'no-cache',
+            headers: {'Content-Type': 'application/json'},
+            redirect: 'follow',
+            referrerPolicy: 'no-referrer',
+            body: JSON.stringify({"item": item})
+        })
+            .then(response => response.json())
+            .then(data => resolve(data))
+            .catch((error) => reject(error));
+    })
+}
 
 function removeStockByLabel(productLabel = "") {
     return new Promise((resolve, reject) => {
@@ -579,6 +757,18 @@ function removeStockByLabel(productLabel = "") {
     })
 }
 
-function getDefaultAction() {
-    return document.querySelector("input[name='defaultActionRadio']:checked").value
+function removePreloadByLabel(productLabel = "") {
+    return new Promise((resolve, reject) => {
+        fetch('/api/v1/preload/remove', {
+            method: "POST",
+            cache: 'no-cache',
+            headers: {'Content-Type': 'application/json'},
+            redirect: 'follow',
+            referrerPolicy: 'no-referrer',
+            body: JSON.stringify({"productLabel": productLabel})
+        })
+            .then(response => response.json())
+            .then(data => resolve(data))
+            .catch((error) => reject(error));
+    })
 }
