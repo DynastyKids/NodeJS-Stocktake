@@ -1,6 +1,6 @@
 {
   "name": "warehouse_electron",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Warehouse Stocktaking independent server",
   "main": "main.js",
   "scripts": {
@@ -21,6 +21,7 @@
     "electron": "^25.2.0"
   },
   "dependencies": {
+    "@mongodb-js/charts-embed-dom": "^3.2.1",
     "@popperjs/core": "^2.11.8",
     "@tabler/icons-webfont": "^2.40.0",
     "@tarekraafat/autocomplete.js": "^10.2.7",

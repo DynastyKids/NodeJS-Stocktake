@@ -147,7 +147,7 @@ style.textContent = `
 
 document.head.appendChild(style)
 
-let inactivityTime = function (setTime = 10) {  // Default screen saver started after 120s
+let inactivityTime = function (setTime = 60) {  // Set default screensaver start idle time
     let time2Open, time2Close;
     window.onload = resetTimer;
     // DOM Events
