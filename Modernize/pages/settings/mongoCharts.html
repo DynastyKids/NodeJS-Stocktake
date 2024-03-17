@@ -39,13 +39,16 @@
                 <div class="card-body px-4 py-3">
                     <div class="row align-items-center">
                         <div class="col-12">
-                            <h4 class="fw-semibold mb-8">Settings</h4>
+                            <h4 class="fw-semibold mb-8">Database Settings</h4>
                             <nav aria-label="breadcrumb">
                                 <ol class="breadcrumb">
                                     <li class="breadcrumb-item">
                                         <a class="text-muted text-decoration-none" href="../home/index.html">Home</a>
                                     </li>
-                                    <li class="breadcrumb-item" aria-current="page">Settings</li>
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="index.html">Settings</a>
+                                    </li>
+                                    <li class="breadcrumb-item" aria-current="page">Database Settings</li>
                                 </ol>
                             </nav>
                         </div>
@@ -66,21 +69,25 @@
             <div id="alertAnchor"></div>
             <div class="card">
                 <div class="card-body">
-                    <h1 class="card-title fw-semibold mb-4">Settings List</h1>
-                    <p class="mb-4">select from one of following.</p>
-                    <ul class="list-group">
-                        <li class="list-group-item">
-                            <a href="mongodb.html">Database Settings (MongoDB)</a>
-                        </li>
-                        <li class="list-group-item">
-                            <a href="mongoCharts.html">Atlas Chart Settings (MongoDB)</a>
-                        </li>
-                        <li class="list-group-item">
-                            <a href="maintaince.html">Manual data maintaince</a>
-                        </li>
-                    </ul>
+                    <h1 class="card-title fw-semibold mb-4">Database Settings</h1>
+                    <p class="mb-4">This system is using MongoDB as primary Database.</p>
+                    <form id="settings-form">
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Atlas Chart Base URL</label>
+                            <input type="text" class="form-control" id="chartBaseurl" value="">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Atlas Chart Dashboard ID</label>
+                            <input type="text" class="form-control" id="chartDashboardid" value="">
+                        </div>
+                        <button class="btn btn-primary" id="btn_mongodbUpdate" type="submit">Save</button>
+                    </form>
                 </div>
             </div>
+
+            <ul class="list-group">
+                <li class="list-group-item"><a href="mongodb.html" class="">Database settings</a></li>
+            </ul>
         </div>
     </div>
 </div>
@@ -89,6 +96,7 @@
 <script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
 <script src="../../assets/js/sidebarmenu.js"></script>
 <script src="../../assets/js/app.min.js"></script>
-<!--<script src="./index.js"></script>-->
+<script src="./mongodb.js"></script>
 </body>
+
 </html>
