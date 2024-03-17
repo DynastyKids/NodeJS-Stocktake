@@ -272,7 +272,7 @@ router.post("/v1/stocks/remove", async (req, res) => {
             useUnifiedTopology: true,
         },
     });
-    if (req.body && req.body.hasOwnProperty("item") && req.body.item.hasOwnProperty("productLabel")) {
+    if (req.body && req.body["item"] && req.body.item["productLabel"]) {
         let filter = {productLabel: req.body.item.productLabel}
         let updateTime = req.body.item.hasOwnProperty("removeTime") ? new Date(req.body.item.removeTime) : new Date()
         let updateObject = {$set: {removed: 1, removeTime: updateTime}}
@@ -308,7 +308,6 @@ router.get("/v1/preload", async (req, res) => {
         await dbclient.connect()
         const session = dbclient.db(targetDB).collection("preloadlog");
         let result = await session.find({}).toArray()
-        console.log(result)
         
         for (let i = 0; i < result.length; i++) {
             if (result[i].hasOwnProperty("item")){
@@ -502,7 +501,7 @@ router.get("/v1/stocks", async (req, res) => {
 
         response.acknowledged = true
     } catch (err) {
-        console.error(err)
+        console.error("Error when request on /v1/stocks :",err)
         response.message = err
     }
     res.json(response)
@@ -520,7 +519,7 @@ router.delete("/v1/stocks/delete", async (req, res) => {
             response = await session.deleteMany({productLabel: productLabel})
             response.message = `${response.deletedCount} Records has been deleted`
         } catch (err) {
-            console.error(err)
+            console.error("Error when request on /v1/stocks/delete:", err)
             res.status(500).json(err)
         }
     }
