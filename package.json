@@ -1,6 +1,6 @@
 {
   "name": "warehouse_electron",
-  "version": "0.2.0",
+  "version": "0.2.3",
   "description": "Warehouse Stocktaking independent server",
   "main": "main.js",
   "scripts": {
@@ -21,6 +21,7 @@
     "electron": "^25.2.0"
   },
   "dependencies": {
+    "@mongodb-js/charts-embed-dom": "^3.2.1",
     "@popperjs/core": "^2.11.8",
     "@tabler/icons-webfont": "^2.40.0",
     "@tarekraafat/autocomplete.js": "^10.2.7",
@@ -52,6 +53,7 @@
     "jquery": "^3.7.0",
     "jquery-ui": "^1.13.2",
     "js-datepicker": "^5.18.2",
+    "jspdf": "^2.5.1",
     "jsqr": "^1.4.0",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
@@ -63,8 +65,10 @@
     "prismjs": "^1.29.0",
     "qrcode": "^1.5.3",
     "qrcode-reader": "^1.0.4",
+    "qrious": "^4.0.2",
     "realm": "^11.10.1",
     "sass": "^1.69.5",
+    "sha1": "^1.1.1",
     "simple-keyboard": "^3.7.14",
     "simplebar": "^6.2.5",
     "swagger-ui-express": "^5.0.0",

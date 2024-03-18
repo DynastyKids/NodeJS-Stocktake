@@ -34,7 +34,6 @@
                 })
         </script>
 
-        <!--  Header End -->
         <div class="container-fluid">
             <div id="alertAnchor"></div>
             <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
@@ -56,8 +55,15 @@
                         </div>
                     </div>
                 </div>
+                <div class="card-footer">
+                    <span style="font-size: small">This function will receive further updates.</span>
+                </div>
             </div>
             <div class="card">
+                <div class="card-body" id="loadingStatus">
+                    <span class="spinner-border" role="status" id="loadingSpinners"></span>
+                    <span class="" id="loadingTableText">Loading data...</span>
+                </div>
                 <div class="card-body">
                     <div class="row">
                         <h5 class="card-title fw-semibold mb-4">Action:</h5>
@@ -132,6 +138,7 @@
 <script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
 
 <script src="./transactions.js"></script>
+<script src="../../layout/inactive.js"></script>
 </body>
 
 </html>

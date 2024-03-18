@@ -1,10 +1,9 @@
 const { ipcRenderer } = require('electron');
 const MongoClient = require('mongodb').MongoClient;
-const {ServerApiVersion} = require('mongodb');
+const {ServerApiVersion, ObjectId} = require('mongodb');
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
-const path = require('path');
 
 var $ = require('jquery');
 var DataTable = require('datatables.net-responsive-bs5')(window, $);
@@ -12,14 +11,24 @@ var DataTable = require('datatables.net-responsive-bs5')(window, $);
 const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb://localhost:27017"
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
-
 const {setInterval} = require('timers');
 
 let shouldRefresh = true;
 const countdownFrom = 90;
 let countdown = 90;
+let stockList = [];
+let table = new DataTable('#table', {
+    responsive: true,
+    pageLength: 25,
+    lengthMenu:[10,15,25,50,100, -1],
+    columns: [{"width": "40%"}, {"width": "15%"},{"width": "15%"},{"width": "15%"},{"width": "15%"}],
+    order: [[1, 'asc']],
+    columnDefs: [{ targets: [1,2,3,4], className: 'datatable-Col-txtcenter' }]
+});
 
 document.addEventListener("DOMContentLoaded", async (event) => {
+    await redrawStockList(true)
+
     // 页面自动刷新
     const automaticRefresh = setInterval(() => {
         if (shouldRefresh) {
@@ -33,141 +42,133 @@ document.addEventListener("DOMContentLoaded", async (event) => {
         }
     }, 1000)
 
-    document.querySelector("#act_pause").addEventListener("click", (ev)=> {
-        shouldRefresh= !shouldRefresh
-        if (!shouldRefresh){
+    document.querySelector("#act_pause").addEventListener("click", async (ev) => {
+        shouldRefresh = !shouldRefresh
+        if (!shouldRefresh) {
             clearInterval(automaticRefresh)
             document.querySelector("#act_pause").innerText = "Resume Timer";
         } else {
             document.querySelector("#act_pause").innerText = "Pause Timer";
-            location.reload()
+            await redrawStockList(true)
         }
     })
-
-    // await fetchProducts();
-    document.querySelector("#table-body").append(await fetchProducts())
-    //跑马灯滚动
-    const tbody = document.querySelector('#scroll-tbody');
 });
 
-async function fetchProducts() {
+document.querySelector("#act_reloadTable").addEventListener("click",async (ev)=>{
+    await redrawStockList(true)
+})
+
+async function redrawStockList(forced = false) {
+    document.querySelector("#loadingStatus").style = ""
+    table.clear().draw()
+    let displayList = assembleDisplayArray(await fetchStockslist(forced));
+    displayList.forEach(eachRow => {
+        table.row.add([
+            `${(eachRow.hasOwnProperty("productCode") ? eachRow.productCode : "")} - ${eachRow.hasOwnProperty("productName") ? eachRow.productName : ""}`,
+            `${(eachRow.next.length > 0 ? `<a href="#" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-labelId="${eachRow.next[0].productLabel}">` + String(eachRow.next[0].location).toUpperCase() + (eachRow.next[0].quarantine === 1 ? `<span style="color: orange"><i class="ti ti-zoom-question"></i></span>` : "") + "<br>" + (eachRow.next[0].bestbefore ? eachRow.next[0].bestbefore : "") + `</a>` : "")}`,
+            `${(eachRow.next.length > 1 ? `<a href="#" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-labelId="${eachRow.next[1].productLabel}">` + String(eachRow.next[1].location).toUpperCase() + (eachRow.next[1].quarantine === 1 ? `<span style="color: orange"><i class="ti ti-zoom-question"></i></span>` : "") + "<br>" + (eachRow.next[1].bestbefore ? eachRow.next[1].bestbefore : "") + `</a>` : "")}`,
+            `${(eachRow.next.length > 2 ? `<a href="#" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-labelId="${eachRow.next[2].productLabel}">` + String(eachRow.next[2].location).toUpperCase() + (eachRow.next[2].quarantine === 1 ? `<span style="color: orange"><i class="ti ti-zoom-question"></i></span>` : "") + "<br>" + (eachRow.next[2].bestbefore ? eachRow.next[2].bestbefore : "") + `</a>` : "")}`,
+            `${(eachRow.next.length > 3 ? `<a href="#" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-labelId="${eachRow.next[3].productLabel}">` + String(eachRow.next[3].location).toUpperCase() + (eachRow.next[3].quarantine === 1 ? `<span style="color: orange"><i class="ti ti-zoom-question"></i></span>` : "") + "<br>" + (eachRow.next[3].bestbefore ? eachRow.next[3].bestbefore : "") + `</a>` : "")}`,
+        ]).draw(false)
+    })
+    document.querySelector("#loadingStatus").style = "display: none"
+}
+
+let removeModalObject = {}
+document.querySelector("#removeModal").addEventListener("show.bs.modal", function (ev) {
+    var labelId = ev.relatedTarget.getAttribute("data-bs-labelId")
+
+    document.querySelector("#removeModal_labelid").value = labelId
+    document.querySelector("#removeModal_btnConfirm").disabled = false
+    document.querySelector("#removeModal_btnConfirm").textContent = "Confirm"
+
+    if (stockList.length >0){
+        for (let i = 0; i < stockList.length; i++) {
+            if (stockList[i].productLabel === labelId){
+                removeModalObject = stockList[i]
+                document.querySelector("#removeModal p").textContent = `Remove '${stockList[i].productName}' from location '${stockList[i].shelfLocation}'?`
+            }
+        }
+    }
+})
+document.querySelector("#removeModal_btnConfirm").addEventListener("click", async function (ev) {
+    document.querySelector("#removeModal_btnConfirm").disabled = true
+    document.querySelector("#removeModal_btnConfirm").textContent = "Updating"
     let client = new MongoClient(uri, {
-        serverApi: {version: ServerApiVersion.v1, strict: true, deprecationErrors: true,
-            useNewUrlParser: true, useUnifiedTopology: true}
+        serverApi: {
+            version: ServerApiVersion.v1, strict: true, deprecationErrors: true,
+            useNewUrlParser: true, useUnifiedTopology: true
+        }
     });
-    let productsDisplay;
     try {
         await client.connect();
         const sessions = client.db(targetDB).collection("pollinglog");
-        const query = {removed: 0};
-        const options = {'productCode': 1, 'bestbefore': 1, 'productLabel': 1};
-        const cursor = sessions.find(query).sort(options);
-        if ((await sessions.countDocuments({})) === 0) {
-            console.log("[MongoDB] Nothing Found");
-        }
-
-        const seenProducts = new Set();
-        await cursor.forEach(product => {
-            if (product.removed === 0) {
-                seenProducts.add(product);
-            }
-        });
-        productsDisplay = build2DProductArray(seenProducts)
+        let result = await sessions.deleteMany({productLabel: removeModalObject.productLabel});
     } catch (e) {
         console.error(e)
     } finally {
         await client.close()
+        bootstrap.Modal.getInstance(document.querySelector("#removeModal")).hide()
+        await redrawStockList(true)
     }
-    let htmlContent = '';
-    let tableBodyElement = document.createElement("tbody")
-    productsDisplay.forEach(item => {
-        if (item.bestbeforeArray.length > 0 && item.LocationArray.length > 0 && item.bestbeforeArray[0]) {
-            let newRow = document.createElement("tr")
-            var productCodeCol = document.createElement("td")
-            productCodeCol.className = "tableItemName"
-            productCodeCol.textContent = `${(item.productCode ? item.productCode : "")} ${item.productName}`
-            newRow.append(productCodeCol)
+})
 
-            var productLocationCol = document.createElement("td")
-            productLocationCol.className = "tableNext1"
-            if (item.bestbeforeArray.length > 0 && item.LocationArray.length > 0) {
-                productLocationCol.innerHTML = `${item.LocationArray[0]}<br>${item.bestbeforeArray[0]}`
+async function fetchStockslist (forced = false) {
+    if (forced || stockList.length <=0){
+        let client = new MongoClient(uri, {
+            serverApi: {
+                version: ServerApiVersion.v1,
+                useNewUrlParser: true,
+                useUnifiedTopology: true
             }
-            newRow.append(productLocationCol)
-
-            var productLocationCol = document.createElement("td")
-            productLocationCol.className = "tableNext2"
-            if (item.bestbeforeArray.length > 1 && item.LocationArray.length > 1) {
-                productLocationCol.innerHTML = `${item.LocationArray[1]}<br>${item.bestbeforeArray[1]}`
-            }
-            newRow.append(productLocationCol)
-
-            var productLocationCol = document.createElement("td")
-            productLocationCol.className = "tableNext2"
-            if (item.bestbeforeArray.length > 2 && item.LocationArray.length > 2) {
-                productLocationCol.innerHTML = `${item.LocationArray[2]}<br>${item.bestbeforeArray[2]}`
-                htmlContent += `<td class="tableNext2">${item.LocationArray[2]}<br>${item.bestbeforeArray[2]}</td>`
-            }
-            newRow.append(productLocationCol)
-
-            tableBodyElement.append(newRow)
+        });
+        try {
+            await client.connect();
+            const sessions = client.db(targetDB).collection("pollinglog");
+            const options = {'productCode': 1, 'bestbefore': 1, 'productLabel': 1};
+            stockList = await sessions.find({removed: 0}, {projection: {"_id": 0 }}).sort(options).toArray();
+        } catch (e) {
+            console.error(e)
+        } finally {
+            await client.close()
         }
-    })
-    console.log(tableBodyElement)
-    return tableBodyElement
+    }
+    return stockList
 }
 
-function build2DProductArray(productList) {
-    let productArray = []
-    productList.forEach(item => {
-        if (productArray.length > 0 && item.productCode !== "") {
-            if (productArray[productArray.length - 1].productCode === item.productCode) {
-                productArray[productArray.length - 1]["bestbeforeArray"].push(item.bestbefore ? item.bestbefore.replaceAll("-", ""): "")
-                productArray[productArray.length - 1]["LocationArray"].push(item.shelfLocation ? item.shelfLocation : "")
-            } else {
-                productArray.push(item)
-                productArray[productArray.length - 1]["bestbeforeArray"] = [(item.bestbefore ? item.bestbefore.replaceAll("-", ""): "")]
-                productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation ? item.shelfLocation : ""]
-                delete productArray[productArray.length - 1].session;
-                delete productArray[productArray.length - 1]._id;
-                delete productArray[productArray.length - 1].POIPnumber;
-                delete productArray[productArray.length - 1].removed;
-                delete productArray[productArray.length - 1].loggingTime;
+function assembleDisplayArray(stockData){
+    let result =[]
+    if (Array.isArray(stockData)){
+        for (let i = 0; i < stockData.length; i++) {
+            if (stockData[i].displayFIFO && stockData[i].displayFIFO !== 1){
+                continue;
             }
-        } else {
-            productArray.push(item)
-            productArray[productArray.length - 1]["bestbeforeArray"] = [(item.bestbefore ? item.bestbefore.replaceAll("-", ""): "")]
-            productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation ? item.shelfLocation : ""]
-            delete productArray[productArray.length - 1].session;
-            delete productArray[productArray.length - 1]._id;
-            delete productArray[productArray.length - 1].POIPnumber;
-            delete productArray[productArray.length - 1].removed;
-            delete productArray[productArray.length - 1].loggingTime;
+            var foundFlag = false
+            for (let j = 0; j < result.length; j++) {
+                 if (result[j].productCode === stockData[i].productCode){
+                     foundFlag = true
+                     result[j].next.push({
+                         productLabel: stockData[i].hasOwnProperty("productLabel") ? stockData[i].productLabel : null,
+                         location: stockData[i].hasOwnProperty("shelfLocation") ? stockData[i].shelfLocation : "",
+                         bestbefore: stockData[i].hasOwnProperty("bestbefore") ? stockData[i].bestbefore : "",
+                         quarantine: stockData[i].hasOwnProperty("quarantine") ? parseInt(stockData[i].quarantine) : 0,
+                     })
+                     break;
+                 }
+            }
+            if (!foundFlag){
+                result.push({
+                    productCode: stockData[i].hasOwnProperty("productCode") ? stockData[i].productCode : ``,
+                    productName: stockData[i].hasOwnProperty("productName") ? stockData[i].productName : ``,
+                    next:[{
+                        productLabel: stockData[i].hasOwnProperty("productLabel") ? stockData[i].productLabel : null,
+                        location: stockData[i].hasOwnProperty("shelfLocation") ? stockData[i].shelfLocation : "",
+                        bestbefore: stockData[i].hasOwnProperty("bestbefore") ? stockData[i].bestbefore : "" ,
+                        quarantine: stockData[i].hasOwnProperty("quarantine") ? parseInt(stockData[i].quarantine) : 0
+                    }]
+                })
+            }
         }
-    })
-    return productArray
+    }
+    return result
 }
-
-window.onload = function () {
-    setTimeout(function () {
-        let tableBodyContainer = document.querySelector('#table-body-container');
-        let tableContent = document.querySelector('#table-body');
-
-        let clonedBody = tableContent.cloneNode(true);
-        tableContent.appendChild(clonedBody.querySelector('tbody'));
-
-        const step = 1;
-
-        function scrollTable() {
-            let currentTop = parseInt(getComputedStyle(tableContent).marginTop) || 0;
-            if (Math.abs(currentTop) >= tableContent.offsetHeight / 2) {
-                tableContent.style.marginTop = '0px'; // 滚动位置=原始表格体的高度时重置到0
-            } else {
-                tableContent.style.marginTop = (currentTop - step) + 'px';
-            }
-            requestAnimationFrame(scrollTable); // 递归持续滚动
-        }
-        scrollTable();
-
-    }, 2500); // 2.5s滚动冷却时间
-};

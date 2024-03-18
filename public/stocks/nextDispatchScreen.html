@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Next Dispatch - Warehouse Electron</title>
+    <link href="../library/bootstrap.min.css" rel="stylesheet"/>
+    <link href="../library/tabler/tabler-icons.min.css" rel="stylesheet">
+    <link href="../library/datatables/datatables.css" rel="stylesheet">
+</head>
+<body>
+<div class="container-fluid" id="topMenu" style="display: block">
+    <div class="container-fluid">
+        <h1 class="m-2" id="sessionTitle">Next Dispatch - Carousel View</h1>
+        <div class="container-fluid">
+            <div id="loadingAnimation" style="display: flex">
+                <div class="loader"></div>
+                <p>Fetching Stock Data, Please Wait</p>
+            </div>
+            <div id="alertAnchor"></div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/index.html">Home</a></li>
+                    <li class="breadcrumb-item"><a href="/stocks/stocks.html">Stocks</a></li>
+                    <li class="breadcrumb-item"><a href="/stocks/nextDispatch.html">Next Dispatch</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Large Screen View</li>
+                </ol>
+            </nav>
+            <div id="refreshCountdown">
+                <span class="toggleRefreshText" style="float: left;">Refresh in: </span>
+                <span id="toggleTimes"></span><span class="toggleRefreshText"></span>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid actions">
+        <a href="nextDispatch.html">Switch View</a>
+    </div>
+</div>
+<div class="container-fluid">
+    <div id="fill-div">
+        <table id="table-header">
+            <thead style="font-size: x-large; text-align: center">
+            <tr>
+                <td scope="col" class="tableItemName" style="font-size: x-large !important;" rowspan="2">Product</td>
+                <td scope="col" class="tableNext" style="font-size: x-large !important;">1st<br>Location / Date</td>
+                <td scope="col" class="tableNext" style="font-size: x-large !important;">2nd<br>Location / Date</td>
+                <td scope="col" class="tableNext" style="font-size: x-large !important;">3rd<br>Location / Date</td>
+            </tr>
+            </thead>
+        </table>
+        <div id="table-body-container">
+            <table id="table-body">
+                <tr>
+                    <td class="tableItemName">Loading Product</td>
+                    <td class="tableNext">Location 1<br>Exp Date 1</td>
+                    <td class="tableNext">Location 2<br>Exp Date 2</td>
+                    <td class="tableNext">Location 3<br>Exp Date 3</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="../library/jquery-3.7.1.min.js"></script>
+<script src="../library/bootstrap.bundle.min.js"></script>
+<script src="../library/datatables/datatables.js"></script>
+<script src="../loadNavbar.js"></script>
+<script src="../elements.js"></script>
+<script src="nextDispatchScreen.js"></script>
+
+</body>
+<style>
+    #fill-div {
+        overflow: hidden;
+        /*position: relative;*/
+    }
+
+    #table-header,
+    #scrolling-tbody {
+        width: 100%;
+    }
+
+    #table-body-container {
+        overflow: hidden;
+        /*position: absolute;*/
+        /*position: relative;*/
+        top: 0;
+        left: 0;
+        width: 100%;
+    }
+
+    .dataTable thead tr {
+        font-size: x-large;
+    }
+
+    .dataTable tbody {
+        font-size: xxx-large;
+    }
+
+    #dataTableBody {
+        overflow: hidden;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    .tableItemName {
+        text-align: left;
+        font-size: xx-large;
+        vertical-align: center;
+        overflow: clip;
+        width: 35% !important;
+        font-weight: bold;
+    }
+
+    .tableNext1 {
+        font-family: 'Courier New', Courier, monospace;
+        text-align: center;
+        font-size: xxx-large;
+        font-stretch: expanded;
+        width: 25% !important;
+        font-weight: bold;
+    }
+
+    .tableNext {
+        font-family: 'Courier New', Courier, monospace;
+        text-align: center;
+        font-size: xxx-large;
+        width: 20% !important;
+        font-weight: bold;
+    }
+
+    table {
+        width: 100%;
+        border: 2px solid black;
+    }
+
+    tr {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+
+    td, th {
+        border: 1px dashed grey;
+        padding: 3px;
+    }
+</style>
+</html>

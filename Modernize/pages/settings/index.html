@@ -66,19 +66,19 @@
             <div id="alertAnchor"></div>
             <div class="card">
                 <div class="card-body">
-                    <h1 class="card-title fw-semibold mb-4">Database Settings</h1>
-                    <p class="mb-4">This system is using MongoDB as primary Database.</p>
-                    <form id="settings-form">
-                        <div class="mb-4">
-                            <label for="mongouri" class="form-label fw-semibold">MongoDB URI String</label>
-                            <input type="text" class="form-control" id="mongouri" value="">
-                        </div>
-                        <div class="mb-4">
-                            <label for="mongodb" class="form-label fw-semibold">MongoDB Database Name</label>
-                            <input type="text" class="form-control" id="mongodb" value="">
-                        </div>
-                        <button class="btn btn-primary" id="btn_mongodbUpdate" type="submit">Save</button>
-                    </form>
+                    <h1 class="card-title fw-semibold mb-4">Settings List</h1>
+                    <p class="mb-4">select from one of following.</p>
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <a href="mongodb.html">Database Settings (MongoDB)</a>
+                        </li>
+                        <li class="list-group-item">
+                            <a href="mongoCharts.html">Atlas Chart Settings (MongoDB)</a>
+                        </li>
+                        <li class="list-group-item">
+                            <a href="maintaince.html">Manual data maintaince</a>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -89,7 +89,6 @@
 <script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
 <script src="../../assets/js/sidebarmenu.js"></script>
 <script src="../../assets/js/app.min.js"></script>
-<script src="./index.js"></script>
+<!--<script src="./index.js"></script>-->
 </body>
-
 </html>

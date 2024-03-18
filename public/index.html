@@ -9,39 +9,7 @@
 </head>
 <body>
 <div class="container-fluid">
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">Stock-take Electron</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/"><i class="ti ti-home"></i>Home</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="ti ti-tools"></i>Tools
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="labelgenerator.html">Generate Labels</a></li>
-                            <li><a class="dropdown-item" href="labelgenerator.html">Manual Input</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Scan QR Code</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/stocks.html"><i class="ti ti-packages"></i>Stocks</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/api"><i class="ti ti-api"></i>Swagger Portal (OpenAPI)</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    <div class="container-fluid">
+    <div class="container-fluid" id="mainBodyContainer">
         <h1>Welcome to Warehouse Electron</h1>
         <br>
         <div class="container-fluid" id="maincontent">
@@ -52,9 +20,16 @@
             </nav>
 
             Select an action from following:
-            <ul>
-                <li class="httpsLink"><a href="labelgenerator.html"><i class="ti ti-tag"></i>Generate Labels</a></li>
-                <li class="httpLink"><a data-bs-toggle="modal" data-bs-target="#httpsModal"><i class="ti ti-tag"></i>Generate Labels</a></li>
+            <ul class="list-group">
+<!--                <li class="httpLink"><a href="stocks/labelgenerator.html"><i class="ti ti-tag"></i>Generate Labels</a></li>-->
+                <li class="list-group-item httpsLink"><a href="#" data-bs-toggle="modal" data-bs-target="#httpsModal"><i class="ti ti-tag"></i>Label Generator</a></li>
+                <li class="list-group-item"><a href="stocks/stocks.html"><i class="ti ti-packages"></i>Check All Stocks</a></li>
+                <li class="list-group-item"><a href="#" id="checkShelf" data-bs-toggle="modal" data-bs-target="#checkShelfModal"><i class="ti ti-zoom-check"></i>Check stocks by shelf</a></li>
+                <li class="list-group-item">
+                    <p>Next Dispatch:</p>
+                    <a href="stocks/nextDispatch.html"><i class="ti ti-printer"></i>Printable List View</a>
+                    <a href="stocks/nextDispatchScreen.html"><i class="ti ti-screen-share"></i>Carousel View</a>
+                </li>
             </ul>
         </div>
     </div>
@@ -74,7 +49,29 @@
                         you can click on "Advanced" then click "Proceed to <span id="redirectip"></span> (unsafe)".</p>
                 </div>
                 <div class="modal-footer">
-                    <a href="labelgenerator.html" class="btn btn-primary">Proceed to Label Generator</a>
+                    <a href="stocks/labelgenerator.html" class="btn btn-primary">Proceed to Label Generator</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="checkShelfModal" tabindex="-1" aria-labelledby="checkShelfModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="checkShelfModalLabel">One More Step</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>To Check a shelf, and it's history, you will need to provide at least 2 characters of bay number, e.g.: 'DA' or 'FA1'</p>
+                    <div class="mb-3 d-flex">
+                        <label class="col-form-label">Bay number:</label>
+                        <input type="text" class="form-control" id="shelfInput">
+                    </div>
+                    <p id="additionalText"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Confirm</button>
                 </div>
             </div>
         </div>
@@ -82,6 +79,7 @@
 </div>
 <script src="/library/jquery-3.7.1.min.js"></script>
 <script src="/library/bootstrap.bundle.min.js"></script>
+<script src="loadNavbar.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         if (window.location.protocol === "http:") {
@@ -109,5 +107,19 @@
         }
     });
 </script>
+<script>
+    document.querySelector("#checkShelfModal .btn-primary").addEventListener("click",(ev)=>{
+        let userInput = document.querySelector("#checkShelfModal input").value
+        const regex = /^[A-Za-z]{2,}.*$/;
+        if (regex.test(userInput)){
+            window.location.href = '/stocks/location.html?location='+encodeURIComponent(userInput)
+        }
+    })
+</script>
 </body>
+<style>
+    ul a {
+        margin: 0 .25rem 0 .25rem;
+    }
+</style>
 </html>

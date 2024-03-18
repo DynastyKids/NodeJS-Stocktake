@@ -6,6 +6,7 @@
     <title>Next Dispatch - Warehouse Electron (N)</title>
     <link rel="shortcut icon" type="image/png" href="../../../assets/images/logos/favicon.png"/>
     <link rel="stylesheet" href="../../../assets/css/styles.min.css"/>
+    <link rel="stylesheet" href="../../../node_modules/@tabler/icons-webfont/tabler-icons.min.css">
 </head>
 <!-- This page is only intended to use for Billboard Screen / TV on warehouse Working Area-->
 <body>
@@ -32,74 +33,110 @@
                     navbarContent.innerHTML = data
                 })
         </script>
-
         <div class="container-fluid">
-            <div class="container-fluid">
-                <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
-                    <div class="card-body px-4 py-3">
-                        <div class="row align-items-center">
-                            <div class="col-12">
-                                <h4 class="fw-semibold mb-8">Next Dispatch</h4>
-                                <nav aria-label="breadcrumb">
-                                    <ol class="breadcrumb">
-                                        <li class="breadcrumb-item">
-                                            <a class="text-muted text-decoration-none"
-                                               href="../home/index.html">Home</a>
-                                        </li>
-                                        <li class="breadcrumb-item">
-                                            <a class="text-muted text-decoration-none"
-                                               href="../stocks/index.html">Stocks
-                                            </a>
-                                        </li>
-                                        <li class="breadcrumb-item" aria-current="page">Next Dispatch</li>
-                                    </ol>
-                                </nav>
-                            </div>
+            <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+                <div class="card-body px-4 py-3">
+                    <div class="row align-items-center">
+                        <div class="col-12">
+                            <h4 class="fw-semibold mb-8">Next Dispatch</h4>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../home/index.html">Home</a>
+                                    </li>
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../stocks/index.html">Stocks</a>
+                                    </li>
+                                    <li class="breadcrumb-item" aria-current="page">Next Dispatch</li>
+                                </ol>
+                            </nav>
                         </div>
                     </div>
                 </div>
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title fw-semibold mb-4">Actions</h5>
-                        <small>To use on TV / large screen for display, click 'switch view'.</small>
-                        <div class="list-group-item-action">
-                            <div class="row mb-0 ms-2">
-                                <span class="toggleRefreshText" style="float: left;">Auto Refresh in: <span
-                                        id="toggleTimes"></span></span><span class="toggleRefreshText"></span>
-                            </div>
-                            <a class="mb-0 ms-2" href="#" id="act_reloadTable">Reload Table</a>
-                            <a class="mb-0 ms-2" href="./nextdisp2.html">Switch View</a>
-                            <a class="mb-0 ms-2" href="#" id="act_pause">Pause Timer</a>
+            </div>
+            <div class="card">
+                <div class="card-body" id="loadingStatus">
+                    <span class="spinner-border" role="status" id="loadingSpinners"></span>
+                    <span class="" id="loadingTableText">Loading data...</span>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title fw-semibold mb-4">Actions</h5>
+                    <small>To use on TV / large screen for display, click 'switch view'.</small>
+                    <div class="list-group-item-action">
+                        <div class="row mb-0 ms-2">
+                            <span class="toggleRefreshText" style="float: left;">Auto Refresh in:
+                                <span id="toggleTimes"></span></span>
+                            <span class="toggleRefreshText"></span>
                         </div>
-
-                        <table id="table-header">
-                            <thead style="font-size: x-large; text-align: center">
-                            <tr>
-                                <th scope="col" class="tableItemName" rowspan="2" style="font-size: large">Product</th>
-                                <th scope="col" class="tableNext1" style="font-size: large">1st<br>Location / Date</th>
-                                <th scope="col" class="tableNext2" style="font-size: large">2nd<br>Location / Date</th>
-                                <th scope="col" class="tableNext2" style="font-size: large">3rd<br>Location / Date</th>
-                            </tr>
-                            </thead>
-                        </table>
-                        <div id="table-body-container">
-                            <table id="table-body">
-<!--                                <thead style="font-size: x-large; text-align: center">-->
-<!--                                    <tr>-->
-<!--                                        <th scope="col" class="tableItemName" rowspan="2" id="tablehead1">Product</th>-->
-<!--                                        <th scope="col" class="tableNext2" id="tablehead2">1st<br>Location / Date</th>-->
-<!--                                        <th scope="col" class="tableNext2" id="tablehead3">2nd<br>Location / Date</th>-->
-<!--                                        <th scope="col" class="tableNext2" id="tablehead4">3rd<br>Location / Date</th>-->
-<!--                                    </tr>-->
-<!--                                </thead>-->
-                            </table>
-                        </div>
+                        <a class="mb-0 ms-2" href="#" id="act_reloadTable">Reload Table</a>
+                        <a class="mb-0 ms-2" href="./nextdisp2.html">Switch View</a>
+                        <a class="mb-0 ms-2" href="#" id="act_pause">Pause Timer</a>
                     </div>
+                    <table class="table table-responsive" id="table" style="width: 100%">
+                        <thead>
+                        <tr style="text-align: center">
+                            <th scope="col">Product</th>
+                            <th scope="col">1st<br>Location / Date</th>
+                            <th scope="col">2nd<br>Location / Date</th>
+                            <th scope="col">3rd<br>Location / Date</th>
+                            <th scope="col">4th<br>Location / Date</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr style="text-align: center">
+                            <th scope="col">Product</th>
+                            <th scope="col">1st<br>Location / Date</th>
+                            <th scope="col">2nd<br>Location / Date</th>
+                            <th scope="col">3rd<br>Location / Date</th>
+                            <th scope="col">4th<br>Location / Date</th>
+                        </tr>
+                        </tfoot>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeModalLabel">Remove Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure to REMOVE Item from shelf?</p>
+                <form>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="removeModal_setManualTimeCheck">
+                                <label class="form-check-label" for="removeModal_setManualTimeCheck">
+                                    Set remove time manually
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12" id="removeModal_time" style="display: none">
+                            <label>Remove Time</label>
+                            <input type="datetime-local" class="form-control" id="removeModal_datetime" value="">
+                        </div>
+                        <div class="col-12" style="display: none">
+                            <label>Label ID</label>
+                            <input type="text" class="form-control" id="removeModal_labelid" hidden value="">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="removeModal_btnCancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="removeModal_btnConfirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script> window.$ = window.jQuery = require('jquery');</script>
 <script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/sidebarmenu.js"></script>
@@ -108,78 +145,8 @@
 <script src="./nextdisp.js"></script>
 </body>
 <style>
-    #fill-div {
-        overflow: hidden;
-        /*position: relative;*/
-    }
-
-    #table-header,
-    #scrolling-tbody {
-        width: 100%;
-    }
-
-    #table-body-container {
-        overflow: hidden;
-        /*position: absolute;*/
-        /*position: relative;*/
-        top: 0;
-        left: 0;
-        width: 100%;
-    }
-
-    .dataTable thead tr {
-        font-size: large;
-    }
-
-    .dataTable tbody {
-        font-size: large;
-    }
-
-    #dataTableBody {
-        overflow: hidden;
-        position: absolute;
-        top: 0;
-        left: 0;
-    }
-
-    .tableItemName {
-        text-align: left;
-        font-size: large;
-        vertical-align: center;
-        width: 35%;
-        font-weight: bold;
-    }
-
-    .tableNext1 {
-        font-family: 'Courier New', Courier, monospace;
+    .datatable-Col-txtcenter{
         text-align: center;
-        font-size: x-large;
-        font-stretch: expanded;
-        width: 25%;
-        font-weight: bold;
-    }
-
-    .tableNext2 {
-        font-family: 'Courier New', Courier, monospace;
-        text-align: center;
-        font-size: large;
-        width: 20%;
-        font-weight: bold;
-    }
-
-    table {
-        width: 100%;
-        border: 2px solid black;
-    }
-
-    tr {
-        border: 1px solid black;
-        border-collapse: collapse;
-    }
-
-    td, th {
-        border: 1px dashed grey;
-        padding: 3px;
     }
 </style>
 

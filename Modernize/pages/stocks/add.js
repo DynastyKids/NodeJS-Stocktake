@@ -1,6 +1,5 @@
 const MongoClient = require('mongodb').MongoClient;
-const {ServerApiVersion, ObjectId} = require('mongodb');
-const path = require('path');
+const {ServerApiVersion, ObjectId, Decimal128} = require('mongodb');
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
@@ -8,6 +7,7 @@ const uri = newStorage.get("mongoURI") ? newStorage.get("mongoURI") : "mongodb:/
 const targetDB = newStorage.get("mongoDB") ? newStorage.get("mongoDB") : "production"
 
 const jsQR = require("jsqr")
+let defaultCreateDate = new Date();
 
 document.querySelector("#act_reset").addEventListener("click",(ev)=>{
     document.querySelectorAll("#div_datatable input").forEach(eachinput=>{
@@ -53,9 +53,10 @@ document.addEventListener("DOMContentLoaded",async () => {
         document.querySelector("#inpt_prodCode").addEventListener("change",(ev) => {
             productList.forEach(eachElement =>{
                 if (eachElement.productCode === ev.target.value){
-                    document.querySelector("#inpt_prodName").value = eachElement.labelname
-                    document.querySelector("#inpt_unit").value = eachElement.unit
+                    document.querySelector("#inpt_prodName").value = (eachElement.labelname ? eachElement.labelname : "")
+                    document.querySelector("#inpt_unit").value = (eachElement.unit ? eachElement.unit : "")
                     document.querySelector("#inpt_quantity").value = (eachElement.palletQty ? eachElement.palletQty : "")
+                    document.querySelector("#inpt_unitprice").value = (eachElement.unitPrice ? eachElement.unitPrice : "")
                 }
             })
         })
@@ -66,28 +67,118 @@ document.addEventListener("DOMContentLoaded",async () => {
     document.querySelector("#btn_submit").removeAttribute("disabled")
 })
 
-document.querySelector("#check_manualTime").addEventListener("change", (ev)=>{
-    if (ev.target.checked){//     当用户勾选时候允许用户自定义设置时间
+document.querySelector("#check_manualTime").addEventListener("change", function (ev){
+    if (document.querySelector("#check_manualTime").checked){//     当用户勾选时候允许用户自定义设置时间
         document.querySelector("#group_createTime").style = ""
-        if (document.querySelector("#check_itemRemoved").checked){
-            document.querySelector("#group_removeTime").style = ""
-        } else {
-            document.querySelector("#group_removeTime").style = "display: none"
-        }
+        document.querySelector("#group_removeTime").style = (document.querySelector("#check_itemRemoved").checked ? "" : "display: none")
+        document.querySelector("#inpt_createTime").value = formatDateToYYYYMMDD(defaultCreateDate)+"T12:00"
     } else { // 如果用户未勾选则隐藏，用户提交时候二次检查，如果未勾选，则修改时间值为默认值
         document.querySelector("#group_createTime").style = "display: none"
-        document.querySelector("#group_consugroup_removeTimeeTime").style = "display: none"
+        document.querySelector("#group_removeTime").style = "display: none"
     }
 })
 
+function formatDateToYYYYMMDD(date) {
+    let targetDate = date instanceof Date && !isNaN(date.valueOf()) ? date : new Date()
+    var year = targetDate.getFullYear();
+    var month = targetDate.getMonth() + 1; // January is 0!
+    var day = targetDate.getDate();
+
+    // Padding month and day with zero if they are less than 10
+    month = month < 10 ? '0' + month : month;
+    day = day < 10 ? '0' + day : day;
+
+    return '' + year + '-' + month + '-' + day;
+}
+
+document.querySelector("#inpt_shelflocation").addEventListener("change",(ev) =>{
+    document.querySelector("#inpt_shelflocation").value =
+        document.querySelector("#inpt_shelflocation").value ? String(document.querySelector("#inpt_shelflocation").value).toUpperCase() : ""
+})
+
 document.querySelector("#check_itemRemoved").addEventListener("change", (ev)=>{
-    document.querySelector("#group_createTime").style = ""
     if (document.querySelector("#check_itemRemoved").checked && document.querySelector("#check_manualTime").checked){
         document.querySelector("#group_removeTime").style = ""
     } else {
         document.querySelector("#group_removeTime").style = "display: none"
     }
 })
+
+document.querySelector("#inpt_labelid").addEventListener("input",async (ev) => {
+    var currentValue = ev.target.value
+    if (currentValue && String(currentValue).length > 8) {
+        // 31DEC2023 新增内容，用户输入labelid时候，达到8位则开始自动补充createTime，忽略提交时候是否有勾选均会传递参数，如果用户已经指定了createTime则忽略
+        if (!/^[0-9]{4}[0-1][0-9][0-3][0-9]$/.test(currentValue)) {
+            let dateInfo = {year: currentValue.substring(0, 4), month: currentValue.substring(4, 6), day: currentValue.substring(6, 8)}
+            var date = new Date(dateInfo.year, (dateInfo.month - 1), dateInfo.day)
+            if (date.getFullYear() == dateInfo.year && date.getMonth() + 1 == dateInfo.month && date.getDate() == dateInfo.day) {
+                defaultCreateDate = new Date(dateInfo.year, (dateInfo.month - 1), dateInfo.day)
+                document.querySelector("#inpt_createTime").value = formatDateToYYYYMMDD(defaultCreateDate) + "T12:00"
+            }
+        }
+    }
+    if (currentValue && String(currentValue).length >= 14) {
+        // 31DEC2023 新增内容，当用户输入达到14位时候则开始查找prefill表格内是否有相同label的产品信息，如果有则弹出alert提示并预填充已有信息
+        console.log()
+        let stockResults = await fetchPrefillStockById(currentValue)
+        if (stockResults.length > 0) {
+            if (stockResults[0].hasOwnProperty("productName") && String(document.querySelector("#inpt_prodName").value).length <= 0){
+                document.querySelector("#inpt_prodName").value = stockResults[0].productName
+            }
+            if (stockResults[0].hasOwnProperty("productCode") && String(document.querySelector("#inpt_prodCode").value).length <= 0){
+                document.querySelector("#inpt_prodCode").value = stockResults[0].productCode
+            }
+            if (stockResults[0].hasOwnProperty("quantity") && String(document.querySelector("#inpt_quantity").value).length <= 0){
+                document.querySelector("#inpt_quantity").value = stockResults[0].quantity
+            }
+            if (stockResults[0].hasOwnProperty("quantityUnit") && String(document.querySelector("#inpt_unit").value).length <= 0){
+                document.querySelector("#inpt_unit").value = stockResults[0].quantityUnit
+            } else if (stockResults[0].hasOwnProperty("unit") && String(document.querySelector("#inpt_unit").value).length <= 0){
+                document.querySelector("#inpt_unit").value = stockResults[0].unit
+            }
+            if (stockResults[0].hasOwnProperty("POnumber") && String(document.querySelector("#inpt_purchaseorder").value).length <= 0){
+                document.querySelector("#inpt_purchaseorder").value = stockResults[0].POnumber
+            }
+            if (stockResults[0].hasOwnProperty("bestbefore") && String(document.querySelector("#inpt_bestbefore").value).length <= 0){
+                document.querySelector("#inpt_bestbefore").value = stockResults[0].bestbefore
+            }
+            if (stockResults[0].hasOwnProperty("unitPrice") && parseFloat(stockResults[0].unitPrice > 0) && String(document.querySelector("#inpt_unitprice").value).length <= 0){
+                document.querySelector("#inpt_unitprice").value = stockResults[0].unitPrice
+            }
+
+            if (stockResults[0].hasOwnProperty("removed") && stockResults[0].removed === 1){
+                document.querySelector("#check_itemRemoved").checked = true
+            } else if(stockResults[0].hasOwnProperty("removed") && stockResults[0].removed === 0) {
+                document.querySelector("#check_itemRemoved").checked = false
+            }
+
+            if (stockResults[0].hasOwnProperty("createTime")){
+                if (!document.querySelector("#check_manualTime").checked){
+                    document.querySelector("#check_manualTime").click()
+                }
+                document.querySelector("#inpt_createTime").value = `${new Date(stockResults[0].createTime).getFullYear()}-${new Date(stockResults[0].createTime).getMonth()+1}-${new Date(stockResults[0].createTime).getDate()}T12:00`
+            }
+        }
+    }
+})
+
+async function fetchPrefillStockById(stockLabel) {
+    let client = new MongoClient(uri, {
+        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
+    let results = []
+    try {
+        await client.connect();
+        let session = await client.db(targetDB).collection("preloadlog")
+        results = await session.find({productLabel:stockLabel}).toArray();
+    } catch (e) {
+        console.error("Data upsert:", e)
+    } finally {
+        await client.close();
+    }
+    return results;
+}
+
 
 async function fetchProductList() {
     let client = new MongoClient(uri, {
@@ -139,42 +230,31 @@ document.querySelector("#form_product").addEventListener("submit",(ev)=>{
     object.labelBuild = 3
     object.locationRecords = []
     object.sessions = [(document.querySelector("#inpt_sessionid").value ? document.querySelector("#inpt_sessionid").value : "STOCKS")]
-    if (document.querySelector("#inpt_prodCode").value){
-        object.productCode = document.querySelector("#inpt_prodCode").value
+    if (String(document.querySelector("#inpt_prodCode").value).length > 0){ object.productCode = document.querySelector("#inpt_prodCode").value }
+    if (String(document.querySelector("#inpt_prodName").value).length > 0){ object.productName = document.querySelector("#inpt_prodName").value }
+    if (String(document.querySelector("#inpt_quantity").value).length > 0){ object.quantity = parseInt(document.querySelector("#inpt_quantity").value) }
+    if (String(document.querySelector("#inpt_unit").value).length > 0){ object.quantityUnit = document.querySelector("#inpt_unit").value }
+    if (String(document.querySelector("#inpt_purchaseorder").value).length > 0){ object.POnumber = document.querySelector("#inpt_purchaseorder").value }
+    if (String(document.querySelector("#inpt_bestbefore").value).length > 0){ object.bestbefore = document.querySelector("#inpt_bestbefore").value }
+    if (String(document.querySelector("#inpt_labelid").value).length > 0){ object.productLabel = document.querySelector("#inpt_labelid").value }
+    if (String(document.querySelector("#inpt_unitprice").value).length > 0){
+        object.unitPrice = Decimal128.fromString(document.querySelector("#inpt_unitprice").value)
     }
-    if (document.querySelector("#inpt_prodName").value){
-        object.productName = document.querySelector("#inpt_prodName").value
+    object.loggingTime = new Date()
+    object.createTime = new Date()
+    if (document.querySelector("#check_itemRemoved").checked){
+        object.removed = 1
+        object.removeTime = (document.querySelector("#inpt_removeTime").value ? new Date(document.querySelector("#inpt_removeTime").value) : new Date())
+    } else {
+        object.removed = 0
     }
-    if (document.querySelector("#inpt_quantity").value){
-        object.quantity = document.querySelector("#inpt_quantity").value
-    }
-    if (document.querySelector("#inpt_unit").value){
-        object.quantityUnit = document.querySelector("#inpt_unit").value
-    }
-    if (document.querySelector("#inpt_purchaseorder").value){
-        object.POnumber = document.querySelector("#inpt_purchaseorder").value
-    }
-    if (document.querySelector("#inpt_bestbefore").value){
-        object.bestbefore = document.querySelector("#inpt_bestbefore").value
-    }
-    if (document.querySelector("#inpt_labelid").value){
-        object.productLabel = document.querySelector("#inpt_labelid").value
-    }
+    object.createTime = (document.querySelector("#check_manualTime").checked && document.querySelector("#inpt_createTime").value ?
+        new Date(document.querySelector("#inpt_createTime").value) : new Date())
+    object.quarantine = parseInt(document.querySelector("input[name='quarantineRatio']:checked").value)
+
     if (document.querySelector("#inpt_shelflocation").value){
         object.shelfLocation =  document.querySelector("#inpt_shelflocation").value
-        object.locationRecords =  [{location:document.querySelector("#inpt_shelflocation").value, datetime: new Date()}]
-    }
-    if (document.querySelector("#inpt_unitprice").value){
-        object.unitPrice = document.querySelector("#inpt_unitprice").value
-    }
-    object.loggingTime =  new Date()
-    object.createTime = new Date()
-    object.removed = document.querySelector("#check_itemRemoved").checked ? 1 : 0;
-    if (document.querySelector("#check_manualTime").checked){
-        object.createTime =  (document.querySelector("#inpt_createTime").value ? new Date(document.querySelector("#inpt_createTime").value) : new Date())
-        if (document.querySelector("#inpt_removeTime").value) {
-            object.removeTime = (document.querySelector("#inpt_removeTime").value ? new Date(document.querySelector("#inpt_removeTime").value) : new Date())
-        }
+        object.locationRecords =  [{location:document.querySelector("#inpt_shelflocation").value, datetime: object.createTime}]
     }
 
     if (object.productLabel.length > 0){
@@ -228,10 +308,11 @@ async function insertProductLog(productObject, override = false) {
     return result
 }
 
-document.querySelector("#btn_scanqrcode").addEventListener("click",function(){
-    document.querySelector("#videobox").style = ""
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then(function(stream) {
+document.querySelector("#btn_scanqrcode").addEventListener("click",function (ev) {
+    ev.preventDefault()
+    document.querySelector("#videobox").style = "";
+    navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}})
+        .then(function (stream) {
             const video = document.querySelector('#video');
             video.srcObject = stream;
             video.setAttribute("playsinline", true);
@@ -270,32 +351,52 @@ function scanQRCode() {
     }
 }
 
-function cameraFillinblank(data){
+async function cameraFillinblank(data) {
     console.log(data)
-    let itemBase64 = data.search("item=") >=0 ? data.substring(data.search("item=")+5) : ""
+    let itemBase64 = data.search("item=") >= 0 ? data.substring(data.search("item=") + 5) : ""
     try {
-        if (itemBase64.length > 0){
+        if (itemBase64.length > 0) {
             let decodedData = JSON.parse(atob(itemBase64))
             console.log(decodedData)
-
             document.querySelector("#inpt_prodCode").value = decodedData.productCode ? decodedData.productCode : ""
-            document.querySelector("#inpt_prodName").value = decodedData.productName ? decodedData.productName : ""
-            document.querySelector("#inpt_quantity").value = decodedData.quantity ? decodedData.quantity : ""
-            document.querySelector("#inpt_purchaseorder").value = (decodedData.POnumber ? decodedData.POnumber : (decodedData.POIPnumber ? decodedData.POIPnumber : ""))
-            document.querySelector("#inpt_bestbefore").value = decodedData.bestbefore ? decodedData.bestbefore : ""
-            document.querySelector("#inpt_labelid").value = decodedData.productLabel ? decodedData.productLabel : ""
-            document.querySelector("#inpt_sessionid").value = decodedData.session ? decodedData.session : "STOCK"
-            if (decodedData.shelfLocation){
-                document.querySelector("#inpt_sessionid").value = decodedData.shelfLocation
-            }
 
-
-            document.querySelector("#inpt_unit").value = decodedData.quantityUnit ? unitAbbrvLookup(decodedData.quantityUnit) : ""
-
+            let productBackupInfo = await fetchProductInfos(decodedData.productCode)
+            document.querySelector("#inpt_prodName").value = decodedData.productName ? decodedData.productName :
+                (productBackupInfo.length > 0 && productBackupInfo[0].labelname ? productBackupInfo[0].labelname : "");
+            document.querySelector("#inpt_quantity").value = decodedData.quantity ? decodedData.quantity :
+                (productBackupInfo.length > 0 && productBackupInfo[0].palletQty ? productBackupInfo[0].palletQty : "");
+            document.querySelector("#inpt_unit").value = decodedData.quantityUnit ? unitAbbrvLookup(decodedData.quantityUnit) :
+                (productBackupInfo.length > 0 && productBackupInfo[0].unit ? productBackupInfo[0].unit : "") ;
+            document.querySelector("#inpt_purchaseorder").value = (decodedData.POnumber ? decodedData.POnumber : (decodedData.POIPnumber ? decodedData.POIPnumber : ""));
+            document.querySelector("#inpt_bestbefore").value = decodedData.bestbefore ? decodedData.bestbefore : "";
+            document.querySelector("#inpt_labelid").value = decodedData.productLabel ? decodedData.productLabel : "";
+            document.querySelector("#inpt_sessionid").value = decodedData.session ? decodedData.session : "STOCKS";
+            document.querySelector("#inpt_unitprice").value = decodedData.unitPrice ? decodedData.unitPrice :
+                (productBackupInfo.length > 0 && productBackupInfo[0].unitPrice ? productBackupInfo[0].unitPrice : "");
+            document.querySelector("#inpt_sessionid").value = decodedData.shelfLocation ? decodedData.shelfLocation : "";
         }
     } catch (e) {
-        console.log("Decode Failed: ",e)
+        console.log("Decode Failed: ", e)
     }
+}
+
+async function fetchProductInfos(productCode){
+    let client = new MongoClient(uri, {
+        serverApi: {version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
+    });
+    let results = []
+    try {
+        await client.connect();
+        let session = await client.db(targetDB).collection("products")
+        if (productCode && productCode.length > 0){
+            results = await session.find({"productCode": productCode}).toArray();
+        }
+    } catch (e) {
+        console.error("Data upsert:", e)
+    } finally {
+        await client.close();
+    }
+    return results;
 }
 
 function unitAbbrvLookup(sourceText){

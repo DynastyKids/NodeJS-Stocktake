@@ -4,61 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Label Generator - Warehouse Electron</title>
-    <link href="/library/bootstrap.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/library/tabler/tabler-icons.min.css">
+    <link href="/library/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="../library/tabler/tabler-icons.min.css">
 </head>
 <body>
 <div class="container-fluid">
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">Stock-take Electron</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/"><i class="ti ti-home"></i>Home</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="ti ti-tools"></i>Tools
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="labelgenerator.html">Generate Labels</a></li>
-                            <li><a class="dropdown-item" href="labelgenerator.html">Manual Input</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Scan QR Code</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/stocks.html"><i class="ti ti-packages"></i>Stocks</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/api"><i class="ti ti-api"></i>Swagger Portal (OpenAPI)</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
     <div class="container-fluid">
         <h1>Label Generator</h1>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
                 <li class="breadcrumb-item active" aria-current="page">Label Generator</li>
             </ol>
         </nav>
-
-        <div id="toastDiv" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">Product data has fetched successfully.</div>
-                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
+        <div id="alertAnchor"></div>
+        <div id="loadingAnimation" style="display: flex">
+            <div class="loader"></div>
+            <p>Fetching Products List, Please Wait</p>
         </div>
         <div class="container-fluid">
             <table class="table">
-                <thead><tr>
+                <thead>
+                <tr>
                     <th class="rowid d-none d-sm-table-cell">No.</th>
                     <th class="d-inline-block d-sm-table-cell">Product Name</th>
                     <th class="d-inline-block d-sm-table-cell">Quantity</th>
@@ -66,7 +33,8 @@
                     <th class="d-inline-block d-sm-table-cell">Expire date</th>
                     <th class="d-inline-block d-sm-table-cell">Copies</th>
                     <th class="d-inline-block d-sm-table-cell"></th>
-                </tr></thead>
+                </tr>
+                </thead>
                 <tbody>
                 </tbody>
             </table>
@@ -91,16 +59,16 @@
                 <hr>
                 <h5>Optional</h5>
                 <div class="row mb-3">
-<!--                    <div  class="col-sm-3 col-6">-->
-<!--                        <label for="fileinput_packaging">Manifest File</label>-->
-<!--                        <input type="file" id="fileinput_manifest" class="form-control">-->
-<!--                    </div>-->
+                    <!--                    <div  class="col-sm-3 col-6">-->
+                    <!--                        <label for="fileinput_packaging">Manifest File</label>-->
+                    <!--                        <input type="file" id="fileinput_manifest" class="form-control">-->
+                    <!--                    </div>-->
                     <div class="col-sm-4 col-12">
                         <label>Purchase Order No.</label>
                         <input type="text" class="form-control" placeholder="" id="input_purchaseorder">
                     </div>
                 </div>
-<!--                <button class="btn btn-secondary" id="file_load">Load File</button>-->
+                <!--                <button class="btn btn-secondary" id="file_load">Load File</button>-->
             </div>
         </div>
         <datalist id="productSuggestions"></datalist>
@@ -117,22 +85,56 @@
         </datalist>
     </div>
 </div>
-<script src="/library/jquery-3.7.1.min.js"></script>
-<script src="/library/bootstrap.bundle.min.js"></script>
-<script src="/library/axios.min.js"></script>
-<script src="/library/jspdf.umd.min.js"></script> <!--用于生成PDF，从ChromeEXT项目引入-->
-<script src="/library/qrious.min.js"></script>
+<script src="../library/jquery-3.7.1.min.js"></script>
+<script src="../library/bootstrap.bundle.min.js"></script>
+<script src="../library/axios.min.js"></script>
+<script src="../library/jspdf.umd.min.js"></script> <!--用于生成PDF，从ChromeEXT项目引入-->
+<script src="../library/qrious.min.js"></script>
 <!--JS.PDF用于生成PDF文件，而PDF.js用于读取PDF文件-->
-
+<script src="../library/sha1.min.js"></script>
+<script src="../library/jsqr/jsQR.min.js"></script>
+<script src="../loadNavbar.js"></script>
+<script src="../elements.js"></script>
 <script src="labelgenerator.js"></script>
 
 <style>
-    @media (max-width: 576px) { /* For small devices */
+    @media (max-width: 576px) {
+        /* For small devices */
         .table thead th.d-block,
         .table tbody td.d-block {
             display: block;
             width: 100%;
             box-sizing: border-box;
+        }
+    }
+
+    /*    Loading Animation*/
+    .loader {
+        width: 40px;
+        aspect-ratio: 1;
+        --c: no-repeat radial-gradient(farthest-side, #514b82 92%, #0000);
+        background: var(--c) 50% 0,
+        var(--c) 50% 100%,
+        var(--c) 100% 50%,
+        var(--c) 0 50%;
+        background-size: 7px 7px;
+        animation: l18 1s infinite;
+        position: relative;
+    }
+
+    .loader::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        margin: 3px;
+        background: repeating-conic-gradient(#0000 0 35deg, #514b82 0 90deg);
+        -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 3px), #000 0);
+        border-radius: 50%;
+    }
+
+    @keyframes l18 {
+        100% {
+            transform: rotate(.5turn)
         }
     }
 </style>

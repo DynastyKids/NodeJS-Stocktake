@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stocks - Warehouse Electron</title>
+    <link href="../library/bootstrap.min.css" rel="stylesheet"/>
+    <link href="../library/tabler/tabler-icons.min.css" rel="stylesheet">
+    <link href="../library/datatables/datatables.css" rel="stylesheet">
+</head>
+<body>
+<div class="container-fluid">
+    <div class="container-fluid">
+        <h1>Stocks List</h1>
+        <br>
+        <div class="container-fluid" id="maincontent">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Stocks</li>
+                </ol>
+            </nav>
+            <div id="alertAnchor"></div>
+            <div id="loadingAnimation" style="display: flex">
+                <div class="loader"></div>
+                <p>Fetching Stock Data, Please Wait</p>
+            </div>
+            <div>
+                <h4>Actions</h4>
+                <div class="row mb-2 ms-2 d-flex">
+                    <a href="#" class="col-sm-3" id="act_reloadData">Reload Data</a>
+                    <a href="#" class="col-sm-3" id="addStock" data-bs-toggle="modal" data-bs-target="#addStockModal">Add Stock</a>
+                    <a href="nextDispatch.html" class="col-sm-3">Next Distpatch (FIFO)</a>
+                </div>
+                <div class="row mb-2 ms-2">
+                    <div class="form-check col-sm-3">
+                        <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_current" checked>
+                        <label class="form-check-label">Showing Current Stock Only</label>
+                    </div>
+                    <div class="form-check col-sm-3">
+                        <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_history">
+                        <label class="form-check-label">Show History Stocks Only</label>
+                    </div>
+                    <div class="form-check col-sm-3">
+                        <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_all">
+                        <label class="form-check-label">Show All Stocks</label>
+                    </div>
+                </div>
+            </div>
+            <table id="table" class="table " style="width: 100%">
+                <thead class="thead-light">
+                <tr>
+                    <th>Code<br>Product Name</th>
+                    <th>Quantity<br>Location</th>
+                    <th>Best Before</th>
+                    <th>Best Before</th>
+                    <th>Stock ID<br>Purchase Order #</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tfoot class="tfoot-light">
+                <tr>
+                    <th>Code<br>Product Name</th>
+                    <th>Quantity<br>Location</th>
+                    <th>Best Before</th>
+                    <th>Best Before</th>
+                    <th>Stock ID<br>Purchase Order #</th>
+                    <th>Actions</th>
+                </tr>
+                </tfoot>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    <div class="modal fade" id="httpsModal" tabindex="-1" aria-labelledby="httpsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="httpsModalLabel">HTTPS warning Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>A warning message will show as below due browser requires a signed certificate to verify identity of the device.</p>
+                    <p>The default certificate in the application is self-signed and doesn't fulfill the default SSL policy of the browser.</p>
+                    <p>However, even if you see this warning page, which means website self-signed Certificate is not trusted by your browser,
+                        the connection between your browser and the Electron Stocktake localserver is still secure.</p>
+                    <p>If you do not want to see this warning page when you login to this webpage,
+                        you can click on "Advanced" then click "Proceed to <span id="redirectip"></span> (unsafe)".</p>
+                </div>
+                <div class="modal-footer">
+                    <a href="labelgenerator.html" class="btn btn-primary">Proceed to Label Generator</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" data-bs-backdrop="static" id="editModal" tabindex="-1"
+     aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Item:</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="row">
+                        <h6>Product Information:</h6>
+                        <div class="col-12">
+                            <div style="display: inline-block">
+                                <label class="form-label">Product Info:</label>
+                                <span id="productInfoText"></span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div style="display: inline">
+                                <label class="form-label">Label ID:</label>
+                                <span id="labelIDText"></span>
+                            </div>
+                        </div>
+                        <input type="text" class="form-control col-6" id="editModal_labelId" hidden value="">
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_quantity" class="form-label">Product Quantity:</label>
+                            <input type="number" class="form-control col-6" id="editModal_quantity" value="">
+                        </div>
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_unit" class="form-label">Product Unit:</label>
+                            <input type="text" class="form-control col-6" id="editModal_unit" value="">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_bestbefore" class="form-label">Best Before:</label>
+                            <input type="date" class="form-control col-6" id="editModal_bestbefore" value="">
+                        </div>
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_location" class="form-label">Location:</label>
+                            <input type="text" class="form-control col-6" id="editModal_location" value="">
+                        </div>
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_unitPrice" class="form-label">Unit Price:</label>
+                            <input type="text" class="form-control col-6" id="editModal_unitPrice" value="">
+                        </div>
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_ponumber" class="form-label">Purchase Order Ref:</label>
+                            <input type="text" class="form-control col-6" id="editModal_ponumber" value="">
+                        </div>
+                        <div class="row col-12 d-flex mt-2 mb-2">
+                            <div class="col-12 form-label">Item require Quarantine?</div>
+                            <div class="" style="display: flex">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="editModal_quarantineRatio" id="editModal_quarantineYes" value="1">
+                                    <label class="form-check-label" for="editModal_quarantineYes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="editModal_quarantineRatio" id="editModal_quarantineNo" value="0" checked>
+                                    <label class="form-check-label" for="editModal_quarantineNo">No</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="editModal_quarantineRatio" id="editModal_quarantineFinished" value="-1">
+                                    <label class="form-check-label" for="editModal_quarantineFinished">Inspected Finished</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <input type="checkbox" class="form-check-input" id="editModal_fifoCheck">
+                            <label class="form-label">Display this in next dispatch (FIFO) screen ?</label>
+                        </div>
+                        <div class="col-12">
+                            <input type="checkbox" class="form-check-input" id="editModal_turnoverCheck">
+                            <label class="form-label">Include this in turnover rate calculation?</label>
+                        </div>
+                        <div class="row col-12 d-flex mt-2 mb-2">
+                            <div class="col-12">
+                                <input type="checkbox" class="form-check-input" id="editModal_removeCheck">
+                                <label class="form-label">Product has been removed?</label>
+                            </div>
+                            <div class="col" id="group_removeTime" style="display: none">
+                                <label for="inpt_removeTime" class="form-label">Custom Remove Time:</label>
+                                <input type="datetime-local" class="form-control col-6" id="inpt_removeTime" value="">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <p></p>
+            </div>
+            <div class="modal-footer justify-content-between d-flex">
+                <div>
+                    <button type="button" class="btn btn-danger" id="editModal_btnDelete" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#deleteModal" data-bs-labelId="">Delete</button>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="editModal_btnSubmit" disabled>Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeModalLabel">Remove Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure to REMOVE Item from shelf?</p>
+                <form>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="removeModal_check">
+                                <label class="form-check-label" for="removeModal_check">
+                                    Set remove time manually
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12" id="removeModal_time" style="display: none">
+                            <label>Remove Time</label>
+                            <input type="datetime-local" class="form-control" id="removeModal_datetime" value="">
+                        </div>
+                        <div class="col-12" style="display: none">
+                            <label>Label ID</label>
+                            <input type="text" class="form-control" id="removeModal_labelid" hidden value="">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="removeModalYes">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">It is not safe to use delete method from here, please use desktop's stock manage page to delete this stock.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-info" id="deleteModal_btnReturn" data-bs-target="#editModal" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-itemId="">Back to Edit</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Dismiss</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="addStockModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addStockLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addStockLabel">Add New Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../library/jquery-3.7.1.min.js"></script>
+<script src="../library/bootstrap.bundle.min.js"></script>
+<script src="../library/datatables/datatables.js"></script>
+<script src="../elements.js"></script>
+<script src="../loadNavbar.js"></script>
+<script src="stocks.js"></script>
+
+</body>
+<style>
+    .table_actions {
+        padding-left: .25rem;
+        padding-right: .25rem;
+    }
+    
+/*    Loading Animation*/
+    .loader {
+        width: 40px;
+        aspect-ratio: 1;
+        --c:no-repeat radial-gradient(farthest-side,#514b82 92%,#0000);
+        background:
+                var(--c) 50%  0,
+                var(--c) 50%  100%,
+                var(--c) 100% 50%,
+                var(--c) 0    50%;
+        background-size: 7px 7px;
+        animation: l18 1s infinite;
+        position: relative;
+    }
+    .loader::before {
+        content:"";
+        position: absolute;
+        inset:0;
+        margin: 3px;
+        background: repeating-conic-gradient(#0000 0 35deg,#514b82 0 90deg);
+        -webkit-mask: radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 0);
+        border-radius: 50%;
+    }
+    @keyframes l18 {
+        100%{transform: rotate(.5turn)}
+    }
+</style>
+</html>

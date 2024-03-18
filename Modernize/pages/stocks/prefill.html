@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prefill Stocks - Warehouse Electron (N)</title>
+    <link rel="shortcut icon" type="image/png" href="../../assets/images/logos/favicon.png"/>
+    <link rel="stylesheet" href="../../assets/css/styles.min.css"/>
+</head>
+
+<body><!--  Body Wrapper -->
+<div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+     data-sidebar-position="fixed" data-header-position="fixed"><!-- Sidebar Start -->
+    <aside class="left-sidebar"><!-- Sidebar scroll-->
+        <script>
+            const sidebarContent = document.querySelector("#main-wrapper aside")
+            fetch('../../layout/sidebar.html')
+                .then(response => response.text())
+                .then(data => {
+                    sidebarContent.innerHTML = data
+                })
+        </script>
+    </aside>
+
+    <div class="body-wrapper">
+        <div id="navbarAnchor"></div>
+        <script>
+            const navbarContent = document.querySelector("#navbarAnchor")
+            fetch('../../layout/navbar.html')
+                .then(response => response.text())
+                .then(data => {
+                    navbarContent.innerHTML = data
+                })
+        </script>
+
+        <!--  Header End -->
+        <div class="container-fluid">
+            <div id="alertAnchor"></div>
+            <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+                <div class="card-body px-4 py-3">
+                    <h4 class="card-title fw-semibold mb-4">Pre-filled Stock Info</h4>
+                    <div class="row align-items-center">
+                        <div class="col-12">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../home/index.html">Home</a>
+                                    </li>
+                                    <li class="breadcrumb-item">
+                                        <a class="text-muted text-decoration-none" href="../stocks/index.html">Stocks</a>
+                                    </li>
+                                    <li class="breadcrumb-item" aria-current="page">Pre-filled Stock Info</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body" id="loadingStatus">
+                    <span class="spinner-border" role="status" id="loadingSpinners"></span>
+                    <span class="" id="loadingTableText">Loading data...</span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <h5 class="card-title fw-semibold mb-4">Action:</h5>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 mb-2" id="card_infotext">
+                            <p>Pre-filled table is used by label generator to generate and pre-filling stock information to a standalone datatable.
+                                Which can be later used to complete the data when they fill into stock table.</p>
+                        </div>
+                        <div class="actions">
+                            <a class="mb-0 ms-2" href="#" id="act_reloadTable">Reload Table</a>
+                            <a class="mb-0 ms-2" href="#" id="act_addPrefill" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-modalaction="add">Add Prefill Item</a>
+                            <a class="mb-0 ms-2" href="#" id="act_deleteAll">Delete all prefilled labels</a>
+                            <a class="mb-0 ms-2" href="#" id="act_deleteDuplicate">Delete duplicate labels</a>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade show active" id="nav-all" role="tabpanel" aria-labelledby="nav-all-tab">
+                        <table class="table table-responsive" id="table">
+                            <thead>
+                            <tr>
+                                <th scope="col">Code</th>
+                                <th scope="col">Quantity</th>
+                                <th scope="col">Best before</th>
+                                <th scope="col">PO#<br><small>Sequence</small></th>
+                                <th scope="col">Stock ID<br><small>Add Time</small></th>
+                                <th scope="col">Action</th>
+                            </tr>
+                            </thead>
+                            <tfoot>
+                            <tr>
+                                <th scope="col">Code</th>
+                                <th scope="col">Quantity</th>
+                                <th scope="col">Best before</th>
+                                <th scope="col">PO#<br><small>Sequence</small></th>
+                                <th scope="col">Stock ID<br><small>Add Time</small></th>
+                                <th scope="col">Action</th>
+                            </tr>
+                            </tfoot>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeModalLabel">Remove Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure to REMOVE prefilled item info? This action cannot be reverted.</p>
+                <form>
+                    <input type="text" class="form-control" id="removeModal_labelid" hidden value="">
+                    <input type="text" class="form-control" id="removeModal_itemid" hidden value="">
+                    <input class="form-check-input" type="checkbox" value="" disabled hidden id="removeModal_allLabels">
+                    <input class="form-check-input" type="checkbox" value="" disabled hidden id="removeModal_duplicateLabels">
+                </form>
+                <p class="mt-2 mb-2" id="removeModal_StatusText"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="removeModal_btnCancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="removeModal_btnConfirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade modal-lg" data-bs-backdrop="static" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Item:</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="row">
+                        <input type="text" class="form-control col-6" id="modalEditAdd" hidden value="edit">
+                        <div class="col-12">
+                            <label class="form-label">Label ID</label>
+                            <input type="text" class="form-control is-invalid" id="modalEdit_labelid" data-bs-targetField="productLabel" required value="">
+                            <div class="invalid-feedback">
+                                Please provide a valid product label.
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <label class="form-label">Product Code</label>
+                            <input class="form-control" id="modalEdit_productCode" data-bs-targetField="productCode" value="">
+                        </div>
+                        <div class="col-6  col-sm-4">
+                            <label class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="modalEdit_productName" data-bs-targetField="productName" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">Purchase OrderID:</label>
+                            <input type="text" class="form-control col-6" id="modalEdit_POnumber" data-bs-targetField="POnumber" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">Product Quantity:</label>
+                            <input type="number" class="form-control col-6" id="modalEdit_quantity" data-bs-targetField="quantity" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">Product Unit:</label>
+                            <input type="text" class="form-control col-6" id="modalEdit_quantityUnit" data-bs-targetField="quantityUnit" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">Best Before:</label>
+                            <input type="date" class="form-control col-6" id="modalEdit_bestbefore" data-bs-targetField="bestbefore" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">Location:</label>
+                            <input type="text" class="form-control col-6" id="modalEdit_location" data-bs-targetField="shelfLocation" value="">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">Unit Price: <a href="#" id="modalEditDefaultPrice">Use Default Value</a></label>
+                            <input type="text" class="form-control col-6" id="modalEdit_unitPrice" data-bs-targetField="unitPrice" value="">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Item Require Quarantine?</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" data-bs-targetField="quarantine"  id="modalEdit_quarantineYes" value="1">
+                                <label class="form-check-label" for="modalEdit_quarantineYes">Yes</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" data-bs-targetField="quarantine" id="modalEdit_quarantineNo" value="0" checked>
+                                <label class="form-check-label" for="modalEdit_quarantineNo">No</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" data-bs-targetField="quarantine" id="modalEdit_quarantineFinished" value="-1">
+                                <label class="form-check-label" for="modalEdit_quarantineFinished">Inspected Finished</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Comments / Notes</label>
+                            <textarea class="form-control" id="modalEdit_notes" data-bs-targetField="notes" rows="5"></textarea>
+                        </div>
+                            <div class="col-6">
+                                <input type="checkbox" class="form-check-input" id="modalEdit_checkRemove" data-bs-targetField="removed">
+                                <label class="form-label">Product has been removed?</label>
+                            </div>
+                            <div class="col-6">
+                                <input type="checkbox" class="form-check-input" id="modelCheck_customTime" data-bs-targetField="removed">
+                                <label class="form-label">Set Custom Timestamp?</label>
+                            </div>
+                        <div class="col-12">
+                            <div class="col-6" id="group_createTime" style="display: none">
+                                <label class="form-label">Create Time:</label>
+                                <input type="datetime-local" class="form-control col-6" id="modelEdit_createTime" data-bs-targetField="createTime" value="">
+                            </div>
+                            <div class="col-6" id="group_consumeTime" style="display: none">
+                                <label class="form-label">Consume Time:</label>
+                                <input type="datetime-local" class="form-control col-6" id="modelEdit_removeTime" data-bs-targetField="removeTime" value="">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <hr>
+                <div class="d-flex">
+                    <h6>Status: </h6>
+                    <p id="modalEdit_statusTxt">Ready.</p>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <div>
+                    <button type="button" class="btn btn-primary" id="modalEdit_btnSubmit" disabled>Loading</button>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-warning" id="editModalResetBtn">Reset Table</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-info" id="editModalSave">Save Only</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script> window.$ = window.jQuery = require('jquery');</script>
+<script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../assets/js/sidebarmenu.js"></script>
+<script src="../../assets/js/app.min.js"></script>
+<script src="../../assets/js/app-style-switcher.js"></script>
+<script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
+
+<script src="./prefill.js"></script>
+<script src="../../layout/inactive.js"></script>
+</body>
+
+</html>

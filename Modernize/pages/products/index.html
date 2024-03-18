@@ -53,7 +53,7 @@
                     </div>
                 </div>
             </div>
-
+            <div id="alertAnchor"></div>
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title fw-semibold mb-4">Actions</h5>
@@ -74,9 +74,9 @@
                     <table class="table table-responsive" id="productTable">
                         <thead>
                         <tr>
-                            <th scope="col">Code</th>
                             <th scope="col">Product</th>
-                            <th scope="col">On Hand</th>
+                            <th scope="col">Turnover days</th>
+<!--                            <th scope="col">On Hand</th>-->
                             <th scope="col">Default Qty in Carton / Pallet</th>
                             <th scope="col">Unit Price</th>
                             <th scope="col">Action</th>
@@ -84,9 +84,9 @@
                         </thead>
                         <tfoot>
                         <tr>
-                            <th scope="col">Code</th>
                             <th scope="col">Product</th>
-                            <th scope="col">On Hand</th>
+                            <th scope="col">Turnover days</th>
+<!--                            <th scope="col">On Hand</th>-->
                             <th scope="col">Default Qty in Carton / Pallet</th>
                             <th scope="col">Unit Price</th>
                             <th scope="col">Action</th>
@@ -99,7 +99,9 @@
                 <div class="card-footer">
                     Icon Note:
                     <ul>
-                        <li><i class="ti ti-calendar-due"></i> : Item has expire date</li>
+                        <li><i class="ti ti-calendar-due"></i> : Product has expire date</li>
+                        <li><i class="ti ti-screen-share"></i> : Product will be displayed in Next Dispatch screen</li>
+                        <li><i class="ti ti-clock-record"></i> : Product will include in turnover calculation</li>
                     </ul>
                 </div>
             </div>
@@ -137,6 +139,7 @@
                 </div>
                 <div class="modal-body">
                     <form>
+                        <input type="text" class="form-control" id="editRowModalinput_productId" hidden disabled>
                         <div class="row mb-3">
                             <div class="col-sm-6">
                                 <label for="editRowModalinput_productCode" class="col-form-label">Product Code:</label>
@@ -188,14 +191,26 @@
                                 <label for="editRowModalinput_purcPrice" class="col-form-label">Purchase Price:</label>
                                 <input type="number" step="0.01" class="form-control" id="editRowModalinput_purcPrice">
                             </div>
-                            <div class="col-4">
-                                <label for="editRowModalinput_sellPrice" class="col-form-label">Selling Price:</label>
-                                <input type="number" step="0.01" class="form-control" id="editRowModalinput_sellPrice">
-                            </div>
-                            <div class="col-4 d-flex align-items-center">
+<!--                            <div class="col-4">-->
+<!--                                <label for="editRowModalinput_sellPrice" class="col-form-label">Selling Price:</label>-->
+<!--                                <input type="number" step="0.01" class="form-control" id="editRowModalinput_sellPrice">-->
+<!--                            </div>-->
+                            <div class="col-12 d-flex align-items-center">
                                 <input class="form-check-input" type="checkbox" value="" id="expiredateCheck">
                                 <label class="form-check-label" for="expiredateCheck">
                                     Has Expire Date?
+                                </label>
+                            </div>
+                            <div class="col-12 d-flex align-items-center">
+                                <input class="form-check-input" type="checkbox" value="" id="editModal_turnoverCheck">
+                                <label class="form-check-label" for="editModal_turnoverCheck">
+                                    Included in turnover rate calculation
+                                </label>
+                            </div>
+                            <div class="col-12 d-flex align-items-center">
+                                <input class="form-check-input" type="checkbox" value="" id="editModal_fifoCheck">
+                                <label class="form-check-label" for="editModal_fifoCheck">
+                                    Display in next dispatch screen
                                 </label>
                             </div>
                         </div>
@@ -209,8 +224,26 @@
             </div>
         </div>
     </div>
-
 </div>
+
+<div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeModalLabel">Remove Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="removeModal_btnCancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="removeModal_btnConfirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script> window.$ = window.jQuery = require('jquery');</script>
 <script src="../../assets/js/sidebarmenu.js"></script>
 <script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
@@ -220,6 +253,7 @@
 <script src="../../assets/js/app-style-switcher.js"></script>
 <script src="../../../node_modules/prismjs/prism.js"></script>
 <script src="./index.js"></script>
+<script src="../../layout/inactive.js"></script>
 </body>
 
 </html>

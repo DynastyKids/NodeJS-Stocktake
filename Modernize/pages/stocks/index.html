@@ -7,12 +7,13 @@
     <title>Stocks - Warehouse Electron (N) </title>
     <link rel="shortcut icon" type="image/png" href="../../assets/images/logos/favicon.png"/>
     <link rel="stylesheet" href="../../assets/css/styles.min.css"/>
+    <link rel="stylesheet" href="../../../node_modules/@tabler/icons-webfont/tabler-icons.min.css">
 </head>
 
-<body><!--  Body Wrapper -->
+<body>
 <div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
-     data-sidebar-position="fixed" data-header-position="fixed"><!-- Sidebar Start -->
-    <aside class="left-sidebar"><!-- Sidebar scroll-->
+     data-sidebar-position="fixed" data-header-position="fixed">
+    <aside class="left-sidebar">
         <script>
             const sidebarContent = document.querySelector("#main-wrapper aside")
             fetch('../../layout/sidebar.html')
@@ -52,20 +53,34 @@
                     </div>
                 </div>
             </div>
-
+            <div id="alertAnchor"></div>
             <div class="card">
+                <div class="card-body" id="loadingStatus">
+                    <span class="spinner-border" role="status" id="loadingSpinners"></span>
+                    <span class="" id="loadingTableText">Loading data...</span>
+                </div>
                 <div class="card-body">
                     <h5 class="card-title fw-semibold mb-4">Actions</h5>
-
                     <div class="list-group-item-action">
-                        <div class="row mb-0 ms-2">
-                            <div class="col-6" id="switchDiv">
-                                <input class="form-check-input" type="checkbox" id="switchCheck">
-                                <span>Show History Stocks</span>
+                        <div class="row mb-2 ms-2">
+                            <div class="form-check col-4">
+                                <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_current" checked>
+                                <label class="form-check-label">Showing Current Stock Only</label>
                             </div>
+                            <div class="form-check col-4">
+                                <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_history">
+                                <label class="form-check-label">Show History Stocks Only</label>
+                            </div>
+                            <div class="form-check col-4">
+                                <input class="form-check-input" type="radio" name="stockStatusRadio" id="radio_all">
+                                <label class="form-check-label">Show All Stocks</label>
+                            </div>
+                        </div>
+                        <div class="row mb-0 ms-2">
+                            <div class="col-6"></div>
                             <div class="col-6" style="display: flex">
-                                <span id="labelForFilterdate" for="filterdate">Filter records after Date:</span>
-                                <input type="date" id="filterdate" name="filterdate" class="form-control form-control-sm">
+<!--                                <span id="labelForFilterdate" for="filterdate">Filter records after Date:</span>-->
+<!--                                <input type="date" id="filterdate" name="filterdate" class="form-control form-control-sm">-->
                             </div>
                             <span class="toggleRefreshText" style="float: left;">Auto Refresh in: <span id="toggleTimes"></span></span><span class="toggleRefreshText"></span>
                         </div>
@@ -75,37 +90,40 @@
                         <a class="mb-0 ms-2" href="aggregate_print.html">Aggregate View</a>
                         <a class="mb-0 ms-2" href="#" id="act_pause">Pause Timer</a>
                     </div>
-                </div>
-                <div card="card-body" id="loadingStatus">
-                    <span class="spinner-border" role="status" id="loadingSpinners"></span>
-                    <span class="" id="loadingTableText">Loading data...</span>
-                </div>
-                <div class="card-body" id="div_datatable">
+
                     <table class="table table-responsive" id="table">
                         <thead>
                         <tr>
-                            <th scope="col">Product</th>
-                            <th scope="col">Quantity</th>
-                            <th scope="col">Best before</th>
-                            <th scope="col">Best before</th>
-                            <th scope="col">Location</th>
-                            <th scope="col">Stock ID<br><small>Add Time</small></th>
+                            <th scope="col">Product Code<br>Product Name</th>
+                            <th scope="col">Bestbefore</th>
+                            <th scope="col">Bestbefore(Hidden)</th>
+                            <th scope="col">Quantity<br>Location</th>
+                            <th scope="col"><small>Add Time</small><br><small>Remove Time</small></th>
+                            <th scope="col">Stock ID<br><small>PO # - Seq.</small></th>
                             <th scope="col">Action</th>
                         </tr>
                         </thead>
                         <tfoot>
                         <tr>
-                            <th scope="col">Product</th>
-                            <th scope="col">Quantity</th>
-                            <th scope="col">Best before</th>
-                            <th scope="col">Best before</th>
-                            <th scope="col">Location</th>
-                            <th scope="col">Stock ID<br><small>Add Time</small></th>
+                            <th scope="col">Product Code<br>Product Name</th>
+                            <th scope="col">Bestbefore</th>
+                            <th scope="col">Bestbefore(Hidden)</th>
+                            <th scope="col">Quantity<br>Location</th>
+                            <th scope="col"><small>Add Time</small><br><small>Remove Time</small></th>
+                            <th scope="col">Stock ID<br><small>PO # - Seq.</small></th>
                             <th scope="col">Action</th>
                         </tr>
                         </tfoot>
                         <tbody></tbody>
                     </table>
+                </div>
+                <div class="card-footer">
+                    Icon Note:
+                    <ul>
+                        <li><i class="ti ti-message-dots"></i> : Item has addition note within</li>
+                        <li><i class="ti ti-zoom-question"></i> : Item is requiring inspections</li>
+                        <li><i class="ti ti-zoom-check-filled"></i> : Item inspections has finished</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -116,18 +134,18 @@
     <div class="modal-dialog model-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="removeModalLabel">Remove Item</h5>
+                <h5 class="modal-title" id="removeModalLabel">Remove Item - mark used</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-2">Are you sure to REMOVE Item from shelf?</p>
+                <p class="mb-2"></p>
                 <form>
                     <div class="row">
                         <div class="col-12">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="removeModal_check">
-                                <label class="form-check-label" for="removeModal_check">
-                                    Set remove time manually
+                                <input class="form-check-input" type="checkbox" value="" id="removeModal_setManualTimeCheck">
+                                <label class="form-check-label" for="removeModal_setManualTimeCheck">
+                                    Set timestamp manually
                                 </label>
                             </div>
                         </div>
@@ -143,8 +161,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="removeModalYes">Confirm</button>
+                <button type="button" class="btn btn-secondary" id="removeModal_btnCancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="removeModal_btnConfirm">Confirm</button>
             </div>
         </div>
     </div>
@@ -153,11 +171,11 @@
     <div class="modal-dialog model-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="revertModalLabel">Add Item?</h5>
+                <h5 class="modal-title" id="revertModalLabel">Remove Item - Revert</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                Are you sure to put back Item from shelf?
+                <p class="mb-2"></p>
                 <form>
                     <input type="text" class="form-control" id="revertLabelid" hidden value="">
                     <div class="col-12">
@@ -168,7 +186,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="revertModalYes">Confirm</button>
+                <button type="button" class="btn btn-primary" id="revertModal_btnConfirm">Confirm</button>
             </div>
         </div>
     </div>
@@ -184,8 +202,19 @@
             <div class="modal-body">
                 <form>
                     <div class="row">
-                        <h6>Product Information:</h6>
-                        <input type="text" class="form-control col-6" id="modalEditLabelid" hidden value="">
+                        <h3>Product Information:</h3>
+                        <div class="col-12">
+                            <div style="display: flex">
+                                <h5 class="form-label" style="font-weight: bolder">Product Info: </h5>
+                                <h5 id="productInfoText"></h5>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div style="display: flex">
+                                <h5 class="form-label" style="font-weight: bolder">Label ID: </h5>
+                                <h5 id="labelIDText"></h5>
+                            </div>
+                        </div>
                         <div class="col-6 col-md-4">
                             <label for="modalEditQuantity" class="form-label">Product Quantity:</label>
                             <input type="number" class="form-control col-6" id="modalEditQuantity" value="">
@@ -211,37 +240,75 @@
                             <input type="text" class="form-control col-6" id="modelEditPOnumber" value="">
                         </div>
                         <div class="col-6">
-                            <label for="modelEditLoggingTime" class="form-label">Initial Log Time:</label>
-                            <input type="datetime-local" class="form-control col-6" id="modelEditLoggingTime" value="">
+                            <label for="modelEditCreateTime" class="form-label">Create Time:</label>
+                            <input type="datetime-local" class="form-control col-6" id="modelEditCreateTime" value="">
                         </div>
-                        <div class="col-12">
-                            <div style="display: inline-block">
-                                <label class="form-label">Product Info:</label>
-                                <span id="productInfoText"></span>
+                        <div class="col-12 mt-2 mb-2">
+                            <div class="col-12 mb-2">
+                                <label class="form-label">Item require Quarantine?</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineYes" value="1">
+                                    <label class="form-check-label" for="modalEdit_quarantineYes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineNo" value="0">
+                                    <label class="form-check-label" for="modalEdit_quarantineNo">No</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="modalEdit_quarantineRatio" id="modalEdit_quarantineFinished" value="-1">
+                                    <label class="form-check-label" for="modalEdit_quarantineFinished">Inspected Finished</label>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-12">
-                            <div style="display: inline">
-                                <label class="form-label">Label ID:</label>
-                                <span id="labelIDText"></span>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="col-6">
-                                <input type="checkbox" class="form-check-input" id="modelCheckboxConsumed">
+                            <div class="col-12 mb-2">
+                                <input type="checkbox" class="form-check-input" id="modelEditCheckRemoved">
                                 <label class="form-label">Product has been removed?</label>
                             </div>
-                            <div class="col-6" id="group_consumeTime" style="display: none">
-                                <label for="modelEditConsumeTime" class="form-label">Consume Time:</label>
-                                <input type="datetime-local" class="form-control col-6" id="modelEditConsumeTime" value="">
+                            <div class="col-6" id="group_removeTime" style="display: none">
+                                <label for="modelEditRemoveTime" class="form-label">Remove Time:</label>
+                                <input type="datetime-local" class="form-control col-6" id="modelEditRemoveTime" value="">
                             </div>
+                        </div>
+                        <div class="col-12">
+                            <label for="modelEditComments" class="form-label">Comments / Notes:</label>
+                            <textarea class="form-control" id="modelEditComments" rows="5"></textarea>
+                        </div>
+                    </div>
+                </form>
+                <p></p>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <div>
+                    <button type="button" class="btn btn-danger" id="editModal_deleteBtn" data-bs-target="#deleteModal" data-bs-toggle="modal">Delete</button>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="editModal_submitBtn" disabled>Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure to delete this record? Target data will be permanently removed from database.</p>
+                <form>
+                    <div class="row">
+                        <div class="col-12" style="display: none">
+                            <input type="text" class="form-control" id="deleteModal_labelid" hidden value="">
                         </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
+                <button type="button" class="btn btn-info" id="deleteModal_btnReturn" data-bs-target="#editModal" data-bs-toggle="modal" data-bs-itemId="">Back to Edit</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="editModalSubmitBtn" disabled>Submit</button>
+                <button type="button" class="btn btn-danger" id="deleteModal_btnConfirm">Confirm</button>
             </div>
         </div>
     </div>
@@ -251,11 +318,17 @@
 <script src="../../assets/js/sidebarmenu.js"></script>
 <script src="../../../node_modules/simplebar/dist/simplebar.min.js"></script>
 <script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../../node_modules/qrious/dist/qrious.min.js"></script>
 
 <script src="../../assets/js/app.min.js"></script>
 <script src="../../assets/js/app-style-switcher.js"></script>
 <script src="../../../node_modules/prismjs/prism.js"></script>
 <script src="./index.js"></script>
+<script src="../../layout/inactive.js"></script>
 </body>
-
+<style>
+    .table_actions{
+        margin-right: 5px
+    }
+</style>
 </html>

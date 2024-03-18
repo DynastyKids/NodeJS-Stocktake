@@ -23,7 +23,7 @@ SHASUMS256.txt
 compile_commands.json
 .envrc
 config/localsettings.json
-
+GeneratedLabel.pdf
 
 # npm package
 /npm/dist

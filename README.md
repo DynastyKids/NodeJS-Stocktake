@@ -60,32 +60,31 @@ This section will soon be migrated to GitHub Wiki.
 This section will be giving out basic instruction of how to use this application
 
 ### First Time using
-1. On first time use, the setting page will pops up, you will need to set up your MongoDB server information and click `submit`, all your information are stored locally in plaintext. If you wish to migrate to another computer, you will require to setup with same process again.
+1. On first time use, the setting page will pops up. Or navigate to left menu under 'Operations' section, then click "Settings"
+2. In the settings page, click "Database Settings (MongoDB)"
+3. In the Database settings page, filling the credentials retrieved for MongoDB, then click `save`.
+4. When the successful alert pops up, you are good to go.
 
-2. You will need to import product information to MongoDB.
-
-### Create / Start a stocktake session
-1. On Electron application homepage, click `New Stocktake Session`
-2. Confirm the Start Time and End Time details, and also remember Session Code as it will required when user needs to join the session
- - Note: There can have multiple sessions running at same time.
-
-### Perform Stocktake
-1. Open Android App / Wechat MiniProgram, input the Server's IP address and Session Code
-    - IP address is available on Homepage / View session page
-    - If you can't remember the Session Code, you can type Server Address only and click `Check Sessions`, then type in the session code you wish to join
-
-2. Hold the phone to QR code, or manually input available on mobile screen
-
+### Perform Stocktaking
+1. Ensure you are using the same network / under same router with your application running machine.
+2. Using your phone's camera to QR code on workstation, or open the browser type in http://<your-server-ip-address>:3000 
+3. At homepage, click "Check All Stocks" so you will be able to see the full list of current stock items, ordered by Location. 
 
 ## Functions
 
 This application is designed with following core functionalities.
 
-1. **Warehouse Stocktake**: Ability to tracking stock levels in regular stock take process.
-2. **Report**: Viewable real-time server showing stock and inventory value, also promise first-in-first-out function for FMCG industry.
-3. **Barcode Scanning**: Integration with Wechat-MiniProgram to enable barcode scanning ability for faster and error-free entries.
-    - WeChat Miniprogram is currently under beta testing
-    - Android Application is currently under Alpha stage development
+1. **Warehouse Management**: 
+   - Tracking stock levels in regular stock take process.
+   - Knowing your stock movements in real-time.
+   - Warehouse staff can generate & print labels within warehouse range, and able to help manage stocks quickly.
+2. **Report**: 
+   - Viewable real-time server showing stock and inventory value, promise first-in-first-out for your business stocks.
+   - Supporting Cloud dashboard (Powered by MongoDB Charts)
+3. **Barcode Scanning**: 
+   - Integrated within the main application and mini-webserver for easier management of stock movement. 
+   - On dedicate work station, it can be preset to manage stocks autonomously.
+   - No need for special PDA, using standard mobile-phone with camera can cover most cases.
 
 ## Planning
 
@@ -93,10 +92,10 @@ This section contains some features that may involve in future developing with w
 
 **Product running log**: Allowing to utilise user's mobile phone to tracking product movement log
 
-**Integration with Netsuite**: Seamless syncing of inventory levels with Oracle ERP system to streamline stock levels.
+~~**Integration with Netsuite**: Seamless syncing of inventory levels with Oracle ERP system to streamline stock levels.~~
 
 **Product log editor / bulk importer**: Allow user setting product catalogues within Electron Application
 
-**Label Generator**: Currently generator are not available to public due to testing, will release sooner within later this year
+~~**Label Generator**: Currently generator are not available to public due to testing, will release sooner within later this year~~
 
 **Languages Support**: Everyone could help the project by adding i18n locale files and help to translate the product to your own languages

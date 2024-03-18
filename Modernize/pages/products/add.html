@@ -102,27 +102,46 @@
                                 <input type="text" class="form-control" id="inpt_unit" placeholder="Unit" value="" required="" >
                             </div>
                             <div class="col-sm-3 col-6 mb-2">
-                                <label for="inpt_weight">Weight</label>
-                                <input type="number" class="form-control" id="inpt_weight" placeholder="Weight (g)">
+                                <label for="inpt_weight">Weight (g)</label>
+                                <input type="number" step="1" min="0" class="form-control" id="inpt_weight" placeholder="Weight (g)">
                             </div>
                             <div class="col-sm-6 col-12 mb-2">
                                 <label for="inputSizeGroup">Size (cm)</label>
                                 <div class="input-group" id="inputSizeGroup">
-                                    <input type="number" min="0" class="form-control" id="inpt_length" placeholder="Length" aria-describedby="inputGroupPrepend2">
-                                    <input type="number" min="0" class="form-control" id="inpt_width" placeholder="Width" aria-describedby="inputGroupPrepend2">
-                                    <input type="number" min="0" class="form-control" id="inpt_height" placeholder="Height" aria-describedby="inputGroupPrepend2">
+                                    <input type="number" step="1" min="0" class="form-control" id="inpt_length" placeholder="Length" aria-describedby="inputGroupPrepend2">
+                                    <input type="number" step="1" min="0" class="form-control" id="inpt_width" placeholder="Width" aria-describedby="inputGroupPrepend2">
+                                    <input type="number" step="1" min="0" class="form-control" id="inpt_height" placeholder="Height" aria-describedby="inputGroupPrepend2">
                                 </div>
                             </div>
                             <div class="col-sm-6 col-6 mb-2">
                                 <label for="inpt_weight">Vendor Code</label>
-                                <input type="number" class="form-control" id="inpt_vendorcode"
-                                       placeholder="Vendor Code">
+                                <input type="text" class="form-control" id="inpt_vendorcode" placeholder="Vendor Code">
+                            </div>
+                            <div class="col-sm-6 col-6 mb-2">
+                                <label for="inpt_price">Purchase price</label>
+                                <input type="number" step="0.01" min="0" class="form-control" id="inpt_price" placeholder="Purchase price">
+                            </div>
+                            <div class="col-sm-6 col-6 mb-2">
+                                <label for="inpt_price">Internal ID</label>
+                                <input type="text" class="form-control" id="inpt_internalID" placeholder="Internal ID">
                             </div>
                         </div>
                         <div class="form-group">
                             <div class="form-check mr-sm-2">
-                                <input type="checkbox" class="form-check-input" id="inpt_expire">
-                                <label class="form-check-label" for="inpt_expire">Product has best before date</label>
+                                <input type="checkbox" class="form-check-input" id="checkbox_fifo" checked>
+                                <label class="form-check-label" for="checkbox_expire">Show this product in Next Dispatch (FIFO) Screen</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-check mr-sm-2">
+                                <input type="checkbox" class="form-check-input" id="checkbox_turnoverRate" checked>
+                                <label class="form-check-label" for="checkbox_expire">Calculate turnover rate</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-check mr-sm-2">
+                                <input type="checkbox" class="form-check-input" id="checkbox_expire">
+                                <label class="form-check-label" for="checkbox_expire">Product has best before date</label>
                             </div>
                         </div>
                         <button class="btn btn-info rounded-pill px-4 mt-3" type="submit" disabled>Submit</button>

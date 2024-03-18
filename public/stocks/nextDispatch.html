@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Next Dispatch - Warehouse Electron</title>
+    <link href="../library/bootstrap.min.css" rel="stylesheet"/>
+    <link href="../library/tabler/tabler-icons.min.css" rel="stylesheet">
+    <link href="../library/datatables/datatables.css" rel="stylesheet">
+</head>
+<body>
+<div class="container-fluid" id="topMenu" style="display: block">
+    <div class="container-fluid">
+        <h1 class="m-2" id="sessionTitle">Next Dispatch - List View</h1>
+        <div class="container-fluid">
+            <div id="loadingAnimation" style="display: flex">
+                <div class="loader"></div>
+                <p>Fetching Stock Data, Please Wait</p>
+            </div>
+            <div id="alertAnchor"></div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/index.html">Home</a></li>
+                    <li class="breadcrumb-item"><a href="/stocks/stocks.html">Stocks</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Next Dispatch</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="container-fluid actions">
+            <a href="nextDispatchScreen.html">Switch View</a>
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div id="fill-div">
+        <table class="table table-striped table-sm">
+            <thead style="text-align: center">
+                <tr>
+                    <td class="tableItemName">Product</td>
+                    <td class="tableNext">1st<br>Location / Date</td>
+                    <td class="tableNext">2nd<br>Location / Date</td>
+                    <td class="tableNext">3rd<br>Location / Date</td>
+                    <td class="tableNext">4th<br>Location / Date</td>
+                    <td class="tableNext">5th<br>Location / Date</td>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+            <tr>
+                <td class="tableItemName">Loading Product</td>
+                <td class="tableNext">Location 1<br>Exp Date 1</td>
+                <td class="tableNext">Location 2<br>Exp Date 2</td>
+                <td class="tableNext">Location 3<br>Exp Date 3</td>
+                <td class="tableNext">Location 4<br>Exp Date 4</td>
+                <td class="tableNext">Location 5<br>Exp Date 5</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="../library/jquery-3.7.1.min.js"></script>
+<script src="../library/bootstrap.bundle.min.js"></script>
+<script src="../library/datatables/datatables.js"></script>
+<script src="../loadNavbar.js"></script>
+<script src="../elements.js"></script>
+<script src="nextDispatch.js"></script>
+
+</body>
+<style>
+    #fill-div {
+        overflow: hidden;
+        /*position: relative;*/
+    }
+    
+    .tableItemName {
+        text-align: left;
+        vertical-align: center;
+        overflow: clip;
+        width: 25% !important;
+    }
+
+    .tableNext {
+        text-align: center;
+    }
+
+    tr {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+
+    td, th {
+        border: 1px dashed grey;
+        font-size: x-small;
+    }
+</style>
+</html>
