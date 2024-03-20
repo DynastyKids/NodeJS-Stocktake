@@ -10,7 +10,9 @@
 <body>
 <div class="container-fluid" id="topMenu" style="display: block">
     <div class="container-fluid">
-        <h1 class="m-2" id="sessionTitle">Next Dispatch - List View</h1>
+        <div class="flex">
+            <h1 class="m-2" id="sessionTitle">Next Dispatch - List View</h1>
+        </div>
         <div class="container-fluid">
             <div id="loadingAnimation" style="display: flex">
                 <div class="loader"></div>
@@ -23,16 +25,30 @@
                     <li class="breadcrumb-item"><a href="/stocks/stocks.html">Stocks</a></li>
                     <li class="breadcrumb-item active" aria-current="page">Next Dispatch</li>
                 </ol>
+                <div class="actions flex justify-content-between">
+                    <div>
+                        Showing next
+                        <select class="form-control-sm" id="input_selnextitems">
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5" selected>5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                        </select>
+                        items in table
+                    </div>
+                    <a href="nextDispatchScreen.html">Switch View</a>
+                </div>
             </nav>
-        </div>
-        <div class="container-fluid actions">
-            <a href="nextDispatchScreen.html">Switch View</a>
         </div>
     </div>
 </div>
 <div class="container-fluid">
     <div id="fill-div">
-        <table class="table table-striped table-sm">
+        <table class="table table-striped table-sm" id="nextDispatchTable">
             <thead style="text-align: center">
                 <tr>
                     <td class="tableItemName">Product</td>
