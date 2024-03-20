@@ -25,7 +25,8 @@ document.addEventListener("DOMContentLoaded", async (event) => {
         for (const eachProduct of displayList) {
             if (eachProduct.next.length > 0 && (!eachProduct.hasOwnProperty("displayFIFO") ||  eachProduct.displayFIFO === 1)){
                 let product = (eachProduct.productCode ? eachProduct.productCode : "") + ' - ' + (eachProduct.productName ? eachProduct.productName : "")
-                htmlContent += `<tr><td class="tableItemName">${(product.length > 30 ? product.substring(0,30)+'...' : product)}</td>`
+                htmlContent += `<tr><td class="tableItemName">${product}</td>`
+                // htmlContent += `<tr><td class="tableItemName">${(product.length > 30 ? product.substring(0,30)+'...' : product)}</td>`
                 for (let i = 0; i < eachProduct.next.length && i<5; i++) {
                     var item = eachProduct.next[i]
                     htmlContent += `<td class="tableNext">${item.location ? item.location: ""} ${item.hasOwnProperty("quarantine") && item.quarantine === 1 ? '<span style="color: orange"><i class="ti ti-zoom-question"></i></span>': ""}<br>${item.bestbefore ? item.bestbefore : ""}</td>`
@@ -58,7 +59,8 @@ function assembleDisplayArray(){
                     sortOnPush(result[j].next, {
                         productLabel: stockData[i].hasOwnProperty("productLabel") ? stockData[i].productLabel : null,
                         location: stockData[i].hasOwnProperty("shelfLocation") ? stockData[i].shelfLocation : "",
-                        bestbefore: stockData[i].hasOwnProperty("bestbefore") ? new Date(stockData[i].bestbefore).toLocaleDateString() : getDateStringFromLabel(stockData[i].productLabel),
+                        bestbefore: stockData[i].hasOwnProperty("bestbefore") ? new Date(stockData[i].bestbefore).toLocaleDateString() : new Date(getDateStringFromLabel(stockData[i].productLabel)).toLocaleDateString(),
+                        bestbeforeValue: stockData[i].hasOwnProperty("bestbefore") ? new Date(stockData[i].bestbefore).getTime() : new Date(getDateStringFromLabel(stockData[i].productLabel)).getTime(),
                         quarantine: stockData[i].hasOwnProperty("quarantine") ? parseInt(stockData[i].quarantine) : 0,
                     },"bestbefore")
                     break;
@@ -71,7 +73,8 @@ function assembleDisplayArray(){
                     next:[{
                         productLabel: stockData[i].hasOwnProperty("productLabel") ? stockData[i].productLabel : null,
                         location: stockData[i].hasOwnProperty("shelfLocation") ? stockData[i].shelfLocation : "",
-                        bestbefore: stockData[i].hasOwnProperty("bestbefore") ? new Date(stockData[i].bestbefore).toLocaleDateString() : getDateStringFromLabel(stockData[i].productLabel),
+                        bestbefore: stockData[i].hasOwnProperty("bestbefore") ? new Date(stockData[i].bestbefore).toLocaleDateString() : new Date(getDateStringFromLabel(stockData[i].productLabel)).toLocaleDateString(),
+                        bestbeforeValue: stockData[i].hasOwnProperty("bestbefore") ? new Date(stockData[i].bestbefore).getTime() : new Date(getDateStringFromLabel(stockData[i].productLabel)).getTime(),
                         quarantine: stockData[i].hasOwnProperty("quarantine") ? parseInt(stockData[i].quarantine) : 0
                     }]
                 }, "productCode")
