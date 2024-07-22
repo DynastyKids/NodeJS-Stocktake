@@ -85,11 +85,13 @@ function inflateTable(){
         table.row.add([
             `<a href="#" data-bs-ponumber="${(eachRow.productCode ? eachRow.productCode : "")}" class="table_action_search">${(eachRow.productCode ? eachRow.productCode : "")}</a>`
             + `${eachRow.productName ? '<br>' + eachRow.productName : ''}`,
-            `${eachRow.quantity ? eachRow.quantity + (eachRow.quantityUnit ? ' ' + eachRow.quantityUnit : '') : ''}` + `${eachRow.shelfLocation ? '<br>' + eachRow.shelfLocation : ''}`,
+            `${eachRow.quantity ? eachRow.quantity + (eachRow.quantityUnit ? ' ' + eachRow.quantityUnit : '') : ''}`,
+            `${eachRow.shelfLocation ? '<br>' + eachRow.shelfLocation : ''}`,
             `${eachRow.shelfLocation ? eachRow.shelfLocation : ''}`, // Product without Exp Date, use max
             `${eachRow.bestbefore ? eachRow.bestbefore : ''}`,
-            `${eachRow.productLabel ? eachRow.productLabel : ''}` + `<br>` +
-            `<a href="#" data-bs-ponumber="${(eachRow.POnumber ? eachRow.POnumber : "")}" class="table_action_search">${(eachRow.POnumber ? eachRow.POnumber : "")}</a>`,
+            `${eachRow.productLabel ? eachRow.productLabel : ''}`,
+            `<a href="#" data-bs-ponumber="${(eachRow.POnumber ? eachRow.POnumber : "")}" class="table_action_search">${(eachRow.POnumber ? eachRow.POnumber : "")}</a>`+
+            `${eachRow.seq ? (eachRow.POnumber ? "." : "")+eachRow.seq.toString().padStart(3,"0") : ''}`,
             (eachRow.removed === 0 ? `<a href="#" class="table_actions editModal" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-labelId="${eachRow.productLabel}">View/Edit</a>` + `<br>` +
                 `<a href="#" class="table_actions removeModal" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-labelId="${eachRow.productLabel}">Remove</a>`:
                 `<small>Removed: ${new Date(eachRow.removeTime).toLocaleDateString()}</small>`)
@@ -104,12 +106,40 @@ document.querySelector("#act_reloadData").addEventListener("click", (ev)=>{
     fetchStocksList()
 })
 
+// Add Stock Modal
+// Dynamic inflation upon open
+// Destory previous table
+
+var addModalScannerInputTimer
+document.querySelector("#addModal_scannerInput").addEventListener("input",(ev)=>{
+//     扫码枪输入后，等待750ms确认间断后执行
+    clearTimeout(addModalScannerInputTimer)
+    addModalScannerInputTimer = setTimeout(()=>{
+        let currentScannerInput = document.querySelector("#addModal_scannerInput").value
+
+        document.querySelector("#addModal_scannerInput").value = ""
+    },750)
+})
+function readScannerInput(inputval = ""){
+//     读取Barcode，并返回读取的对象结果
+    if (inputval.length >0){
+    //     查找关键字,item=""
+    }
+}
+
 
 let currentEditModalItem = {}
 let editModal = document.querySelector("#editModal")
 editModal.addEventListener("show.bs.modal", async function (ev) {
     let requestLabelId = ev.relatedTarget.getAttribute("data-bs-labelId")
     resetModalEdit()
+
+    if (ev.relatedTarget.getAttribute("data-bs-action") === "add"){
+        editModal.querySelector("#editModal_btnSubmit").disabled = false
+        editModal.querySelector("#addModal_scannerInput").focus()
+    }
+    document.querySelector("#modalModule_inputscan").style = (ev.relatedTarget.getAttribute("data-bs-action") === "add") ? "" : "display:none"
+
     editModal.querySelector("#editModal_labelId").value = requestLabelId
     editModal.querySelector("#editModal_btnSubmit").textContent = "Submit"
     editModal.querySelector(".modal-title").textContent = `Loading Product Information`
@@ -184,6 +214,7 @@ document.querySelector("#editModal_removeCheck").addEventListener("change", (ev)
 })
 
 function resetModalEdit(){
+    editModal.querySelector("#editModal_btnSubmit").disabled = true
     editModal.querySelectorAll("input").forEach(eachInput=>{
         if (['text','date','datetime-local','number'].indexOf(eachInput.type) !== -1){
             eachInput.value = ""
@@ -196,8 +227,8 @@ function resetModalEdit(){
 
 function writeModalEdit(element) {
     editModal.querySelector(".modal-title").textContent = `Edit Stock: ${element.productName}`
-    editModal.querySelector(".modal-body #productInfoText").textContent = `${element.productCode} - ${element.productName}`
-    editModal.querySelector(".modal-body #labelIDText").textContent = `${element.productLabel}`
+    editModal.querySelector("#editModal_productCode").value = element.productCode ? element.productCode : ""
+    editModal.querySelector("#editModal_productName").value = element.productName ? element.productName : ""
     editModal.querySelector("#editModal_quantity").value = element.quantity ? element.quantity : ""
     editModal.querySelector("#editModal_unit").value = element.quantityUnit ? element.quantityUnit : ""
     editModal.querySelector("#editModal_bestbefore").value = element.bestbefore ? element.bestbefore : ""
@@ -205,6 +236,15 @@ function writeModalEdit(element) {
     editModal.querySelector("#editModal_unitPrice").value = element.unitPrice ? element.unitPrice : ""
     editModal.querySelector("#editModal_ponumber").value = element.POnumber ? element.POnumber : ""
     editModal.querySelector("#inpt_removeTime").value = element.removeTime ? element.removeTime : ""
+    editModal.querySelector("#editModal_sequence").value = element.seq ? element.seq : ""
+
+    editModal.querySelector("#editModal_vendorCode").value = element.vendorCode ? element.vendorCode : ""
+    editModal.querySelector("#editModal_itemSize").value = element.itemSize ? element.itemSize : ""
+    editModal.querySelector("#editModal_itemWeight").value = element.itemWeight ? element.itemWeight : ""
+    editModal.querySelector("#editModal_GrossWeight").value = element.grossWeight ? element.grossWeight : ""
+    editModal.querySelector("#editModal_carrier").value = element.vessel ? element.vessel : ""
+    editModal.querySelector("#editModal_consignment").value = element.consignmentNo ? element.consignmentNo : ""
+
     
     if (element.hasOwnProperty("quarantine") && element.quarantine === 1) {
         switch (element.quarantine) {

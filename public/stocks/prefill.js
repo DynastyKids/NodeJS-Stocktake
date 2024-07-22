@@ -64,6 +64,10 @@ function fetchPrefillList(forced = false) {
     }
 }
 
+function deleteSingleLineOnDisplay(itemId = ""){
+//     This function is remove every successful entry response, as avoiding refreshing whole table.
+}
+
 function redrawDataTable(tableData =[]){
     table.clear().draw()
     tableData.forEach(eachRow => {
@@ -77,8 +81,8 @@ function redrawDataTable(tableData =[]){
                 `${stockElement.hasOwnProperty("bestbefore") && stockElement.bestbefore ? stockElement.bestbefore : '2999-12-31'}`, // Product without Exp Date, use max
                 `${stockElement.hasOwnProperty("bestbefore") && stockElement.bestbefore ? stockElement.bestbefore : '9 - No Expire'}`,
                 `<a href="#" data-bs-ponumber="${(stockElement.hasOwnProperty("POnumber") && stockElement.POnumber ? stockElement.POnumber : "")}" class="table_action_search">${(stockElement.hasOwnProperty("POnumber") ? stockElement.POnumber : "")}</a>`+
-                `${stockElement.hasOwnProperty("seq") ? "."+stockElement.seq: ""}`+
-                `<br>${stockElement.hasOwnProperty("productLabel") && stockElement.productLabel ? stockElement.productLabel.substring(0,15) : ''}`,
+                `${stockElement.hasOwnProperty("seq") ? "."+stockElement.seq.toString().padStart(3,"0"): ""}`,
+                `${stockElement.hasOwnProperty("productLabel") && stockElement.productLabel ? stockElement.productLabel.substring(0,15) : ''}`,
                 `<a href="#" class="table_actions editModal" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-labelId="${stockElement.productLabel}">Patch / Edit</a>`+`<br>`+
                 `<a href="#" class="table_actions removeModal" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-labelId="${stockElement.productLabel}">Delete</a>`,
             ]).draw(false)
@@ -122,11 +126,16 @@ editModal.addEventListener("show.bs.modal", async function (ev) {
     editModal.querySelector("#editModal_statusText").textContent = `Loading Stock Information...`
     let stockInfo = fetchStockInfoByLabelId(requestLabelId)
     try{
+        let patchingField = [
+            {key:"POnumber",inputField: "editModal_POnumber"},
+            {key:"bestbefore"},
+            {key:"consignmentNo"},
+            {key:"createTime"}
+        ]
         if (Object.keys(stockInfo).length > 0){
             editModal.querySelector("#editModal .modal-title").textContent =
-                `Patching for ${stockInfo.item.productCode ? stockInfo.item.productCode : ""} - ${stockInfo.item.productName ? stockInfo.item.productName : ""}  `+
-                `ID:${stockInfo.item.productLabel ? stockInfo.item.productLabel.slice(-7) : ""}`
-            editModal.querySelector("#productInfoText").textContent = `${stockInfo.item.productCode ? stockInfo.item.productCode : ""} ${stockInfo.item.productName ? stockInfo.item.productName : ""}`
+                `Editing item ID:${stockInfo.item.productLabel ? stockInfo.item.productLabel.slice(-7) : ""}`
+
             editModal.querySelector("#labelIDText").textContent = `${stockInfo.item.productLabel ? stockInfo.item.productLabel : ""}`
             editModal.querySelectorAll("input").forEach(eachInputField=>{
                 if (eachInputField.hasAttribute("data-bs-targetField")){
