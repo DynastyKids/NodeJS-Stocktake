@@ -41,16 +41,20 @@ document.addEventListener("DOMContentLoaded", async (event) => {
         fetchedData.stocks.forEach(eachStock =>{
             if (eachStock.productCode === eachProduct.productCode){
             //     当找到产品后，查找是否有相同单位的产品，如果没有则直接插入一条新纪录
-                var inserted = false
-                for (let i = 0; i < purposedCol2.length; i++) {
-                    if (purposedCol2[i].unit.includes(eachStock.quantityUnit) || eachStock.quantityUnit.includes(purposedCol2[i].unit)){
-                        purposedCol2[i].quantity += parseInt(eachStock.quantity)
-                        inserted = true
-                        break;
+                try{
+                    var inserted = false
+                    for (let i = 0; i < purposedCol2.length; i++) {
+                        if (purposedCol2[i].unit.includes(eachStock.quantityUnit) || eachStock.quantityUnit.includes(purposedCol2[i].unit)){
+                            purposedCol2[i].quantity += parseInt(eachStock.quantity)
+                            inserted = true
+                            break;
+                        }
                     }
-                }
-                if (!inserted){
-                    purposedCol2.push({quantity: parseInt(eachStock.quantity), unit: eachStock.quantityUnit})
+                    if (!inserted){
+                        purposedCol2.push({quantity: parseInt(eachStock.quantity), unit: eachStock.quantityUnit})
+                    }
+                } catch (e) {
+                    console.warn("Error when filling stock data: ", eachStock, e)
                 }
             }
         })
