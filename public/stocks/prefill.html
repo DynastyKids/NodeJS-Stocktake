@@ -34,20 +34,22 @@
                 <thead class="thead-light">
                 <tr>
                     <th>Code<br>Product Name</th>
-                    <th>Quantity<br></th>
+                    <th>Quantity</th>
                     <th>Best Before (hidden)</th>
                     <th>Best Before</th>
-                    <th>Purchase Order # / Sequence<br>Stock ID</th>
+                    <th>Purchase Order # / Sequence</th>
+                    <th>Stock ID</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
                 <tfoot class="tfoot-light">
                 <tr>
                     <th>Code<br>Product Name</th>
-                    <th>Quantity<br></th>
+                    <th>Quantity</th>
                     <th>Best Before (hidden)</th>
                     <th>Best Before</th>
-                    <th>Purchase Order # / Sequence<br>Stock ID</th>
+                    <th>Purchase Order # / Sequence</th>
+                    <th>Stock ID</th>
                     <th>Actions</th>
                 </tr>
                 </tfoot>
@@ -57,7 +59,7 @@
     </div>
 </div>
 <div class="modal fade" data-bs-backdrop="static" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Edit Item:</h5>
@@ -68,12 +70,6 @@
                     <div class="row">
                         <h6>Product Information:</h6>
                         <div class="col-12">
-                            <div style="display: inline-block">
-                                <label class="form-label">Product Info:</label>
-                                <span id="productInfoText"></span>
-                            </div>
-                        </div>
-                        <div class="col-12">
                             <div style="display: inline">
                                 <label class="form-label">Label ID:</label>
                                 <span id="labelIDText"></span>
@@ -81,33 +77,79 @@
                         </div>
                         <input type="text" class="form-control col-6" id="editModal_labelId" data-bs-targetField="productLabel" hidden value="">
                         <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_productCode" class="form-label">Product Code:</label>
+                            <input type="text" class="form-control col-6" id="editModal_productCode" data-bs-targetField="productCode" value="">
+                        </div>
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_productName" class="form-label">Product Name:</label>
+                            <input type="text" class="form-control col-6" id="editModal_productName" data-bs-targetField="productName" value="">
+                        </div>
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_productLabel" class="form-label">Label ID:</label>
+                            <input type="text" class="form-control col-6" id="editModal_productLabel" data-bs-targetField="productLabel" value="">
+                        </div>
+                        <div class="col-6 col-md-3 mt-2 mb-2">
                             <label for="editModal_quantity" class="form-label">Product Quantity:</label>
                             <input type="number" class="form-control col-6" id="editModal_quantity" data-bs-targetField="quantity" value="">
                         </div>
-                        <div class="col-6 col-md-4 mt-2 mb-2">
+                        <div class="col-6 col-md-3 mt-2 mb-2">
                             <label for="editModal_unit" class="form-label">Product Unit:</label>
                             <input type="text" class="form-control col-6" id="editModal_unit" data-bs-targetField="quantityUnit" value="">
                         </div>
-                        <div class="col-12 col-sm-6 col-md-4 mt-2 mb-2">
+                        <div class="col-12 col-sm-6 col-md-3 mt-2 mb-2">
                             <label for="editModal_bestbefore" class="form-label">Best Before:</label>
                             <input type="date" class="form-control col-6" id="editModal_bestbefore" data-bs-targetField="bestbefore" value="">
                         </div>
-                        <div class="col-6 col-md-4 mt-2 mb-2">
-                            <label for="editModal_location" class="form-label">Location:</label>
-                            <input type="text" class="form-control col-6" id="editModal_location" data-bs-targetField="shelfLocation" value="">
-                        </div>
-                        <div class="col-6 col-md-4 mt-2 mb-2">
-                            <label for="editModal_unitPrice" class="form-label">Unit Price:</label>
-                            <input type="text" class="form-control col-6" id="editModal_unitPrice" data-bs-targetField="unitPrice" value="">
-                        </div>
-                        <div class="col-6 col-md-4 mt-2 mb-2">
-                            <label for="editModal_grossPrice" class="form-label">Gross Price:</label>
-                            <input type="text" class="form-control col-6" id="editModal_grossPrice" data-bs-targetField="grossPrice" value="">
-                        </div>
-                        <div class="col-6 col-md-4 mt-2 mb-2">
+                        <div class="col-6 col-md-3 mt-2 mb-2">
                             <label for="editModal_ponumber" class="form-label">Purchase Order Ref:</label>
                             <input type="text" class="form-control col-6" id="editModal_ponumber" data-bs-targetField="POnumber" value="">
                         </div>
+                        <div class="col-6 col-md-3 mt-2 mb-2">
+                            <label for="editModal_location" class="form-label">Location:</label>
+                            <input type="text" class="form-control col-6" id="editModal_location" data-bs-targetField="shelfLocation" value="">
+                        </div>
+                        <div class="col-6 col-md-3 mt-2 mb-2">
+                            <label for="editModal_unitPrice" class="form-label">Unit Price:</label>
+                            <input type="text" class="form-control col-6" id="editModal_unitPrice" data-bs-targetField="unitPrice" value="">
+                        </div>
+                        <div class="col-6 col-md-3 mt-2 mb-2">
+                            <label for="editModal_grossPrice" class="form-label">Gross Price:</label>
+                            <input type="text" class="form-control col-6" id="editModal_grossPrice" data-bs-targetField="grossPrice" value="">
+                        </div>
+                        <div class="col-6 col-md-3 mt-2 mb-2">
+                            <label for="editModal_sequence" class="form-label">Sequence:</label>
+                            <input type="text" class="form-control col-6" id="editModal_sequence" data-bs-targetField="seq" value="">
+                        </div>
+                        <hr>
+                        <div class="col-6 col-md-3 mt-2 mb-2">
+                            <label for="editModal_rawQuantity" class="form-label">Raw Quantity:</label>
+                            <input type="text" class="form-control col-6" id="editModal_rawQuantity" data-bs-targetField="rawQuantity" value="">
+                        </div>
+                        <div class="col-6 col-md-3 mt-2 mb-2">
+                            <label for="editModal_rawUnit" class="form-label">Raw Unit:</label>
+                            <input type="text" class="form-control col-6" id="editModal_rawUnit" data-bs-targetField="rawUnit" value="">
+                        </div>
+                        <div class="col-6 col-md-3 mt-2 mb-2">
+                            <label for="editModal_itemWeight" class="form-label">Item Weight:</label>
+                            <input type="text" class="form-control col-6" id="editModal_itemWeight" data-bs-targetField="itemWeight" value="">
+                        </div>
+                        <div class="col-6 col-md-3 mt-2 mb-2">
+                            <label for="editModal_grossWeight" class="form-label">Gross Weight:</label>
+                            <input type="text" class="form-control col-6" id="editModal_grossWeight" data-bs-targetField="grossWeight" value="">
+                        </div>
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_itemSize" class="form-label">Item Size:</label>
+                            <input type="text" class="form-control col-6" id="editModal_itemSize" data-bs-targetField="itemSize" value="">
+                        </div>
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_vessel" class="form-label">Carrier:</label>
+                            <input type="text" class="form-control col-6" id="editModal_vessel" data-bs-targetField="vessel" value="">
+                        </div>
+                        <div class="col-6 col-md-4 mt-2 mb-2">
+                            <label for="editModal_consignmentNo" class="form-label">Consignment #:</label>
+                            <input type="text" class="form-control col-6" id="editModal_consignmentNo" data-bs-targetField="consignmentNo" value="">
+                        </div>
+
                         <div class="row col-12 d-flex mt-2 mb-2">
                             <div class="col-12 form-label">Item require Quarantine?</div>
                             <div class="" style="display: flex">
