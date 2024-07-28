@@ -91,14 +91,18 @@ function loadStockInfoToTable(fetchAll) {
                         continue;
                     }
                 }
-                table.row.add([
-                    `${element.productCode} - ${element.productName}`,
-                    `${element.quantity} ${element.quantityUnit}`,
-                    (element.bestbefore ? element.bestbefore : ""),
-                    (element.shelfLocation ? element.shelfLocation : ""),
-                    `<small>${(element.productLabel ? element.productLabel : "")}</small>`,
-                    (element.removed < 1 ? `` : `<small class="table_action_removed">${(element.removeTime ? "Removed on " + element.removeTime.split(" ")[0]: "")}</small>`)
-                ]).draw(false);
+                try{
+                    table.row.add([
+                        `${element.productCode} - ${element.productName}`,
+                        `${(element.hasOwnProperty("quantity") ? element.quantity + " " +(element.hasOwnProperty("quantityUnit") ? element.quantityUnit: "") : "") }`,
+                        (element.bestbefore ? element.bestbefore : ""),
+                        (element.shelfLocation ? element.shelfLocation : ""),
+                        `<small>${(element.productLabel ? element.productLabel : "")}</small>`,
+                        (element.removed < 1 ? `` : `<small class="table_action_removed">${(element.removeTime ? "Removed on " + element.removeTime.split(" ")[0]: "")}</small>`)
+                    ]).draw(false);
+                } catch (e) {
+                    console.warn("Error when attempting adding new row to table:",e,element)
+                }
             }
         }
     })
