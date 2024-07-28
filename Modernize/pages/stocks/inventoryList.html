@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Stock Aggregate- Warehouse Electron (N) </title>
+    <title>Stock list (Printview) - Warehouse Electron (N) </title>
     <link rel="shortcut icon" type="image/png" href="../../assets/images/logos/favicon.png"/>
     <link rel="stylesheet" href="../../assets/css/styles.min.css"/>
     <link rel="stylesheet" href="../../../node_modules/datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css"/>
@@ -16,7 +16,7 @@
         <div class="card-body px-4 py-3">
             <div class="row align-items-center">
                 <div class="col-12">
-                    <h4 class="fw-semibold mb-0">Stock List - Aggregrated</h4>
+                    <h4 class="fw-semibold mb-0">Stock List - Print View</h4>
                 </div>
             </div>
             <div class="card-body">
@@ -25,6 +25,14 @@
                     <a class="mb-0 ms-2" href="./index.html">Exit Print View</a>
                     <a class="mb-0 ms-2" href="#" id="act_reload">Reload Table</a>
                     <a class="mb-0 ms-2" href="#" id="act_print">Print</a>
+                    <div class="mb-0 ms-2" id="switchDiv">
+                        <input class="form-check-input" type="checkbox" id="switchCheck">
+                        <span>Show History Stocks</span>
+                    </div>
+                    <div class="form-floating mb-0 ms-2" style="display: flex">
+                        <span id="labelForFilterdate">Filter records after Date:</span>
+                        <input type="date" id="filterdate" name="filterdate" class="form-control form-control-sm w-30">
+                    </div>
                 </div>
                 <div id="loadingStatus">
                     <span class="spinner-border" role="status" id="loadingSpinners"></span>
@@ -37,17 +45,25 @@
 
     <div class="card">
         <div class="card-body" id="div_datatable">
-            <table class="table table-responsive" id="table">
-                <thead>
+            <table class="table table-sm table-hover" id="table">
+                <thead class="thead-dark">
                 <tr>
-                    <th scope="col">Product</th>
+                    <th scope="col">Code</th>
                     <th scope="col">Quantity</th>
+                    <th scope="col">Best before</th>
+                    <th scope="col">Location</th>
+                    <th scope="col">Stock ID</th>
+                    <th scope="col">Comment</th>
                 </tr>
                 </thead>
-                <tfoot>
+                <tfoot class="thead-dark">
                 <tr>
-                    <th scope="col">Product</th>
+                    <th scope="col">Code</th>
                     <th scope="col">Quantity</th>
+                    <th scope="col">Best before</th>
+                    <th scope="col">Location</th>
+                    <th scope="col">Stock ID</th>
+                    <th scope="col">Comment</th>
                 </tr>
                 </tfoot>
                 <tbody></tbody>
@@ -63,7 +79,7 @@
 <script src="../../assets/js/app.min.js"></script>
 <script src="../../assets/js/app-style-switcher.js"></script>
 <script src="../../../node_modules/prismjs/prism.js"></script>
-<script src="./aggregate_print.js"></script>
+<script src="inventoryList.js"></script>
 </body>
 <style>
     @media print{
