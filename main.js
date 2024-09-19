@@ -211,7 +211,8 @@ expressApp.use(bodyParser.urlencoded({ extended: false }));
 expressApp.use(bodyParser.json());
 expressApp.use(cors())
 expressApp.use("/api", apiRequests);
-expressApp.use(express.static(path.join(__dirname, 'public')));
+expressApp.use("/stocks",express.static(path.join(__dirname,"stocks")))
+expressApp.use("/",express.static(path.join(__dirname, 'public')));
 
 const credentials = {key: fs.readFileSync(path.join(__dirname, 'config/key.pem'), 'utf8'),
     cert:fs.readFileSync(path.join(__dirname, 'config/cert.pem'), 'utf8')}
