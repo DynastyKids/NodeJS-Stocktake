@@ -139,7 +139,11 @@ function scanAction(stockLabelId = "") {
 
 function actionCountdown(displayElement, duration = 5) {
     // Action Countdown 仅通过扫码后对应的Action自动触发
-    //     如果该label存在于系统中，则仅update removed = 1 & removeTime
+    //     如果该label存在于系统中
+    //          这是第一次移除，则update removed = 1 & removeTime
+    //          如果label已经removed = 1且有remove Time (打断计时器)
+    //              倒计时10s，默认不做任何操作
+    //              如果用户需要更新移除时间，点击按钮后自动更新状态，则update removed = 1 & removeTime
     //     如果该label不存在，则需要upsert添加，设置全参数
     //     给对应的remove按钮添加倒计时，如果倒计时内没有点击取消，则执行remove操作
     let cancelButton = document.createElement("a")

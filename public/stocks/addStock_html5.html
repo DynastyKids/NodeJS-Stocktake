@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Stock (HTML5) - Warehouse Electron</title>
+    <link rel="stylesheet" href="/library/bootstrap.min.css" />
+    <link rel="stylesheet" href="../library/tabler/tabler-icons.min.css" />
+    <link rel="stylesheet" href="addStock.css" />
+</head>
+<body>
+<div class="container-fluid">
+    <div class="container-fluid">
+        <h1>Add Stock (html5-qrcode)</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
+                <li class="breadcrumb-item"><a href="stocks.html">Stocks</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Add Stock</li>
+            </ol>
+        </nav>
+        <div id="alertAnchor"></div>
+
+        <p>This page is used for checking existing stock in system. To generate labels for new items. Goto <a href="labelgenerator.html">Label Generator</a></p>
+        <p>If camera didn't work right, either <a href="addStock_html5.html">refresh</a> page or try <a href="addStock_jsqr.html">another plugin</a>.</p>
+        <p></p>
+        <hr>
+        <div class="container-fluid">
+            <h3>Pathway 1: Scanner Entry</h3>
+            <div class="row">
+            <div class="col-12 col-md-6 mt-2 mb-2">
+                <strong>Input by Camera Scanning QR Code</strong>
+                <div class="row">
+                    <div id="qr-reader" class="col-12"></div>
+                    <div id="qr-reader-results" class="col-12">Awaiting to Scan</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 mt-2 mb-2">
+                <strong>Input by Barcode Scanner</strong>
+                <input class="form-control" id="input_scannerInput" value="" placeholder="Barcode Scanner">
+            </div>
+            </div>
+        </div>
+        <hr>
+        <div class="container-fluid">
+            <h3>Pathway 2: Manual Entry</h3>
+            <div class="row">
+                <div class="col-12"><strong>Product Information</strong></div>
+                <div class="col-12 col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Product Code:</label>
+                    <input type="text" class="form-control" id="input_productCode" value="">
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Product Name:</label>
+                    <input type="text" class="form-control" id="input_productName" value="">
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Product Label:</label>
+                    <input type="text" class="form-control" id="input_productLabel" value="">
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Quantity:</label>
+                    <input type="number" class="form-control" id="input_quantity" value="">
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Unit:</label>
+                    <input type="text" class="form-control" id="input_unit" value="">
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Best Before:</label>
+                    <input type="date" class="form-control" id="input_bestbefore" value="">
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Location:</label>
+                    <input type="text" class="form-control" id="input_location" value="">
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Purchase Order Ref:</label>
+                    <input type="text" class="form-control" id="input_ponumber" value="">
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Sequence:</label>
+                    <input type="text" class="form-control" id="input_sequence" value="">
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Create Time:</label>
+                    <input type="datetime-local" class="form-control" id="input_createTime" value="">
+                </div>
+                <div class="row col-12 d-flex mt-2 mb-2">
+                    <div class="col-12 form-label">Item require Quarantine?</div>
+                    <div class="col-12" id="input_quarantineRadioBox">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="input_quarantineRatio" id="input_quarantineYes" value="1">
+                            <label class="form-check-label" for="input_quarantineYes">Yes</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="input_quarantineRatio" id="input_quarantineNo" value="0" checked>
+                            <label class="form-check-label" for="input_quarantineNo">No</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="input_quarantineRatio" id="input_quarantineFinished" value="-1">
+                            <label class="form-check-label" for="input_quarantineFinished">Inspected Finished</label>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="col-12"><strong>Additional Information</strong></div>
+                <div class="col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Vendor Code:</label>
+                    <input type="text" class="form-control" id="input_vendorCode" value="">
+                </div>
+                <div class="col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Item Size:</label>
+                    <input type="text" class="form-control" id="input_itemSize" value="">
+                </div>
+                <div class="col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Item Weight:</label>
+                    <input type="text" class="form-control" id="input_itemWeight" value="">
+                </div>
+                <div class="col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Gross Weight:</label>
+                    <input type="text" class="form-control" id="input_GrossWeight" value="">
+                </div>
+                <div class="col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Carrier:</label>
+                    <input type="text" class="form-control" id="input_carrier" value="">
+                </div>
+                <div class="col-sm-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Consignment #:</label>
+                    <input type="text" class="form-control" id="input_consignment" value="">
+                </div>
+                <div class="col-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Purchase Price:</label>
+                    <input type="text" class="form-control" id="input_POPrice" value="">
+                </div>
+                <div class="col-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Selling Price:</label>
+                    <input type="text" class="form-control" id="input_SOPrice" value="">
+                </div>
+                <div class="col-6 col-lg-4 mt-2 mb-2">
+                    <label class="form-label">Sequence by Container:</label>
+                    <input type="text" class="form-control" id="input_seq2" value="">
+                </div>
+            </div>
+            <hr>
+        </div>
+        <div class="col-12">
+            <input type="checkbox" class="form-check-input" id="input_fifoCheck">
+            <label class="form-label">Display this in next dispatch (FIFO) page?</label>
+        </div>
+        <div class="col-12">
+            <input type="checkbox" class="form-check-input" id="input_turnoverCheck">
+            <label class="form-label">Include this in turnover rate calculation?</label>
+        </div>
+        <btn class="btn btn-primary">Submit</btn>
+    </div>
+
+    <div class="modal modal-fullscreen fade" id="httpsModal" tabindex="-1" aria-labelledby="httpModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="httpModalLabel">Attention</h5>
+                </div>
+                <div class="modal-body">
+                    You are currently accessing this page via HTTP. To ensure security and enable the camera for scanning, it is recommended to switch to HTTPS. Please click "Continue" to proceed.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="httpsModal_cancelBtn">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="httpsModal_confirmBtn">Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../library/jquery-3.7.1.min.js"></script>
+<script src="../library/bootstrap.bundle.min.js"></script>
+<script src="../library/axios.min.js"></script>
+<script src="../library/jspdf.umd.min.js"></script> <!--用于生成PDF，从ChromeEXT项目引入-->
+<script src="../library/html5-qrcode.min.js">
+
+    <!--JS.PDF用于生成PDF文件，而PDF.js用于读取PDF文件-->
+    <script src="../library/sha1.min.js"></script>
+    <script src="../library/jsqr/jsQR.min.js"></script>
+    <script src="../loadNavbar.js"></script>
+    <script src="../elements.js"></script>
+    <script src="addStock.js"></script>
+
+<!--<script>-->
+<!--    document.addEventListener("DOMContentLoaded", function (ev) {-->
+<!--        if (window.location.protocol === "http:") {-->
+<!--            const modal = new bootstrap.Modal(document.querySelector("#httpsModal"))-->
+<!--            modal.show()-->
+<!--            document.querySelector("#httpsModal_cancelBtn").addEventListener("click",()=>{-->
+<!--                window.location.replace(`http://${window.location.hostname}:3000/stock/stock.html`)-->
+<!--            })-->
+<!--            document.querySelector("#httpsModal_confirmBtn").addEventListener("click",()=>{-->
+<!--                window.location.replace(`https://${window.location.hostname}:3001${window.location.pathname}`)-->
+<!--            })-->
+<!--        }-->
+<!--    })-->
+<!--</script>-->
+</body>
+</html>
