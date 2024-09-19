@@ -92,9 +92,9 @@ function inflateTable(){
             `${eachRow.productLabel ? eachRow.productLabel : ''}`,
             `<a href="#" data-bs-ponumber="${(eachRow.POnumber ? eachRow.POnumber : "")}" class="table_action_search">${(eachRow.POnumber ? eachRow.POnumber : "")}</a>`+
             `${eachRow.seq ? (eachRow.POnumber ? "." : "")+eachRow.seq.toString().padStart(3,"0") : ''}`,
-            (eachRow.removed === 0 ? `<a href="#" class="table_actions editModal" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-labelId="${eachRow.productLabel}">View/Edit</a>` + `<br>` +
-                `<a href="#" class="table_actions removeModal" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-labelId="${eachRow.productLabel}">Remove</a>`:
-                `<small>Removed: ${new Date(eachRow.removeTime).toLocaleDateString()}</small>`)
+            `<a href="#" class="table_actions editModal" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-labelId="${eachRow.productLabel}">Edit</a>` +
+            (eachRow.removed === 0 ? `<br><a href="#" class="table_actions removeModal" data-bs-toggle="modal" data-bs-target="#removeModal" data-bs-labelId="${eachRow.productLabel}">Remove</a>`:
+                `<br><small>Removed: ${new Date(eachRow.removeTime).toLocaleDateString()}</small>`)
             ,
         ]).draw(false)
     })
@@ -147,6 +147,7 @@ editModal.addEventListener("show.bs.modal", async function (ev) {
     let stocksResponse =  await fetchStockByLabelid(requestLabelId)
     if (stocksResponse.acknowledged && stocksResponse.data.length>=0){
         let stockInfo = stocksResponse.data
+        console.log(stocksResponse)
         if (Array.isArray(stockInfo) && stockInfo.length > 0) {
             currentEditModalItem = stockInfo[0]
             writeModalEdit(stockInfo[0])
