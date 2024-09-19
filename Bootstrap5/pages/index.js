@@ -53,8 +53,7 @@ function i18n_bodyContents() {
     h4subtitles[2].textContent = i18next.t('index.h4label_productaction');
 
     var h3subtitles = document.querySelectorAll(".container h3")
-    h3subtitles[0].textContent = i18next.t('index.h3label_currentactivestocktake');
-    h3subtitles[1].textContent = i18next.t('index.h3label_environment');
+    h3subtitles[0].textContent = i18next.t('index.h3label_environment');
 
     var actionLinks = document.querySelectorAll(".container table a")
     // Stock-take actions
@@ -69,12 +68,6 @@ function i18n_bodyContents() {
     // products actions
     actionLinks[7].textContent = i18next.t('index.showallproducts');
     actionLinks[8].textContent = i18next.t('index.addproduct');
-
-    var tableTitles = document.querySelectorAll("#activeStocktakeContainer table th")
-    tableTitles[0].textContent = i18next.t('tables.stocktable_sessionid');
-    tableTitles[1].textContent = i18next.t('tables.stocktable_startTime');
-    tableTitles[2].textContent = i18next.t('tables.stocktable_endTime');
-    tableTitles[3].textContent = i18next.t('tables.stocktable_action');
 
     var tableRowActions = document.querySelectorAll(".tableaction_view")
     tableRowActions.forEach(eachRow => {
@@ -113,44 +106,7 @@ ipcRenderer.on('server-info', (event, {address, port, addressSet}) => {
     document.querySelector("#serverPortText").innerText = port ? port : "";
 });
 
-async function getCurrentSession() {
-    let client = new MongoClient(uri, {
-        serverApi: { version: ServerApiVersion.v1, useNewUrlParser: true, useUnifiedTopology: true}
-    });
-    let cursor;
-    let htmlContent = ""
-    try {
-        await client.connect();
-
-        let localTime = moment(new Date()).tz("Australia/Sydney")
-        const options = {sort: {startDate: 1},};
-        const sessions = client.db(targetDB).collection("pollingsession");
-        let findingQuery = {endDate: {$gte: localTime.format('YYYY-MM-DD HH:mm:ss')}}
-
-
-        cursor = sessions.find(findingQuery, options);
-        if ((await sessions.countDocuments(findingQuery)) === 0) {
-            console.log("[MongoDB] Nothing Found");
-        }
-
-        for await (const x of cursor) {
-            htmlContent += `<tr><td>${x.session}</td><td>${x.startDate}</td><td>${x.endDate}</td><td><a href="../stocktake/viewsession.html?id=${x.session}" class="tableaction_view">View</a></td></tr>`
-        }
-
-        if (htmlContent.length > 0) {
-            document.querySelector("#activeSessionTBody").innerHTML = htmlContent
-        }
-    } catch (err) {
-        console.error(err)
-    } finally {
-        await client.close()
-    }
-
-    return [cursor, htmlContent];
-}
-
 window.onload = () => {
-    console.log(getCurrentSession().catch(console.log));
     qrv2patch()
 }
 
