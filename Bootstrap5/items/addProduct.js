@@ -1,7 +1,6 @@
 const MongoClient = require('mongodb').MongoClient;
 const {ServerApiVersion, ObjectId} = require('mongodb');
 const path = require('path');
-const moment = require('moment-timezone')
 
 const Storage = require("electron-store");
 const newStorage = new Storage();
@@ -105,7 +104,7 @@ document.addEventListener("DOMContentLoaded",async (ev) => {
             sizeWidth: document.querySelector("#sizeWidth").value ? document.querySelector("#sizeWidth").value : 0,
             sizeHeight: document.querySelector("#sizeHeight").value ? document.querySelector("#sizeHeight").value : 0,
             withBestbefore: document.querySelector("#inputExpire").value ? document.querySelector("#inputExpire").value : 0,
-            lastupdate: moment(new Date()).tz("Australia/Sydney").format('YYYY-MM-DD HH:MM:ss'),
+            lastupdate: new Date(),
             inuse: 1
         }
         let filterCondition = {itemcode: data.itemcode}

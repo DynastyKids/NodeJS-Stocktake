@@ -103,7 +103,7 @@ function build2DProductArray(productList) {
                 productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation]
                 delete productArray[productArray.length - 1].session;
                 delete productArray[productArray.length - 1]._id;
-                delete productArray[productArray.length - 1].POIPnumber;
+                delete productArray[productArray.length - 1].POnumber;
                 delete productArray[productArray.length - 1].removed;
                 delete productArray[productArray.length - 1].loggingTime;
             }
@@ -113,7 +113,7 @@ function build2DProductArray(productList) {
             productArray[productArray.length - 1]["LocationArray"] = [item.shelfLocation]
             delete productArray[productArray.length - 1].session;
             delete productArray[productArray.length - 1]._id;
-            delete productArray[productArray.length - 1].POIPnumber;
+            delete productArray[productArray.length - 1].POnumber;
             delete productArray[productArray.length - 1].removed;
             delete productArray[productArray.length - 1].loggingTime;
         }

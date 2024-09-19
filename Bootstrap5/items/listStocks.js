@@ -182,6 +182,7 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
             document.querySelector("#modalEditUnit").value = (fullResultSet[i].quantityUnit ? fullResultSet[i].quantityUnit : "")
             document.querySelector("#modalEditBestbefore").value = (fullResultSet[i].bestbefore ? fullResultSet[i].bestbefore : "")
             document.querySelector("#modelEditLocation").value = (fullResultSet[i].shelfLocation ? fullResultSet[i].shelfLocation : "")
+            document.querySelector("#modelEditPOnumber").value = (fullResultSet[i].POnumber ? fullResultSet[i].POnumber : (fullResultSet[i].POIPnumber ? fullResultSet[i].POIPnumber : ""))
             document.querySelector("#editModalSubmitBtn").disabled = false
             break;
         }
@@ -203,7 +204,9 @@ document.querySelector("#editModal").addEventListener("show.bs.modal", (ev)=>{
                 quantity: (document.querySelector("#modalEditQuantity").value ? document.querySelector("#modalEditQuantity").value : originProperty.quantity ),
                 quantityUnit: (document.querySelector("#modalEditUnit").value ? document.querySelector("#modalEditUnit").value : originProperty.quantityUnit ),
                 bestbefore : (document.querySelector("#modalEditBestbefore").value ? document.querySelector("#modalEditBestbefore").value : originProperty.bestbefore),
-                shelfLocation: (document.querySelector("#modelEditLocation").value ? document.querySelector("#modelEditLocation").value : originProperty.shelfLocation)
+                shelfLocation: (document.querySelector("#modelEditLocation").value ? document.querySelector("#modelEditLocation").value : originProperty.shelfLocation),
+                POnumber: document.querySelector("#modelEditPOnumber").value ? document.querySelector("#modelEditPOnumber").value  : originProperty.POnumber
+
             }
         })
         if (result.acknowledged){
@@ -349,7 +352,7 @@ function loadStockInfoToTable(fetchAll) {
                     (element.bestbefore ? element.bestbefore : ""),
                     (element.shelfLocation ? element.shelfLocation : ""),
                     `<small>${(element.productLabel ? element.productLabel : "")}</small>`,
-                    `<small>${(element.POIPnumber ? element.POIPnumber : "")}</small>`,
+                    `<small>${(element.POnumber ? element.POnumber : (element.POIPnumber ? element.POIPnumber : ""))}</small>`,
                     (element.removed < 1 ? `
                     <a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_edit")}</a>

@@ -312,7 +312,7 @@ function loadStockInfoToTable(fetchAll) {
                     (element.bestbefore ? element.bestbefore : ""),
                     (element.shelfLocation ? element.shelfLocation : ""),
                     `<small>${(element.productLabel ? element.productLabel : "")}</small>`,
-                    `<small>${(element.POIPnumber ? element.POIPnumber : "")}</small>`,
+                    `<small>${(element.POnumber ? element.POnumber : "")}</small>`,
                     `<a href="#" class="table_actions table_action_edit" data-bs-toggle="modal" data-bs-target="#editModal" 
                         data-bs-itemId="${element.productLabel}" style="margin: 0 2px 0 2px">${i18next.t("dataTables.action_edit")}</a>
                     <a href="#" class="table_actions table_action_remove" data-bs-toggle="modal" data-bs-target="#removeModal" 

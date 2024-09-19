@@ -145,24 +145,6 @@
         </div>
     </div> <!-- Add New Movement Log Model End-->
     <hr>
-    <div class="container-fluid" id="activeStocktakeContainer">
-        <h3>Current active stocktake session:</h3>
-        <table class="table">
-            <thead>
-            <th>Session ID</th>
-            <th>Start Time</th>
-            <th>End Time</th>
-            <th>Action</th>
-            </thead>
-            <!-- 用来展示当前没有结束的sessions -->
-            <tbody id="activeSessionTBody">
-            <tr>
-                <td colspan="4">None</td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
-    <hr>
     <div class="container-fluid" id="environmentContainer">
         <h3>Environment Info:</h3>
         <table class="table" style="font-size: small">
@@ -181,5 +163,19 @@
 <script src="../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="index.js"></script>
 </body>
+<style>
+    .tableItemName {
+        max-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2em;
+        max-height: 2.4em;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        white-space: normal;
+    }
+</style>
 
 </html>
