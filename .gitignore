@@ -56,3 +56,6 @@ ts-gen
 patches/mtime-cache.json
 spec/fixtures/logo.png
 out/
+
+#User Credentials
+config/atlasChart.js

@@ -1,0 +1,8 @@
+#qr-reader-results{
+    font-size: xx-small;
+    overflow: hidden;
+}
+
+#input_quarantineRadioBox{
+    display: flex
+}

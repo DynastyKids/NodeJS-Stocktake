@@ -13,10 +13,13 @@ let NavbarHTML =
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="ti ti-tools"></i>Features
+                            <i class="ti ti-tools"></i>Stocks Management
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="/stocks/index.html">Dashboard</a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/stocks/labelgenerator.html">Generate Labels</a></li>
+                            <li><a class="dropdown-item" href="/stocks/addStock.html">Add Stock</a></li>
                             <li><a class="dropdown-item" href="/stocks/prefill.html">Check prefill labels</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/stocks/stocks.html">Stock Management</a></li>
@@ -36,5 +39,5 @@ let NavbarHTML =
     </nav>`
 
 document.addEventListener("DOMContentLoaded", function(){
-    document.querySelector(".container-fluid").insertAdjacentHTML('afterbegin',NavbarHTML)
+    document.querySelector("body").insertAdjacentHTML('afterbegin',NavbarHTML)
 })

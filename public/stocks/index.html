@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Stocks - Warehouse Electron</title>
+    <link href="../library/bootstrap.min.css" rel="stylesheet"/>
+    <link href="../library/font-awesome/all.css" ref="stylesheet"/>
+    <link href="../library/tabler/tabler-icons.min.css" rel="stylesheet">
+    <link href="../library/datatables/datatables.css" rel="stylesheet">
+</head>
+<body>
+<div class="container-fluid" style="min-height: 100vh;">
+    <h1>Stocks Dashboard</h1>
+    <br>
+    <div class="container-fluid" id="maincontent">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Stocks</li>
+            </ol>
+        </nav>
+        <div id="alertAnchor"></div>
+        <div>
+            <h2>Actions</h2>
+            <ul class="list-group list-group-horizontal">
+                <li class="list-group-item"><a href="stocks.js">Stock List</a></li>
+                <li class="list-group-item"><a href="nextDispatch.html">Next Dispatch List</a></li>
+            </ul>
+            <ul class="list-group list-group-horizontal">
+                <li class="list-group-item"><a href="addStock.html">Add New Stock</a></li>
+                <li class="list-group-item"><a href="qrscan.html">Scanner Mode</a></li>
+                <li class="list-group-item"><a href="labelgenerator.html">Generate New Label</a></li>
+                <li class="list-group-item"><a href="prefill.html">Check Prefilled Labels</a></li>
+            </ul>
+        </div>
+
+        <div class="row" id="dashboardMain" style="min-height: 350px;flex: 1;display: flex;height: max-content">
+        Mongo Dynamic Charts loading
+        </div>
+    </div>
+</div>
+
+<script src="../library/jquery-3.7.1.min.js"></script>
+<script src="../library/bootstrap.bundle.min.js"></script>
+<script src="../library/datatables/datatables.js"></script>
+<script src="../elements.js"></script>
+<script src="https://unpkg.com/@mongodb-js/charts-embed-dom"></script>
+<script src="../loadNavbar.js"></script>
+<script src="index.js"></script>
+
+</body>
+</html>

@@ -29,7 +29,8 @@
             <h4>Actions</h4>
             <div class="row mb-2 ms-2 d-flex">
                 <a href="#" class="col-sm-3" id="act_reloadData">Reload Data</a>
-                <a href="#" class="col-sm-3" id="addStock" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-action="add">Add Stock</a>
+                <a href="addStock.html" class="col-sm-3" id="">Add Stock</a>
+<!--                <a href="#" class="col-sm-3" id="addStock" data-bs-toggle="modal" data-bs-target="#editModal" data-bs-action="add">Add Stock</a>-->
                 <a href="nextDispatch.html" class="col-sm-3">Next Distpatch (FIFO)</a>
             </div>
             <div class="row mb-2 ms-2">
@@ -117,47 +118,47 @@
                     </div>
                     <div class="row">
                         <div class="col-12"><b>Product Information:</b></div>
-                        <div class="col-sm-4 col-lg-3">
+                        <div class="col-sm-6 col-lg-4">
                             <label class="form-label">Product Code:</label>
                             <input type="text" class="form-control" id="editModal_productCode" value="">
                         </div>
-                        <div class="col-sm-8 col-lg-6">
+                        <div class="col-sm-6 col-lg-8">
                             <label class="form-label">Product Name:</label>
                             <input type="text" class="form-control" id="editModal_productName" value="">
                         </div>
-                        <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                        <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                             <label class="form-label">Label ID:</label>
-                            <input type="text" class="form-control" id="editModal_labelId" disabled value="">
+                            <input type="text" class="form-control" id="editModal_labelId" value="">
                         </div>
-                        <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                        <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                             <label for="editModal_quantity" class="form-label">Quantity:</label>
                             <input type="number" class="form-control" id="editModal_quantity" value="">
                         </div>
-                        <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                        <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                             <label for="editModal_unit" class="form-label">Unit:</label>
                             <input type="text" class="form-control" id="editModal_unit" value="">
                         </div>
-                        <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                        <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                             <label for="editModal_bestbefore" class="form-label">Best Before:</label>
                             <input type="date" class="form-control" id="editModal_bestbefore" value="">
                         </div>
-                        <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                        <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                             <label for="editModal_location" class="form-label">Location:</label>
                             <input type="text" class="form-control" id="editModal_location" value="">
                         </div>
-                        <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                        <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                             <label for="editModal_unitPrice" class="form-label">Unit Price:</label>
                             <input type="text" class="form-control" id="editModal_unitPrice" value="">
                         </div>
-                        <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                        <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                             <label for="editModal_ponumber" class="form-label">Purchase Order Ref:</label>
                             <input type="text" class="form-control" id="editModal_ponumber" value="">
                         </div>
-                        <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                        <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                             <label for="editModal_sequence" class="form-label">Sequence:</label>
                             <input type="text" class="form-control" id="editModal_sequence" value="">
                         </div>
-                        <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                        <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                             <label for="editModal_createTime" class="form-label">Create Time:</label>
                             <input type="datetime-local" class="form-control" id="editModal_createTime" value="">
                         </div>
@@ -170,27 +171,27 @@
                             </a>
                         </div>
                         <div class="collapse row" id="optionalCollapse">
-                            <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                            <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                                 <label for="editModal_ponumber" class="form-label">Vendor Code:</label>
                                 <input type="text" class="form-control" id="editModal_vendorCode" value="">
                             </div>
-                            <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                            <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                                 <label for="editModal_ponumber" class="form-label">Item Size:</label>
                                 <input type="text" class="form-control" id="editModal_itemSize" value="">
                             </div>
-                            <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                            <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                                 <label for="editModal_ponumber" class="form-label">Item Weight:</label>
                                 <input type="text" class="form-control" id="editModal_itemWeight" value="">
                             </div>
-                            <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                            <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                                 <label for="editModal_ponumber" class="form-label">Gross Weight:</label>
                                 <input type="text" class="form-control" id="editModal_GrossWeight" value="">
                             </div>
-                            <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                            <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                                 <label for="editModal_ponumber" class="form-label">Carrier:</label>
                                 <input type="text" class="form-control" id="editModal_carrier" value="">
                             </div>
-                            <div class="col-sm-6 col-md-4 col-lg-3 mt-2 mb-2">
+                            <div class="col-sm-6 col-lg-4 mt-2 mb-2">
                                 <label for="editModal_ponumber" class="form-label">Consignment #:</label>
                                 <input type="text" class="form-control" id="editModal_consignment" value="">
                             </div>

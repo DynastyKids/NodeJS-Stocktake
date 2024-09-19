@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Stock - Navigator</title>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <p>Choose your preference page/plugin to scan QR Code</p>
+            <p id="redirection"></p>
+            <hr>
+            <ul>
+                <li><a href="addStock_jsQR.html" id="defaultLink">Using jsQR for scan (Default)</a></li>
+                <li><a href="addStock_html5.html">Using html5-qrcode scan</a></li>
+            </ul>
+
+
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var timeLeft = 5;
+            var countdownElement = document.getElementById("countdown");
+
+            var timer = setInterval(function() {
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    document.getElementById("defaultLink").click();
+                } else {
+                    document.querySelector("#redirection").innerHTML = `Redirection in ${timeLeft}s`;
+                }
+                timeLeft -= 1;
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
