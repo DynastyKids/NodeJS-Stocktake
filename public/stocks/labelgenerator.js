@@ -14,8 +14,17 @@ document.addEventListener("DOMContentLoaded", function (ev) {
             createAlert("success","Product list has fetched successfully", 3000)
             if (Array.isArray(response.data.data)) {
                 productsData = response.data.data
+                productsData.sort((a,b)=>{
+                    if (a.hasOwnProperty("productCode") && b.hasOwnProperty("productCode")){
+                        if(a.productCode <= b.productCode){
+                            return -1;
+                        } else {
+                            return 1;
+                        }
+                    }
+                })
+
                 response.data.data.forEach(eachItem => {
-                    // document.querySelector("#productSuggestions").append(`<option value="${eachItem.productCode}" label="${eachItem.description}"></option>`);
                     $("#productSuggestions").append(`<option value="${eachItem.description}" data-code="${eachItem.productCode}" data-qty="${eachItem.palletQty}" data-unit="${eachItem.unit}"></option>`);
                 });
             }

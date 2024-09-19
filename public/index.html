@@ -18,19 +18,26 @@
                     <li class="breadcrumb-item active" aria-current="page">Home</li>
                 </ol>
             </nav>
+            <div class="row">
+                <div class="col-md-4 col-lg-3">
+                    Shortcuts:
+                    <ul class="list-group">
+                        <!--                <li class="httpLink"><a href="stocks/labelgenerator.html"><i class="ti ti-tag"></i>Generate Labels</a></li>-->
+                        <li class="list-group-item httpsLink"><a href="#" data-bs-toggle="modal" data-bs-target="#httpsModal"><i class="ti ti-tag"></i>Label Generator</a></li>
+                        <li class="list-group-item"><a href="stocks/stocks.html"><i class="ti ti-packages"></i>Check All Stocks</a></li>
+                        <li class="list-group-item"><a href="#" id="checkShelf" data-bs-toggle="modal" data-bs-target="#checkShelfModal"><i class="ti ti-zoom-check"></i>Check stocks by shelf</a></li>
+                        <li class="list-group-item">
+                            <p>Next Dispatch:</p>
+                            <a href="stocks/nextDispatch.html"><i class="ti ti-printer"></i>Printable List View</a>
+                            <a href="stocks/nextDispatchScreen.html"><i class="ti ti-screen-share"></i>Carousel View</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-8 col-lg-9">
+                    
+                </div>
+            </div>
 
-            Select an action from following:
-            <ul class="list-group">
-<!--                <li class="httpLink"><a href="stocks/labelgenerator.html"><i class="ti ti-tag"></i>Generate Labels</a></li>-->
-                <li class="list-group-item httpsLink"><a href="#" data-bs-toggle="modal" data-bs-target="#httpsModal"><i class="ti ti-tag"></i>Label Generator</a></li>
-                <li class="list-group-item"><a href="stocks/stocks.html"><i class="ti ti-packages"></i>Check All Stocks</a></li>
-                <li class="list-group-item"><a href="#" id="checkShelf" data-bs-toggle="modal" data-bs-target="#checkShelfModal"><i class="ti ti-zoom-check"></i>Check stocks by shelf</a></li>
-                <li class="list-group-item">
-                    <p>Next Dispatch:</p>
-                    <a href="stocks/nextDispatch.html"><i class="ti ti-printer"></i>Printable List View</a>
-                    <a href="stocks/nextDispatchScreen.html"><i class="ti ti-screen-share"></i>Carousel View</a>
-                </li>
-            </ul>
         </div>
     </div>
     <div class="modal fade" id="httpsModal" tabindex="-1" aria-labelledby="httpsModalLabel" aria-hidden="true">
@@ -80,42 +87,8 @@
 <script src="/library/jquery-3.7.1.min.js"></script>
 <script src="/library/bootstrap.bundle.min.js"></script>
 <script src="loadNavbar.js"></script>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        if (window.location.protocol === "http:") {
-            const hostname = window.location.hostname;
-            const redirectUrl = "https://" + hostname + ":3001";
-            document.querySelector("#warning-message").style.display = "block";
-            document.querySelector("#redirectip").innerText = hostname;
-            document.querySelector("#https_desc_link").href = redirectUrl;
-
-            document.querySelector("#maincontent").style.display = "none";
-            document.querySelectorAll(".nav-item").forEach(eachItem=>{
-                eachItem.style.display ="none"
-            })
-        }
-
-        if (window.location.protocol.includes("http:")) {
-            document.querySelectorAll(".httpsLink").forEach(eachLinkItem =>{
-                eachLinkItem.style.display = "none"
-            })
-        }
-        if (window.location.protocol.includes("https:")) {
-            document.querySelectorAll(".httpLink").forEach(eachLinkItem =>{
-                eachLinkItem.style.display = "none"
-            })
-        }
-    });
-</script>
-<script>
-    document.querySelector("#checkShelfModal .btn-primary").addEventListener("click",(ev)=>{
-        let userInput = document.querySelector("#checkShelfModal input").value
-        const regex = /^[A-Za-z]{2,}.*$/;
-        if (regex.test(userInput)){
-            window.location.href = '/stocks/location.html?location='+encodeURIComponent(userInput)
-        }
-    })
-</script>
+<script src="https://unpkg.com/@mongodb-js/charts-embed-dom"></script>
+<script src="index.js"></script>
 </body>
 <style>
     ul a {

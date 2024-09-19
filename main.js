@@ -8,7 +8,11 @@ const http = require('http')
 const https = require('https')
 const fs = require('fs')
 
-const cors=require("cors")
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const config = require("./config/atlasChart.js");
+
 const apiRequests = require('./apiserver/apimain');
 const {main} = require("@popperjs/core");
 const portfinder = require('portfinder');
@@ -203,6 +207,8 @@ app.on("window-all-closed", function () {
 app.setAsDefaultProtocolClient("warehouseelec");
 
 const expressApp = express()
+expressApp.use(bodyParser.urlencoded({ extended: false }));
+expressApp.use(bodyParser.json());
 expressApp.use(cors())
 expressApp.use("/api", apiRequests);
 expressApp.use(express.static(path.join(__dirname, 'public')));
@@ -210,6 +216,68 @@ expressApp.use(express.static(path.join(__dirname, 'public')));
 const credentials = {key: fs.readFileSync(path.join(__dirname, 'config/key.pem'), 'utf8'),
     cert:fs.readFileSync(path.join(__dirname, 'config/cert.pem'), 'utf8')}
 
+// 20240901新，添加Embedded SDK，允许访问charts
+expressApp.post("/jwt",(req, res)=>{
+    // Future adding user auth
+    const payload = {userId:"user"}
+    const tokenSecretKey = config.atlasChartProfiles[0].atlas_jwt
+    const jwt_token = jwt.sign(payload, tokenSecretKey, {
+        algorithm:"HS256",
+        expiresIn: '1h'
+    })
+    
+    res.json({token:jwt_token})
+})
+
+function authJWT(req, res, next) {
+    const token = req.headers.authorization
+    if (token) {
+        jwt.verify(token, config.atlasChartProfiles[0].atlas_jwt, (err, user) => {
+            if (err) {
+                return res.sendStatus(403);
+            }
+            req.user = user;
+            next();
+        });
+    } else {
+        res.sendStatus(401);
+    }
+}
+
+MongoClient.connect(config.atlasChartProfiles[0].atlas_url, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(client => {
+        const db = client.db();
+        const dashboardCollection = db.collection('dashboards');
+
+        app.get('/dashboard', authenticateJWT, (req, res) => {
+            dashboardCollection.findOne({ _id: config.atlasChartProfiles[0].atlas_dashboardId })
+                .then(dashboard => {
+                    if (dashboard) {
+                        res.json(dashboard);
+                    } else {
+                        res.status(404).send('Dashboard not found');
+                    }
+                })
+                .catch(error => res.status(500).send('Error fetching dashboard'));
+        });
+    })
+    .catch(error => console.error('Failed to connect to the database:', error));
+
+// 20231020新增，允许用户多开，通过推演端口号
+function checkPort(port, callback) {
+    const server = net.createServer();
+    server.listen(port, () => {
+        server.once('close', () => {
+            callback(true);
+        });
+        server.close();
+    });
+    server.on('error', () => {
+        callback(false);
+    });
+}
+
+// Finally
 app.whenReady().then(() => {
     // 使用portfinder插件查找可用端口，原有方法可能出现undefined
     portfinder.getPort((err,port)=>{
@@ -227,17 +295,3 @@ app.whenReady().then(() => {
         });
     })
 })
-
-// 20231020新增，允许用户多开，通过推演端口号
-function checkPort(port, callback) {
-    const server = net.createServer();
-    server.listen(port, () => {
-        server.once('close', () => {
-            callback(true);
-        });
-        server.close();
-    });
-    server.on('error', () => {
-        callback(false);
-    });
-}

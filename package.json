@@ -18,10 +18,11 @@
     "@electron-forge/maker-squirrel": "^6.3.0",
     "@electron-forge/maker-zip": "^6.3.0",
     "@electron-forge/plugin-auto-unpack-natives": "^6.3.0",
-    "electron": "^25.2.0"
+    "electron": "^25.2.0",
+    "html5-qrcode": "^2.3.8"
   },
   "dependencies": {
-    "@mongodb-js/charts-embed-dom": "^3.2.1",
+    "@mongodb-js/charts-embed-dom": "^3.3.1",
     "@popperjs/core": "^2.11.8",
     "@tabler/icons-webfont": "^2.40.0",
     "@tarekraafat/autocomplete.js": "^10.2.7",
@@ -53,6 +54,7 @@
     "jquery": "^3.7.0",
     "jquery-ui": "^1.13.2",
     "js-datepicker": "^5.18.2",
+    "jsonwebtoken": "^9.0.2",
     "jspdf": "^2.5.1",
     "jsqr": "^1.4.0",
     "lodash": "^4.17.21",
