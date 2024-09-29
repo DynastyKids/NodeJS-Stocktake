@@ -13,7 +13,8 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const config = require("./config/atlasChart.js");
 
-const apiRequests = require('./apiserver/apimain');
+const apiv1_main = require('./apiserver/apimain');
+const apiv2 = require('./apiserver/apiv2');
 const {main} = require("@popperjs/core");
 const portfinder = require('portfinder');
 portfinder.basePort = 3000;
@@ -210,7 +211,8 @@ const expressApp = express()
 expressApp.use(bodyParser.urlencoded({ extended: false }));
 expressApp.use(bodyParser.json());
 expressApp.use(cors())
-expressApp.use("/api", apiRequests);
+expressApp.use("/api2", apiv2);
+expressApp.use("/api", apiv1_main);
 expressApp.use("/stocks",express.static(path.join(__dirname,"stocks")))
 expressApp.use("/",express.static(path.join(__dirname, 'public')));
 
